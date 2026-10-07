@@ -1,0 +1,1 @@
+{"name":"pharmatech-security-prototype","private":true,"type":"module","scripts":{"test":"node --test test/security-prototype.test.mjs","benchmark":"node test/security-performance.test.mjs"}}

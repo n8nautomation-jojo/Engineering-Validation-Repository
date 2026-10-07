@@ -1,0 +1,20 @@
+{
+  "name": "@pharmatech/platform",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PharmaTech modular-monolith runtime foundation",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test \"tests/**/*.test.mjs\"",
+    "check": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "pg": "^8.16.3",
+    "typescript": "^5.9.2"
+  }
+}

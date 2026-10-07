@@ -1,0 +1,39 @@
+name: Platform Administration PostgreSQL Validation
+on:
+  push:
+    paths:
+      - 'docs/05-data/migrations/postgresql/002_platform_administration.sql'
+      - 'src/infrastructure/sql/platform-administration.ts'
+      - 'src/persistence/platform-contracts.ts'
+      - 'tests/platform-administration-persistence.test.mjs'
+      - 'tests/platform-administration-postgres.integration.test.mjs'
+  pull_request:
+    paths:
+      - 'docs/05-data/migrations/postgresql/002_platform_administration.sql'
+      - 'src/infrastructure/sql/platform-administration.ts'
+      - 'src/persistence/platform-contracts.ts'
+      - 'tests/platform-administration-persistence.test.mjs'
+      - 'tests/platform-administration-postgres.integration.test.mjs'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: pharmatech_test }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d pharmatech_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: npm run build
+      - name: Apply migration
+        env: { PGPASSWORD: postgres }
+        run: psql -h 127.0.0.1 -U postgres -d pharmatech_test -f docs/05-data/migrations/postgresql/002_platform_administration.sql
+      - name: Validate platform persistence
+        env: { DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/pharmatech_test }
+        run: node --test tests/platform-administration-persistence.test.mjs tests/platform-administration-postgres.integration.test.mjs

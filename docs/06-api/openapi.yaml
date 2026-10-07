@@ -1,0 +1,483 @@
+openapi: 3.1.0
+info:
+  title: PharmaTech API
+  version: 1.0.0
+  description: |
+    Machine-readable contract derived from promoted Phase 3.4.
+    This artifact does not introduce business rules.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Sales
+  - name: Payments
+  - name: Cash
+  - name: Inventory
+  - name: Purchasing
+  - name: Sync
+paths:
+  /sales:
+    post:
+      tags: [Sales]
+      operationId: completeSale
+      security: [{ bearerAuth: [] }]
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/CorrelationId'}, {$ref: '#/components/parameters/DeviceHeader'}]
+      x-permission: sales.create
+      x-offline: "OFFLINE_ELIGIBLE"
+      requestBody: {$ref: '#/components/requestBodies/CompleteSaleRequest'}
+      responses:
+        "201": {$ref: '#/components/responses/SaleCreated'}
+        "403": {$ref: '#/components/responses/Forbidden'}
+        "409": {$ref: '#/components/responses/Conflict'}
+        "422": {$ref: '#/components/responses/ValidationError'}
+    get:
+      tags: [Sales]
+      operationId: listSales
+      x-permission: sales.read
+      parameters: [{$ref: '#/components/parameters/Cursor'}, {$ref: '#/components/parameters/CorrelationId'}]
+      responses: {"200": {$ref: '#/components/responses/Page'}}
+  /sales/{saleId}:
+    get:
+      tags: [Sales]
+      operationId: getSale
+      x-permission: sales.read
+      x-offline: "OFFLINE_ELIGIBLE"
+      parameters: [{$ref: '#/components/parameters/SaleId'}]
+      responses: {"200": {$ref: '#/components/responses/Object'}, "404": {$ref: '#/components/responses/NotFound'}}
+  /sales/{saleId}/reversals:
+    post:
+      tags: [Sales]
+      operationId: reverseSale
+      x-permission: sales.reverse
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/SaleId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/IfMatch'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /sales/{saleId}/returns:
+    post:
+      tags: [Sales]
+      operationId: createSalesReturn
+      x-permission: sales.return
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/SaleId'}, {$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/IfMatch'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+
+  /sales/{saleId}/payments:
+    post:
+      tags: [Payments]
+      operationId: recordPayment
+      x-permission: payments.record
+      x-offline: "OFFLINE_ELIGIBLE"
+      parameters: [{$ref: '#/components/parameters/SaleId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/PaymentInput'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /payments/{paymentId}:
+    get:
+      tags: [Payments]
+      operationId: getPayment
+      x-permission: payments.read
+      parameters: [{$ref: '#/components/parameters/PaymentId'}]
+      responses: {"200": {$ref: '#/components/responses/Object'}, "404": {$ref: '#/components/responses/NotFound'}}
+  /payments/{paymentId}/evidence:
+    post:
+      tags: [Payments]
+      operationId: capturePaymentEvidence
+      x-permission: payments.evidence.add
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/PaymentId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}, "503": {$ref: '#/components/responses/Unavailable'}}
+  /payments/{paymentId}/verification-decisions:
+    post:
+      tags: [Payments]
+      operationId: recordManualPaymentVerificationDecision
+      x-permission: payments.verify.manual
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/PaymentId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "403": {$ref: '#/components/responses/Forbidden'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /payments/{paymentId}/verification-requests:
+    post:
+      tags: [Payments]
+      operationId: requestPaymentVerification
+      x-permission: payments.verify.external
+      x-offline: "ONLINE_ONLY"
+      parameters: [{$ref: '#/components/parameters/PaymentId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"202": {$ref: '#/components/responses/Object'}, "200": {$ref: '#/components/responses/Object'}, "201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "503": {$ref: '#/components/responses/Unavailable'}}
+  /payments/{paymentId}/verification-attempts:
+    get:
+      tags: [Payments]
+      operationId: listPaymentVerificationAttempts
+      x-permission: payments.read
+      parameters: [{$ref: '#/components/parameters/PaymentId'}, {$ref: '#/components/parameters/Cursor'}]
+      responses: {"200": {$ref: '#/components/responses/Page'}}
+
+  /cash-sessions:
+    post:
+      tags: [Cash]
+      operationId: openCashSession
+      x-permission: cash.sessions.open
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /cash-sessions/{sessionId}:
+    get:
+      tags: [Cash]
+      operationId: getCashSession
+      x-permission: cash.sessions.open
+      parameters: [{$ref: '#/components/parameters/SessionId'}]
+      responses: {"200": {$ref: '#/components/responses/Object'}, "404": {$ref: '#/components/responses/NotFound'}}
+  /cash-sessions/{sessionId}/movements:
+    post:
+      tags: [Cash]
+      operationId: recordCashMovement
+      x-permission: cash.sessions.move
+      x-offline: "OFFLINE_ELIGIBLE"
+      parameters: [{$ref: '#/components/parameters/SessionId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /cash-sessions/{sessionId}/close:
+    post:
+      tags: [Cash]
+      operationId: closeCashSession
+      x-permission: cash.sessions.close
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/SessionId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"200": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /cash-sessions/{sessionId}/reconciliation:
+    post:
+      tags: [Cash]
+      operationId: reconcileCashSession
+      x-permission: cash.sessions.reconcile
+      x-offline: "ONLINE_ONLY"
+      parameters: [{$ref: '#/components/parameters/SessionId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /cash-registers/{registerId}/active-session:
+    get:
+      tags: [Cash]
+      operationId: getActiveCashSession
+      x-permission: cash.sessions.open
+      x-offline: "OFFLINE_ELIGIBLE"
+      parameters: [{$ref: '#/components/parameters/RegisterId'}]
+      responses: {"200": {$ref: '#/components/responses/Object'}, "404": {$ref: '#/components/responses/NotFound'}}
+
+  /inventory/stock:
+    get:
+      tags: [Inventory]
+      operationId: getInventoryStock
+      x-permission: inventory.read
+      parameters: [{$ref: '#/components/parameters/Cursor'}]
+      responses: {"200": {$ref: '#/components/responses/Page'}}
+  /inventory/batches/availability:
+    get:
+      tags: [Inventory]
+      operationId: getBatchAvailability
+      x-permission: inventory.read
+      responses: {"200": {$ref: '#/components/responses/Page'}}
+  /inventory/stock/expiring:
+    get:
+      tags: [Inventory]
+      operationId: getExpiringStock
+      x-permission: inventory.read
+      x-offline: "OFFLINE_ELIGIBLE"
+      parameters: [{$ref: '#/components/parameters/Cursor'}]
+      responses: {"200": {$ref: '#/components/responses/Page'}}
+  /inventory/stock-movements:
+    get:
+      tags: [Inventory]
+      operationId: listStockMovements
+      x-permission: inventory.read
+      x-offline: "OFFLINE_ELIGIBLE"
+      parameters: [{$ref: '#/components/parameters/Cursor'}]
+      responses: {"200": {$ref: '#/components/responses/Page'}}
+  /inventory/adjustments:
+    post:
+      tags: [Inventory]
+      operationId: createStockAdjustment
+      x-permission: inventory.adjust.create
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/StockAdjustmentRequest'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /inventory/adjustments/{adjustmentId}/approval:
+    post:
+      tags: [Inventory]
+      operationId: approveStockAdjustment
+      x-permission: inventory.adjust.approve
+      x-offline: "ONLINE_ONLY"
+      parameters: [{$ref: '#/components/parameters/AdjustmentId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"200": {$ref: '#/components/responses/Object'}, "201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /stock-transfers:
+    post:
+      tags: [Inventory]
+      operationId: createStockTransfer
+      x-permission: inventory.transfer.create
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"201": {$ref: '#/components/responses/Object'}}
+  /stock-transfers/{transferId}/dispatch:
+    post:
+      tags: [Inventory]
+      operationId: dispatchStockTransfer
+      x-permission: inventory.transfer.dispatch
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/TransferId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"200": {$ref: '#/components/responses/Object'}, "201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /stock-transfers/{transferId}/receipt:
+    post:
+      tags: [Inventory]
+      operationId: receiveStockTransfer
+      x-permission: inventory.transfer.receive
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/TransferId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"200": {$ref: '#/components/responses/Object'}, "201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /goods-receipts:
+    post:
+      tags: [Inventory]
+      operationId: createGoodsReceipt
+      x-permission: purchasing.receipt.create
+      x-offline: "OFFLINE_RESTRICTED"
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GoodsReceiptRequest'}
+      responses: {"201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+  /purchase-orders:
+    post:
+      tags: [Purchasing]
+      operationId: createPurchaseOrder
+      x-permission: purchasing.po.create
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"201": {$ref: '#/components/responses/Object'}}
+  /purchase-orders/{purchaseOrderId}:
+    get:
+      tags: [Purchasing]
+      operationId: getPurchaseOrder
+      x-permission: purchasing.po.read
+      parameters: [{$ref: '#/components/parameters/PurchaseOrderId'}]
+      responses: {"200": {$ref: '#/components/responses/Object'}, "404": {$ref: '#/components/responses/NotFound'}}
+  /payment-methods:
+    get:
+      tags: [Payments]
+      operationId: listPaymentMethods
+      x-permission: payments.read
+      x-offline: "OFFLINE_ELIGIBLE"
+      responses: {"200": {$ref: '#/components/responses/Page'}}
+
+  /sync/push:
+    post:
+      tags: [Sync]
+      operationId: pushSyncOperations
+      x-permission: sync.push (system/device capability)
+      x-offline: "ONLINE_ONLY"
+      x-local-capability: true
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/DeviceHeader'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"200": {$ref: '#/components/responses/Object'}, "207": {$ref: '#/components/responses/Object'}}
+  /sync/pull:
+    get:
+      tags: [Sync]
+      operationId: pullSyncChanges
+      x-permission: sync.pull
+      x-offline: "ONLINE_ONLY"
+      x-local-capability: true
+      parameters: [{$ref: '#/components/parameters/Cursor'}, {$ref: '#/components/parameters/DeviceHeader'}]
+      responses: {"200": {$ref: '#/components/responses/Object'}}
+  /sync/acknowledgements:
+    post:
+      tags: [Sync]
+      operationId: acknowledgeSyncApplication
+      x-permission: sync.pull/device capability
+      x-offline: "ONLINE_ONLY"
+      x-local-capability: true
+      parameters: [{$ref: '#/components/parameters/IdempotencyKey'}, {$ref: '#/components/parameters/DeviceHeader'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"204": {$ref: '#/components/responses/Empty'}, "200": {$ref: '#/components/responses/Object'}}
+  /sync/devices/{deviceId}/pending-outbox:
+    get:
+      tags: [Sync]
+      operationId: getPendingOutboxStatus
+      x-permission: sync.push
+      x-offline: "OFFLINE_ELIGIBLE"
+      x-local-capability: true
+      parameters: [{$ref: '#/components/parameters/DeviceIdPath'}]
+      responses: {"200": {$ref: '#/components/responses/Object'}}
+  /sync/devices/{deviceId}/status:
+    get:
+      tags: [Sync]
+      operationId: getDeviceSyncStatus
+      x-permission: administrative operational access
+      x-offline: "ONLINE_ONLY"
+      parameters: [{$ref: '#/components/parameters/DeviceIdPath'}]
+      responses: {"200": {$ref: '#/components/responses/Object'}}
+  /sync/conflicts/{conflictId}:
+    get:
+      tags: [Sync]
+      operationId: getSyncConflict
+      x-permission: sync.conflict.resolve
+      parameters: [{$ref: '#/components/parameters/ConflictId'}]
+      responses: {"200": {$ref: '#/components/responses/Object'}, "404": {$ref: '#/components/responses/NotFound'}}
+  /sync/conflicts/{conflictId}/resolution:
+    post:
+      tags: [Sync]
+      operationId: resolveSyncConflict
+      x-permission: sync.conflict.resolve
+      x-offline: "ONLINE_ONLY"
+      parameters: [{$ref: '#/components/parameters/ConflictId'}, {$ref: '#/components/parameters/IdempotencyKey'}]
+      requestBody: {$ref: '#/components/requestBodies/GenericObject'}
+      responses: {"200": {$ref: '#/components/responses/Object'}, "201": {$ref: '#/components/responses/Object'}, "409": {$ref: '#/components/responses/Conflict'}, "422": {$ref: '#/components/responses/ValidationError'}}
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Authentication scheme placeholder; exact runtime mechanism remains governed by security architecture.
+  parameters:
+    IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string}}
+    CorrelationId: {name: X-Correlation-ID, in: header, required: false, schema: {type: string}}
+    DeviceHeader: {name: X-Device-ID, in: header, required: false, schema: {type: string}}
+    IfMatch: {name: If-Match, in: header, required: false, schema: {type: string}}
+    Cursor: {name: cursor, in: query, required: false, schema: {type: string}}
+    SaleId: {name: saleId, in: path, required: true, schema: {type: string, format: uuid}}
+    PaymentId: {name: paymentId, in: path, required: true, schema: {type: string, format: uuid}}
+    SessionId: {name: sessionId, in: path, required: true, schema: {type: string, format: uuid}}
+    RegisterId: {name: registerId, in: path, required: true, schema: {type: string, format: uuid}}
+    AdjustmentId: {name: adjustmentId, in: path, required: true, schema: {type: string, format: uuid}}
+    TransferId: {name: transferId, in: path, required: true, schema: {type: string, format: uuid}}
+    PurchaseOrderId: {name: purchaseOrderId, in: path, required: true, schema: {type: string, format: uuid}}
+    DeviceIdPath: {name: deviceId, in: path, required: true, schema: {type: string, format: uuid}}
+    ConflictId: {name: conflictId, in: path, required: true, schema: {type: string, format: uuid}}
+  requestBodies:
+    GenericObject:
+      required: false
+      content: {application/json: {schema: {$ref: '#/components/schemas/LooseObject'}}}
+    CompleteSaleRequest:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/CompleteSaleRequest'}
+    PaymentInput:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/PaymentInput'}
+    StockAdjustmentRequest:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/StockAdjustmentRequest'}
+    GoodsReceiptRequest:
+      required: true
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/GoodsReceiptRequest'}
+  responses:
+    Object: {description: Successful response, content: {application/json: {schema: {$ref: '#/components/schemas/LooseObject'}}}}
+    Page: {description: Cursor-paginated response, content: {application/json: {schema: {$ref: '#/components/schemas/Page'}}}}
+    SaleCreated: {description: Sale created, content: {application/json: {schema: {$ref: '#/components/schemas/CompleteSaleResponse'}}}}
+    Empty: {description: No content}
+    NotFound: {description: Resource not found, content: {application/json: {schema: {$ref: '#/components/schemas/ApiErrorResponse'}}}}
+    Forbidden: {description: Forbidden, content: {application/json: {schema: {$ref: '#/components/schemas/ApiErrorResponse'}}}}
+    Conflict: {description: Conflict, content: {application/json: {schema: {$ref: '#/components/schemas/ApiErrorResponse'}}}}
+    ValidationError: {description: Validation error, content: {application/json: {schema: {$ref: '#/components/schemas/ApiErrorResponse'}}}}
+    Unavailable: {description: Temporary unavailable, content: {application/json: {schema: {$ref: '#/components/schemas/ApiErrorResponse'}}}}
+  schemas:
+    LooseObject:
+      type: object
+      additionalProperties: true
+    Money:
+      type: object
+      required: [value, currency]
+      properties:
+        value: {type: string, description: Decimal string}
+        currency: {type: string, description: Uppercase configured currency code}
+    Quantity:
+      type: object
+      required: [value, unit_code]
+      properties:
+        value: {type: string, description: Decimal string}
+        unit_code: {type: string}
+    SaleLineRequest:
+      type: object
+      additionalProperties: true
+      properties:
+        product_id: {type: string, format: uuid}
+        batch_id: {type: string, format: uuid}
+        quantity: {$ref: '#/components/schemas/Quantity'}
+    PaymentInput:
+      type: object
+      additionalProperties: true
+      properties:
+        method: {type: string}
+        amount: {$ref: '#/components/schemas/Money'}
+        verification_mode: {type: string}
+        evidence_reference: {type: string}
+    CompleteSaleRequest:
+      type: object
+      additionalProperties: true
+      required: [cash_register_id, cash_session_id, lines, payments]
+      properties:
+        cash_register_id: {type: string, format: uuid}
+        cash_session_id: {type: string, format: uuid}
+        customer_id: {type: string, format: uuid}
+        prescription_id: {type: string, format: uuid}
+        lines: {type: array, items: {$ref: '#/components/schemas/SaleLineRequest'}}
+        payments: {type: array, items: {$ref: '#/components/schemas/PaymentInput'}}
+        note: {type: string}
+        client_operation_id: {type: string}
+    CompleteSaleResponse:
+      type: object
+      additionalProperties: true
+      properties:
+        sale_id: {type: string, format: uuid}
+        invoice_number: {type: string}
+        status: {type: string}
+        totals: {$ref: '#/components/schemas/LooseObject'}
+        payment_summary: {$ref: '#/components/schemas/LooseObject'}
+        inventory_effect: {$ref: '#/components/schemas/LooseObject'}
+        sync_status: {type: string}
+        correlation_id: {type: string}
+    StockAdjustmentRequest:
+      type: object
+      additionalProperties: true
+    GoodsReceiptRequest:
+      type: object
+      additionalProperties: true
+    ApiError:
+      type: object
+      required: [code, message, details, retryable]
+      properties:
+        code: {type: string}
+        message: {type: string}
+        details: {type: object, additionalProperties: true}
+        retryable: {type: boolean}
+    ApiErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error: {$ref: '#/components/schemas/ApiError'}
+        meta:
+          type: object
+          properties:
+            correlation_id: {type: string}
+    Page:
+      type: object
+      additionalProperties: true
+      properties:
+        data: {type: array, items: {$ref: '#/components/schemas/LooseObject'}}
+        meta:
+          type: object
+          properties:
+            correlation_id: {type: string}
+            next_cursor: {type: string}
+            has_more: {type: boolean}

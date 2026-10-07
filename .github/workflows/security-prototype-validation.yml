@@ -1,0 +1,43 @@
+name: R1-B Security Prototype Validation
+
+on:
+  push:
+    paths:
+      - "security-prototype/**"
+      - ".github/workflows/security-prototype-validation.yml"
+  pull_request:
+    paths:
+      - "security-prototype/**"
+      - ".github/workflows/security-prototype-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run portable security prototype
+        working-directory: security-prototype
+        run: npm test
+
+  portable-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Record Windows environment
+        shell: pwsh
+        run: |
+          $PSVersionTable
+          Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsBuildNumber, CsProcessors, CsTotalPhysicalMemory
+      - name: Run portable security prototype on Windows
+        working-directory: security-prototype
+        run: npm test

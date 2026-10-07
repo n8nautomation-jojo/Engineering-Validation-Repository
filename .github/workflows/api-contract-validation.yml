@@ -1,0 +1,32 @@
+name: API Contract Validation
+
+on:
+  push:
+    paths:
+      - "docs/06-api/openapi.yaml"
+      - "docs/06-api/fixtures/phase-3-5-contract-fixtures.json"
+      - ".github/workflows/api-contract-validation.yml"
+  pull_request:
+    paths:
+      - "docs/06-api/openapi.yaml"
+      - "docs/06-api/fixtures/phase-3-5-contract-fixtures.json"
+      - ".github/workflows/api-contract-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate OpenAPI 3.1
+        run: npx --yes @redocly/cli@1.34.2 lint docs/06-api/openapi.yaml --extends=minimal
+      - name: Validate contract fixtures JSON
+        run: node -e "JSON.parse(require('node:fs').readFileSync('docs/06-api/fixtures/phase-3-5-contract-fixtures.json','utf8')); console.log('Contract fixtures JSON: PASS')"

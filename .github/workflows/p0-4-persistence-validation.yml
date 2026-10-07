@@ -1,0 +1,48 @@
+name: P0-4 Persistence Contract Validation
+
+on:
+  push:
+    paths:
+      - "src/infrastructure/sql/**"
+      - "src/persistence/**"
+      - "tests/p0-4-**"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/p0-4-persistence-validation.yml"
+  pull_request:
+    paths:
+      - "src/infrastructure/sql/**"
+      - "src/persistence/**"
+      - "tests/p0-4-**"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/p0-4-persistence-validation.yml"
+
+jobs:
+  persistence:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: pharmatech
+          POSTGRES_USER: pharmatech
+          POSTGRES_DB: pharmatech_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pharmatech -d pharmatech_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install
+      - run: npm run build
+      - run: node --test tests/p0-4-sql-adapter-contract.test.mjs
+      - run: node --test tests/p0-4-real-db.integration.test.mjs
+        env:
+          DATABASE_URL: postgresql://pharmatech:pharmatech@localhost:5432/pharmatech_test

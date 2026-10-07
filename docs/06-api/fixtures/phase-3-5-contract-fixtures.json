@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "status": "NON_NORMATIVE_EXAMPLES",
+    "source": "Phase 3.4 / D-032",
+    "warning": "Synthetic contract examples only; they do not establish policy or legal values."
+  },
+  "cash_sale": {
+    "request": {
+      "cash_register_id": "018f0000-0000-7000-8000-000000000001",
+      "cash_session_id": "018f0000-0000-7000-8000-000000000002",
+      "lines": [],
+      "payments": [{ "method": "CASH", "amount": { "value": "10.00", "currency": "SDG" } }]
+    }
+  },
+  "bank_transfer_recorded_without_api_verification": {
+    "request": {
+      "method": "BANK_TRANSFER",
+      "verification_mode": "MANUAL_CONFIRMATION"
+    },
+    "expected_semantics": "Recording a transfer does not imply API verification."
+  },
+  "transfer_with_screenshot_evidence": {
+    "request": {
+      "method": "BANK_TRANSFER",
+      "verification_mode": "EVIDENCE_REVIEW",
+      "evidence_reference": "evidence://synthetic/001"
+    },
+    "expected_semantics": "Evidence is not automatic settlement proof."
+  },
+  "manual_verification_decision": {
+    "request": {
+      "decision": "CONFIRMED",
+      "reason": "Synthetic review reason"
+    }
+  },
+  "hisabati_external_verification_pending": {
+    "request": {
+      "provider": "hisabati",
+      "verification_mode": "API_VERIFICATION"
+    },
+    "response": { "status": "PENDING" }
+  },
+  "split_cash_and_transfer": {
+    "request": {
+      "payments": [
+        { "method": "CASH", "amount": { "value": "6.00", "currency": "SDG" } },
+        { "method": "BANK_TRANSFER", "amount": { "value": "4.00", "currency": "SDG" } }
+      ]
+    }
+  },
+  "offline_completed_sale_pending_sync": {
+    "response": {
+      "status": "COMPLETED",
+      "sync_status": "PENDING"
+    }
+  },
+  "insufficient_stock": {
+    "http_status": 409,
+    "error": { "code": "INSUFFICIENT_STOCK", "retryable": false }
+  },
+  "stale_version": {
+    "http_status": 409,
+    "error": { "code": "CONCURRENCY_CONFLICT", "retryable": false }
+  },
+  "idempotency_replay": {
+    "meta": { "idempotent_replay": true },
+    "expected_semantics": "Same key and same request replay the durable original result."
+  }
+}

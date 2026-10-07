@@ -1,0 +1,26 @@
+name: R1-A1 Offline Safety Conformance
+
+on:
+  push:
+    paths:
+      - 'tests/r1-a1/**'
+      - '.github/workflows/r1-a1-conformance-validation.yml'
+  pull_request:
+    paths:
+      - 'tests/r1-a1/**'
+      - '.github/workflows/r1-a1-conformance-validation.yml'
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run A1 reference conformance
+        run: node --test tests/r1-a1/offline-safety-conformance.test.mjs
