@@ -1101,3 +1101,159 @@ maybe("P0 PostgreSQL: Schema constraint chk_offline_allocations_temporal_integri
     /chk_offline_allocations_temporal_integrity/
   );
 });
+
+// 15. R1 — Real Database Concurrency Validation: Two competing sales on same batch under independent connections
+maybe("R1 PostgreSQL: Two concurrent sales on same batch under independent connections enforce atomic stock guard", async (t) => {
+  // Use two independent connection pools to guarantee separate physical PostgreSQL connections
+  const pool1 = new Pool({ connectionString: databaseUrl, max: 5 });
+  const pool2 = new Pool({ connectionString: databaseUrl, max: 5 });
+  t.after(async () => {
+    await pool1.end();
+    await pool2.end();
+  });
+
+  await setupPostgresDb(pool1);
+
+  const persistence1 = new PostgresSalesPersistence(pool1);
+  const persistence2 = new PostgresSalesPersistence(pool2);
+  const service1 = new SalesService(persistence1);
+  const service2 = new SalesService(persistence2);
+
+  const { context, cashSession, assignments } = createTestContext();
+
+  const batchId = "batch-r1-concurrent";
+  const productId = "prod-r1-concurrent";
+
+  // Controlled scenario: Batch initial stock is exactly 10 units
+  await seedPgBatch(pool1, {
+    id: batchId,
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: productId,
+    batchNumber: "BN-R1-CONC",
+    expiryDate: "2028-12-31",
+    quantity: 10,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  // Verify initial quantity in PostgreSQL
+  const initialBatch = await persistence1.getBatch(batchId);
+  assert.equal(initialBatch.quantity.value, 10);
+
+  // Two concurrent sales commands, each requesting 7 units (7 + 7 = 14 > 10, cannot both succeed)
+  const commandA = {
+    idempotencyKey: "idem-r1-sale-a",
+    correlationId: "corr-r1-sale-a",
+    context,
+    cashSession,
+    assignments,
+    now: "2026-10-07T12:00:00Z",
+    lines: [{
+      productId,
+      quantity: 7,
+      unitPrice: money(10, "SDG")
+    }],
+    payments: [{
+      method: "CASH",
+      amount: money(70, "SDG")
+    }]
+  };
+
+  const commandB = {
+    idempotencyKey: "idem-r1-sale-b",
+    correlationId: "corr-r1-sale-b",
+    context,
+    cashSession,
+    assignments,
+    now: "2026-10-07T12:00:00Z",
+    lines: [{
+      productId,
+      quantity: 7,
+      unitPrice: money(10, "SDG")
+    }],
+    payments: [{
+      method: "CASH",
+      amount: money(70, "SDG")
+    }]
+  };
+
+  // Launch both sales concurrently on two independent PostgreSQL connection pools
+  const [resA, resB] = await Promise.allSettled([
+    service1.processSale(commandA),
+    service2.processSale(commandB)
+  ]);
+
+  const fulfilled = [resA, resB].filter(r => r.status === "fulfilled");
+  const rejected = [resA, resB].filter(r => r.status === "rejected");
+
+  // 1. Exactly one sale succeeds and the other is rejected
+  assert.equal(fulfilled.length, 1, "Exactly one concurrent sale must complete successfully");
+  assert.equal(rejected.length, 1, "Exactly one concurrent sale must be rejected");
+
+  const winner = fulfilled[0].value;
+  const loserError = rejected[0].reason;
+
+  assert.equal(winner.status, "COMPLETED");
+  assert.equal(winner.totalAmount, 70);
+
+  // The competing sale must fail due to insufficient stock / concurrent batch state change
+  assert.match(
+    loserError.message,
+    /STALE_BATCH_OR_INSUFFICIENT_STOCK|INSUFFICIENT_STOCK/,
+    "Rejected sale must fail with stock exhaustion / concurrency guard"
+  );
+
+  // 2. Exact batch stock verification in PostgreSQL: 10 - 7 = exactly 3
+  const batchAfter = await pool1.query("SELECT quantity, version, status FROM batches WHERE id = $1", [batchId]);
+  assert.equal(Number(batchAfter.rows[0].quantity), 3, "Batch quantity must remain exactly 3; double spend prevented");
+  assert.equal(Number(batchAfter.rows[0].version), 1, "Batch version must increment exactly once");
+  assert.equal(batchAfter.rows[0].status, "ACTIVE");
+
+  // 3. Absence of committed residual effects for the rejected sale:
+  // Only the winning sale exists in sales table
+  const salesRows = await pool1.query("SELECT id, status, total_amount, idempotency_key FROM sales");
+  assert.equal(salesRows.rows.length, 1, "Only 1 sale record must exist in sales table");
+  assert.equal(salesRows.rows[0].id, winner.saleId);
+  assert.equal(salesRows.rows[0].status, "COMPLETED");
+
+  // Only the winning sale's lines exist
+  const linesRows = await pool1.query("SELECT sale_id, product_id, quantity FROM sale_lines");
+  assert.equal(linesRows.rows.length, 1, "Only 1 sale line must exist");
+  assert.equal(linesRows.rows[0].sale_id, winner.saleId);
+  assert.equal(Number(linesRows.rows[0].quantity), 7);
+
+  // Only the winning sale's payment exists
+  const paymentRows = await pool1.query("SELECT sale_id, amount_value FROM payments");
+  assert.equal(paymentRows.rows.length, 1, "Only 1 payment record must exist");
+  assert.equal(paymentRows.rows[0].sale_id, winner.saleId);
+  assert.equal(Number(paymentRows.rows[0].amount_value), 70);
+
+  // Only the winning sale's inventory transaction and stock movement exist
+  const invTxRows = await pool1.query("SELECT id, source_id, status FROM inventory_transactions");
+  assert.equal(invTxRows.rows.length, 1, "Only 1 inventory transaction must exist");
+  assert.equal(invTxRows.rows[0].id, winner.inventoryTransactionId);
+  assert.equal(invTxRows.rows[0].source_id, winner.saleId);
+  assert.equal(invTxRows.rows[0].status, "POSTED");
+
+  const smRows = await pool1.query("SELECT inventory_transaction_id, quantity, direction FROM stock_movements");
+  assert.equal(smRows.rows.length, 1, "Only 1 stock movement must exist");
+  assert.equal(smRows.rows[0].inventory_transaction_id, winner.inventoryTransactionId);
+  assert.equal(Number(smRows.rows[0].quantity), 7);
+  assert.equal(smRows.rows[0].direction, "OUT");
+
+  // Only the winning sale's outbox event exists
+  const outboxRows = await pool1.query("SELECT aggregate_id, event_type FROM outbox_events");
+  assert.equal(outboxRows.rows.length, 1, "Only 1 outbox event must exist");
+  assert.equal(outboxRows.rows[0].aggregate_id, winner.saleId);
+
+  // Only the winning sale's audit record exists
+  const auditRows = await pool1.query("SELECT resource_id, action FROM audit_records");
+  assert.equal(auditRows.rows.length, 1, "Only 1 audit record must exist");
+  assert.equal(auditRows.rows[0].resource_id, winner.saleId);
+
+  // Only the winning sale's idempotency record exists
+  const idemRows = await pool1.query("SELECT key FROM idempotency_records");
+  assert.equal(idemRows.rows.length, 1, "Only 1 idempotency record must exist");
+});
+
