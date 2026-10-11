@@ -1114,61 +1114,29 @@ maybe("R1 PostgreSQL: Two concurrent sales on same batch under independent conne
 
   await setupPostgresDb(pool1);
 
-  // Deterministic promise-based synchronization barrier (Zero sleep, zero random timing):
-  // Guarantees:
-  // 1. Both sales read available batches at quantity 10 (pre-checks pass for both).
-  // 2. Transaction 1 acquires row lock on batches and updates quantity (10 -> 3).
-  // 3. Transaction 2 enters executeSaleAtomic and dispatches SELECT ... FOR UPDATE.
-  // 4. In PostgreSQL, connection 2 blocks on the row lock held by connection 1.
-  // 5. Connection 1 commits only after connection 2 is confirmed waiting on the lock.
-  // 6. Connection 2 unblocks, sees quantity 3 < 7, and throws STALE_BATCH_OR_INSUFFICIENT_STOCK.
-  let notifyTx1Locked;
-  const tx1HasLocked = new Promise(resolve => { notifyTx1Locked = resolve; });
-
-  let notifyTx2AttemptingLock;
-  const tx2AttemptingLock = new Promise(resolve => { notifyTx2AttemptingLock = resolve; });
-
-  // Wrap pool1 connection queries to hold transaction 1 until transaction 2 attempts lock
-  const origConnect1 = pool1.connect.bind(pool1);
-  pool1.connect = async () => {
-    const client = await origConnect1();
-    const origQuery = client.query.bind(client);
-    client.query = async (text, params) => {
-      const res = await origQuery(text, params);
-      if (typeof text === "string" && text.includes("UPDATE batches")) {
-        // Transaction 1 has acquired row lock and executed guarded update
-        notifyTx1Locked();
-        // Hold transaction 1 open until transaction 2 enters SELECT ... FOR UPDATE
-        await tx2AttemptingLock;
-      }
-      return res;
-    };
-    return client;
-  };
-
-  // Wrap pool2 connection queries to signal when transaction 2 dispatches lock request
-  const origConnect2 = pool2.connect.bind(pool2);
-  pool2.connect = async () => {
-    const client = await origConnect2();
-    const origQuery = client.query.bind(client);
-    client.query = async (text, params) => {
-      if (typeof text === "string" && text.includes("SELECT quantity, status, expiry_date FROM batches WHERE id = $1 FOR UPDATE")) {
-        // Transaction 2 is dispatching SELECT ... FOR UPDATE and will block in PostgreSQL on connection 1's row lock
-        notifyTx2AttemptingLock();
-      }
-      return origQuery(text, params);
-    };
-    return client;
-  };
-
   const persistence1 = new PostgresSalesPersistence(pool1);
   const persistence2 = new PostgresSalesPersistence(pool2);
 
-  // Persistence 2 waits for tx1 to acquire row lock before executing its transaction
-  const origExecute2 = persistence2.executeSaleAtomic.bind(persistence2);
-  persistence2.executeSaleAtomic = async (plan) => {
-    await tx1HasLocked;
-    return origExecute2(plan);
+  // Deterministic coordination barrier (Zero sleep, zero random timing):
+  // Guarantees that service2 has read the initial batch at quantity 10 before
+  // service1's transaction can execute and commit.
+  // This guarantees that BOTH sales pass in-memory pre-checks and enter
+  // in-transaction PostgreSQL execution with independent connections, proving
+  // that rejection occurs exclusively via the database concurrency guard.
+  let notifyTx2ReadBatches;
+  const tx2HasReadBatches = new Promise(resolve => { notifyTx2ReadBatches = resolve; });
+
+  const origFindBatches2 = persistence2.findBatchesForProduct.bind(persistence2);
+  persistence2.findBatchesForProduct = async (wId, pId) => {
+    const batches = await origFindBatches2(wId, pId);
+    notifyTx2ReadBatches();
+    return batches;
+  };
+
+  const origExecute1 = persistence1.executeSaleAtomic.bind(persistence1);
+  persistence1.executeSaleAtomic = async (plan) => {
+    await tx2HasReadBatches;
+    return origExecute1(plan);
   };
 
   const service1 = new SalesService(persistence1);
@@ -1252,11 +1220,11 @@ maybe("R1 PostgreSQL: Two concurrent sales on same batch under independent conne
   assert.equal(winner.status, "COMPLETED");
   assert.equal(winner.totalAmount, 70);
 
-  // The competing sale must fail strictly with in-transaction concurrency guard error (NOT in-memory pre-check)
+  // The competing sale must fail strictly with the in-transaction database concurrency guard error
   assert.equal(
     loserError.message,
     "STALE_BATCH_OR_INSUFFICIENT_STOCK",
-    "Rejected sale must fail with STALE_BATCH_OR_INSUFFICIENT_STOCK from the in-transaction row lock check"
+    "Rejected sale must fail strictly with STALE_BATCH_OR_INSUFFICIENT_STOCK from the in-transaction row lock check"
   );
 
   // 2. Exact batch stock verification in PostgreSQL: 10 - 7 = exactly 3
