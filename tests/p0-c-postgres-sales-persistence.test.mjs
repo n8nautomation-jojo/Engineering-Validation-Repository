@@ -1114,8 +1114,63 @@ maybe("R1 PostgreSQL: Two concurrent sales on same batch under independent conne
 
   await setupPostgresDb(pool1);
 
+  // Deterministic promise-based synchronization barrier (Zero sleep, zero random timing):
+  // Guarantees:
+  // 1. Both sales read available batches at quantity 10 (pre-checks pass for both).
+  // 2. Transaction 1 acquires row lock on batches and updates quantity (10 -> 3).
+  // 3. Transaction 2 enters executeSaleAtomic and dispatches SELECT ... FOR UPDATE.
+  // 4. In PostgreSQL, connection 2 blocks on the row lock held by connection 1.
+  // 5. Connection 1 commits only after connection 2 is confirmed waiting on the lock.
+  // 6. Connection 2 unblocks, sees quantity 3 < 7, and throws STALE_BATCH_OR_INSUFFICIENT_STOCK.
+  let notifyTx1Locked;
+  const tx1HasLocked = new Promise(resolve => { notifyTx1Locked = resolve; });
+
+  let notifyTx2AttemptingLock;
+  const tx2AttemptingLock = new Promise(resolve => { notifyTx2AttemptingLock = resolve; });
+
+  // Wrap pool1 connection queries to hold transaction 1 until transaction 2 attempts lock
+  const origConnect1 = pool1.connect.bind(pool1);
+  pool1.connect = async () => {
+    const client = await origConnect1();
+    const origQuery = client.query.bind(client);
+    client.query = async (text, params) => {
+      const res = await origQuery(text, params);
+      if (typeof text === "string" && text.includes("UPDATE batches")) {
+        // Transaction 1 has acquired row lock and executed guarded update
+        notifyTx1Locked();
+        // Hold transaction 1 open until transaction 2 enters SELECT ... FOR UPDATE
+        await tx2AttemptingLock;
+      }
+      return res;
+    };
+    return client;
+  };
+
+  // Wrap pool2 connection queries to signal when transaction 2 dispatches lock request
+  const origConnect2 = pool2.connect.bind(pool2);
+  pool2.connect = async () => {
+    const client = await origConnect2();
+    const origQuery = client.query.bind(client);
+    client.query = async (text, params) => {
+      if (typeof text === "string" && text.includes("SELECT quantity, status, expiry_date FROM batches WHERE id = $1 FOR UPDATE")) {
+        // Transaction 2 is dispatching SELECT ... FOR UPDATE and will block in PostgreSQL on connection 1's row lock
+        notifyTx2AttemptingLock();
+      }
+      return origQuery(text, params);
+    };
+    return client;
+  };
+
   const persistence1 = new PostgresSalesPersistence(pool1);
   const persistence2 = new PostgresSalesPersistence(pool2);
+
+  // Persistence 2 waits for tx1 to acquire row lock before executing its transaction
+  const origExecute2 = persistence2.executeSaleAtomic.bind(persistence2);
+  persistence2.executeSaleAtomic = async (plan) => {
+    await tx1HasLocked;
+    return origExecute2(plan);
+  };
+
   const service1 = new SalesService(persistence1);
   const service2 = new SalesService(persistence2);
 
@@ -1197,11 +1252,11 @@ maybe("R1 PostgreSQL: Two concurrent sales on same batch under independent conne
   assert.equal(winner.status, "COMPLETED");
   assert.equal(winner.totalAmount, 70);
 
-  // The competing sale must fail due to insufficient stock / concurrent batch state change
-  assert.match(
+  // The competing sale must fail strictly with in-transaction concurrency guard error (NOT in-memory pre-check)
+  assert.equal(
     loserError.message,
-    /STALE_BATCH_OR_INSUFFICIENT_STOCK|INSUFFICIENT_STOCK/,
-    "Rejected sale must fail with stock exhaustion / concurrency guard"
+    "STALE_BATCH_OR_INSUFFICIENT_STOCK",
+    "Rejected sale must fail with STALE_BATCH_OR_INSUFFICIENT_STOCK from the in-transaction row lock check"
   );
 
   // 2. Exact batch stock verification in PostgreSQL: 10 - 7 = exactly 3
@@ -1210,50 +1265,51 @@ maybe("R1 PostgreSQL: Two concurrent sales on same batch under independent conne
   assert.equal(Number(batchAfter.rows[0].version), 1, "Batch version must increment exactly once");
   assert.equal(batchAfter.rows[0].status, "ACTIVE");
 
-  // 3. Absence of committed residual effects for the rejected sale:
-  // Only the winning sale exists in sales table
-  const salesRows = await pool1.query("SELECT id, status, total_amount, idempotency_key FROM sales");
-  assert.equal(salesRows.rows.length, 1, "Only 1 sale record must exist in sales table");
-  assert.equal(salesRows.rows[0].id, winner.saleId);
-  assert.equal(salesRows.rows[0].status, "COMPLETED");
+  // 3. Isolated data verification: All assertions scoped strictly to operation IDs
+  // Winning sale verification
+  const winnerSale = await pool1.query("SELECT id, status, total_amount, idempotency_key FROM sales WHERE id = $1", [winner.saleId]);
+  assert.equal(winnerSale.rows.length, 1, "Winning sale record must exist in sales table");
+  assert.equal(winnerSale.rows[0].status, "COMPLETED");
+  assert.equal(Number(winnerSale.rows[0].total_amount), 70);
 
-  // Only the winning sale's lines exist
-  const linesRows = await pool1.query("SELECT sale_id, product_id, quantity FROM sale_lines");
-  assert.equal(linesRows.rows.length, 1, "Only 1 sale line must exist");
-  assert.equal(linesRows.rows[0].sale_id, winner.saleId);
-  assert.equal(Number(linesRows.rows[0].quantity), 7);
+  const winnerLines = await pool1.query("SELECT sale_id, product_id, quantity FROM sale_lines WHERE sale_id = $1", [winner.saleId]);
+  assert.equal(winnerLines.rows.length, 1, "Winning sale line must exist");
+  assert.equal(Number(winnerLines.rows[0].quantity), 7);
 
-  // Only the winning sale's payment exists
-  const paymentRows = await pool1.query("SELECT sale_id, amount_value FROM payments");
-  assert.equal(paymentRows.rows.length, 1, "Only 1 payment record must exist");
-  assert.equal(paymentRows.rows[0].sale_id, winner.saleId);
-  assert.equal(Number(paymentRows.rows[0].amount_value), 70);
+  const winnerPayments = await pool1.query("SELECT sale_id, amount_value FROM payments WHERE sale_id = $1", [winner.saleId]);
+  assert.equal(winnerPayments.rows.length, 1, "Winning payment must exist");
+  assert.equal(Number(winnerPayments.rows[0].amount_value), 70);
 
-  // Only the winning sale's inventory transaction and stock movement exist
-  const invTxRows = await pool1.query("SELECT id, source_id, status FROM inventory_transactions");
-  assert.equal(invTxRows.rows.length, 1, "Only 1 inventory transaction must exist");
-  assert.equal(invTxRows.rows[0].id, winner.inventoryTransactionId);
-  assert.equal(invTxRows.rows[0].source_id, winner.saleId);
-  assert.equal(invTxRows.rows[0].status, "POSTED");
+  const winnerInvTx = await pool1.query("SELECT id, source_id, status FROM inventory_transactions WHERE id = $1", [winner.inventoryTransactionId]);
+  assert.equal(winnerInvTx.rows.length, 1, "Winning inventory transaction must exist");
+  assert.equal(winnerInvTx.rows[0].status, "POSTED");
 
-  const smRows = await pool1.query("SELECT inventory_transaction_id, quantity, direction FROM stock_movements");
-  assert.equal(smRows.rows.length, 1, "Only 1 stock movement must exist");
-  assert.equal(smRows.rows[0].inventory_transaction_id, winner.inventoryTransactionId);
-  assert.equal(Number(smRows.rows[0].quantity), 7);
-  assert.equal(smRows.rows[0].direction, "OUT");
+  const winnerMovements = await pool1.query("SELECT inventory_transaction_id, quantity, direction FROM stock_movements WHERE inventory_transaction_id = $1", [winner.inventoryTransactionId]);
+  assert.equal(winnerMovements.rows.length, 1, "Winning stock movement must exist");
+  assert.equal(Number(winnerMovements.rows[0].quantity), 7);
+  assert.equal(winnerMovements.rows[0].direction, "OUT");
 
-  // Only the winning sale's outbox event exists
-  const outboxRows = await pool1.query("SELECT aggregate_id, event_type FROM outbox_events");
-  assert.equal(outboxRows.rows.length, 1, "Only 1 outbox event must exist");
-  assert.equal(outboxRows.rows[0].aggregate_id, winner.saleId);
+  const winnerOutbox = await pool1.query("SELECT aggregate_id, event_type FROM outbox_events WHERE aggregate_id = $1", [winner.saleId]);
+  assert.equal(winnerOutbox.rows.length, 1, "Winning outbox event must exist");
+  assert.equal(winnerOutbox.rows[0].eventType, "sale.completed");
 
-  // Only the winning sale's audit record exists
-  const auditRows = await pool1.query("SELECT resource_id, action FROM audit_records");
-  assert.equal(auditRows.rows.length, 1, "Only 1 audit record must exist");
-  assert.equal(auditRows.rows[0].resource_id, winner.saleId);
+  const winnerAudit = await pool1.query("SELECT resource_id, action FROM audit_records WHERE resource_id = $1", [winner.saleId]);
+  assert.equal(winnerAudit.rows.length, 1, "Winning audit record must exist");
 
-  // Only the winning sale's idempotency record exists
-  const idemRows = await pool1.query("SELECT key FROM idempotency_records");
-  assert.equal(idemRows.rows.length, 1, "Only 1 idempotency record must exist");
+  const winnerIdem = await pool1.query("SELECT key FROM idempotency_records WHERE key = $1", [commandA.idempotencyKey]);
+  assert.equal(winnerIdem.rows.length, 1, "Winning idempotency record must exist");
+
+  // Complete absence of loser's records scoped strictly to loser's idempotency key and correlation ID
+  const loserIdem = await pool1.query("SELECT key FROM idempotency_records WHERE key = $1", [commandB.idempotencyKey]);
+  assert.equal(loserIdem.rows.length, 0, "Rejected sale idempotency record must NOT exist");
+
+  const loserAudit = await pool1.query("SELECT resource_id FROM audit_records WHERE correlation_id = $1", [commandB.correlationId]);
+  assert.equal(loserAudit.rows.length, 0, "Rejected sale audit record must NOT exist");
+
+  const loserOutbox = await pool1.query("SELECT event_id FROM outbox_events WHERE correlation_id = $1", [commandB.correlationId]);
+  assert.equal(loserOutbox.rows.length, 0, "Rejected sale outbox event must NOT exist");
+
+  const loserSales = await pool1.query("SELECT id FROM sales WHERE idempotency_key = $1 OR correlation_id = $2", [commandB.idempotencyKey, commandB.correlationId]);
+  assert.equal(loserSales.rows.length, 0, "Rejected sale record must NOT exist");
 });
 
