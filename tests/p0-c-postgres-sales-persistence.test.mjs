@@ -1013,41 +1013,32 @@ maybe("P0 PostgreSQL: Lock-wait evaluation rejects allocation that expires while
     version: 0
   });
 
-  // Seed allocation expiring 600ms in the future
+  // Allocation with validity window on 2026-10-07 (matching cashier session and snapshot)
+  // which will be expired relative to real database clock_timestamp()
+  await seedPgAllocation(pool, {
+    id: "alloc-lock-wait",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    productId: "prod-lock-wait",
+    allocatedCapacity: 20,
+    consumedCapacity: 0,
+    releasedCapacity: 0,
+    state: "ACTIVE",
+    version: 0,
+    issuedAt: "2026-10-07T00:00:00.000Z",
+    validFrom: "2026-10-07T00:00:00.000Z",
+    expiresAt: "2026-10-07T23:59:59.000Z"
+  });
+
   const client1 = await pool.connect();
-  t.after(() => client1.release());
+  try {
+    // Client 1 holds row lock before sales transaction begins
+    await client1.query("BEGIN");
+    await client1.query("SELECT * FROM offline_allocations WHERE id = 'alloc-lock-wait' FOR UPDATE");
 
-  await client1.query("BEGIN");
-  await client1.query(`
-    INSERT INTO offline_allocations (
-      id, branch_id, warehouse_id, device_id, product_id,
-      allocated_capacity, consumed_capacity, released_capacity,
-      state, version, issued_at, valid_from, expires_at
-    ) VALUES (
-      'alloc-lock-wait', 'branch-001', 'wh-001', 'dev-001', 'prod-lock-wait',
-      20, 0, 0, 'ACTIVE', 0,
-      to_char(clock_timestamp() - interval '1 minute', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
-      to_char(clock_timestamp() - interval '30 seconds', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
-      to_char(clock_timestamp() + interval '500 milliseconds', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
-    )
-  `);
-  await client1.query("COMMIT");
-
-  // Client 1 holds row lock past the allocation's expiration time
-  await client1.query("BEGIN");
-  await client1.query("SELECT * FROM offline_allocations WHERE id = 'alloc-lock-wait' FOR UPDATE");
-
-  // In the background, release lock after 700ms (when allocation will have expired)
-  setTimeout(async () => {
-    try {
-      await client1.query("COMMIT");
-    } catch (_) {}
-  }, 700);
-
-  // Client 2 / SalesService attempts offline sale. It will wait for client 1's lock.
-  // When lock is acquired, clock_timestamp() > expires_at must be detected and rejected!
-  await assert.rejects(
-    () => service.processSale({
+    // Launch sales service processSale concurrently (which will wait for client 1's lock in DB)
+    const salePromise = service.processSale({
       idempotencyKey: "idem-lw-001",
       correlationId: "corr-lw-001",
       context,
@@ -1055,11 +1046,22 @@ maybe("P0 PostgreSQL: Lock-wait evaluation rejects allocation that expires while
       assignments,
       authorizationSnapshot,
       offline: true,
+      now: "2026-10-07T12:00:00Z",
       lines: [{ productId: "prod-lock-wait", quantity: 2, unitPrice: money(50, "SDG") }],
       payments: [{ method: "CASH", amount: money(100, "SDG") }]
-    }),
-    /OFFLINE_ALLOCATION_EXPIRED/
-  );
+    });
+
+    // Wait 200ms to allow client 2 to block on row lock
+    await new Promise(r => setTimeout(r, 200));
+
+    // Client 1 commits, releasing the lock
+    await client1.query("COMMIT");
+
+    // Client 2 acquires lock, evaluates clock_timestamp() post-lock, and rejects
+    await assert.rejects(() => salePromise, /OFFLINE_ALLOCATION_EXPIRED/);
+  } finally {
+    client1.release();
+  }
 });
 
 maybe("P0 PostgreSQL: Schema constraint chk_offline_allocations_temporal_integrity blocks invalid writes", async (t) => {
