@@ -9,11 +9,13 @@ import { openCashSession } from "../dist/src/domain/cash/cash-session.js";
 
 const m1 = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/001_p0_4_foundation.sql", import.meta.url), "utf8");
 const m2 = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/002_sales_vertical_slice.sql", import.meta.url), "utf8");
+const m3 = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/003_offline_allocation_validity.sql", import.meta.url), "utf8");
 
 function createTestHarness() {
   const db = new DatabaseSync(":memory:");
   db.exec(m1);
   db.exec(m2);
+  db.exec(m3);
 
   const persistence = new SqliteSalesPersistence(db);
   const service = new SalesService(persistence);
@@ -62,9 +64,14 @@ function seedBatch(db, b) {
 
 function seedAllocation(db, a) {
   db.prepare(`
-    INSERT INTO offline_allocations (id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(a.id, a.branchId, a.warehouseId, a.deviceId, a.productId, a.allocatedCapacity, a.consumedCapacity, a.releasedCapacity, a.state, a.version);
+    INSERT INTO offline_allocations (id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version, issued_at, valid_from, expires_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    a.id, a.branchId, a.warehouseId, a.deviceId, a.productId, a.allocatedCapacity, a.consumedCapacity, a.releasedCapacity, a.state, a.version,
+    a.issuedAt ?? "2026-10-07T00:00:00.000Z",
+    a.validFrom ?? "2026-10-07T00:00:00.000Z",
+    a.expiresAt ?? "2026-10-08T00:00:00.000Z"
+  );
 }
 
 test("PR B: Happy path - complete retail sale persists atomically with all side effects", async () => {

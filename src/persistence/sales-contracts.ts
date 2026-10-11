@@ -42,6 +42,7 @@ export interface SalesExecutionPlan {
   readonly auditRecord: AuditRecord;
   readonly idempotencyRecord: IdempotencyRecord;
   readonly failureInjectionStage?: FailureInjectionStage;
+  readonly now?: string;
 }
 
 export interface SalesPersistence {

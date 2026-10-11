@@ -16,7 +16,7 @@ import { recordPayment } from "../../domain/sales/payment.js";
 import type { InventoryTransaction, StockMovement } from "../../domain/inventory/inventory-transaction.js";
 import { postInventoryTransaction } from "../../domain/inventory/inventory-transaction.js";
 import type { Batch } from "../../domain/inventory/batch.js";
-import { consumeOfflineAllocation, remainingCapacity, type OfflineSafetyAllocation } from "../../domain/inventory/offline-allocation.js";
+import { consumeOfflineAllocation, remainingCapacity, assertOfflineAllocationValid, parseCanonicalUtc, normalizeCanonicalUtc, type OfflineSafetyAllocation } from "../../domain/inventory/offline-allocation.js";
 import type { OutboxEvent } from "../../infrastructure/outbox.js";
 import type { AuditRecord, IdempotencyRecord } from "../../persistence/contracts.js";
 import type { FailureInjectionStage, SalesExecutionPlan, SalesPersistence } from "../../persistence/sales-contracts.js";
@@ -97,7 +97,7 @@ export class SalesService {
     if (!context.deviceId) throw new Error("DEVICE_SCOPE_REQUIRED");
     if (!context.userId) throw new Error("USER_SCOPE_REQUIRED");
 
-    const now = command.now ?? new Date().toISOString();
+    const now = normalizeCanonicalUtc(command.now ?? new Date().toISOString());
     const today = now.slice(0, 10);
     const isOffline = Boolean(command.offline);
 
@@ -187,9 +187,13 @@ export class SalesService {
         const allocation = await this.persistence.findOfflineAllocation(context.branchId, context.deviceId, productId);
         if (!allocation) throw new Error("OFFLINE_ALLOCATION_NOT_FOUND");
         if (allocation.warehouseId !== context.warehouseId) throw new Error("WAREHOUSE_SCOPE_MISMATCH");
+        if (!allocation.issuedAt || !allocation.validFrom || !allocation.expiresAt) {
+          throw new Error("OFFLINE_ALLOCATION_INVALID");
+        }
         if (allocation.state !== "ACTIVE") throw new Error("OFFLINE_ALLOCATION_UNAVAILABLE");
+        assertOfflineAllocationValid(allocation, now);
         if (totalDemanded > remainingCapacity(allocation)) throw new Error("OFFLINE_ALLOCATION_EXHAUSTED");
-        updatedAllocation = consumeOfflineAllocation(allocation, totalDemanded);
+        updatedAllocation = consumeOfflineAllocation(allocation, totalDemanded, now);
         allocationDeductions.push({ allocationId: allocation.id, quantity: totalDemanded });
       }
 
@@ -416,6 +420,7 @@ export class SalesService {
       outboxEvent,
       auditRecord,
       idempotencyRecord,
+      now,
       ...(command.failureInjectionStage ? { failureInjectionStage: command.failureInjectionStage } : {})
     };
 

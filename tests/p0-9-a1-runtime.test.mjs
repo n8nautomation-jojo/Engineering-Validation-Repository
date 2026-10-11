@@ -11,13 +11,23 @@ import {
   expireOfflineAllocation,
   replenishOfflineAllocation,
   startReconciliation,
-  reconcileOfflineAllocation
+  reconcileOfflineAllocation,
+  normalizeCanonicalUtc,
+  parseCanonicalUtc,
+  isOfflineAllocationExpired,
+  assertOfflineAllocationValid
 } from "../dist/src/domain/inventory/offline-allocation.js";
 import { validateAndConsumeOfflineSaleSafety } from "../dist/src/application/sales/offline-sale-safety.js";
-import { SqliteSalesPersistence } from "../dist/src/infrastructure/sqlite/sqlite-sales-persistence.js";
+import { SqliteSalesPersistence, migrateSqliteSalesSchema } from "../dist/src/infrastructure/sqlite/sqlite-sales-persistence.js";
 import { SalesService } from "../dist/src/application/sales/sales-service.js";
 import { money } from "../dist/src/kernel/money.js";
 import { openCashSession } from "../dist/src/domain/cash/cash-session.js";
+
+const VALID_TEMPORAL = {
+  issuedAt: "2026-10-11T00:00:00.000Z",
+  validFrom: "2026-10-11T00:00:00.000Z",
+  expiresAt: "2026-10-11T23:59:59.000Z"
+};
 
 // --- Domain Lifecycle Tests ---
 
@@ -28,7 +38,8 @@ test("A1 Domain: createOfflineAllocation initializes active allocation with vali
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 20
+    allocatedCapacity: 20,
+    ...VALID_TEMPORAL
   });
   assert.equal(a.state, "ACTIVE");
   assert.equal(a.allocatedCapacity, 20);
@@ -43,7 +54,8 @@ test("A1 Domain: createOfflineAllocation initializes active allocation with vali
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: -5
+    allocatedCapacity: -5,
+    ...VALID_TEMPORAL
   }), /INVALID_ALLOCATION_CAPACITY/);
 });
 
@@ -58,7 +70,8 @@ test("A1 Domain: remainingCapacity calculates allocated - consumed + released ac
     consumedCapacity: 30,
     releasedCapacity: 5,
     state: "ACTIVE",
-    version: 1
+    version: 1,
+    ...VALID_TEMPORAL
   };
   assert.equal(remainingCapacity(a), 25);
 });
@@ -70,7 +83,8 @@ test("A1 Domain: consumeOfflineAllocation transitions ACTIVE to EXHAUSTED upon r
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 10
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
   });
 
   const partial = consumeOfflineAllocation(a, 6);
@@ -93,7 +107,8 @@ test("A1 Domain: consumeOfflineAllocation rejects over-consumption and non-posit
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 5
+    allocatedCapacity: 5,
+    ...VALID_TEMPORAL
   });
 
   assert.throws(() => consumeOfflineAllocation(a, 6), /OFFLINE_ALLOCATION_EXHAUSTED/);
@@ -108,7 +123,8 @@ test("A1 Domain: consumeOfflineAllocation rejects consumption when state is not 
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 10
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
   });
   const suspended = suspendOfflineAllocation(a);
   assert.throws(() => consumeOfflineAllocation(suspended, 1), /OFFLINE_ALLOCATION_UNAVAILABLE/);
@@ -124,7 +140,8 @@ test("A1 Domain: suspendOfflineAllocation transitions ACTIVE and EXHAUSTED to SU
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 10
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
   });
   const s1 = suspendOfflineAllocation(a);
   assert.equal(s1.state, "SUSPENDED");
@@ -145,7 +162,8 @@ test("A1 Domain: activateOfflineAllocation reactivates SUSPENDED to ACTIVE when 
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 10
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
   });
   const suspended = suspendOfflineAllocation(a);
   const active = activateOfflineAllocation(suspended);
@@ -168,7 +186,8 @@ test("A1 Domain: expireOfflineAllocation transitions ACTIVE to EXPIRED", () => {
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 10
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
   });
   const exp = expireOfflineAllocation(a);
   assert.equal(exp.state, "EXPIRED");
@@ -184,7 +203,8 @@ test("A1 Domain: replenishOfflineAllocation adds capacity and transitions EXHAUS
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 5
+    allocatedCapacity: 5,
+    ...VALID_TEMPORAL
   });
   const exhausted = consumeOfflineAllocation(a, 5);
   assert.equal(exhausted.state, "EXHAUSTED");
@@ -207,7 +227,8 @@ test("A1 Domain: replenishOfflineAllocation rejects replenishment when allocatio
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 5
+    allocatedCapacity: 5,
+    ...VALID_TEMPORAL
   });
   const expired = expireOfflineAllocation(a);
   assert.throws(() => replenishOfflineAllocation(expired, 10), /ALLOCATION_NOT_REPLENISHABLE/);
@@ -223,7 +244,8 @@ test("A1 Domain: startReconciliation allows valid states to transition to RECONC
     warehouseId: "wh-01",
     deviceId: "dev-01",
     productId: "prod-01",
-    allocatedCapacity: 10
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
   });
   const r1 = startReconciliation(a);
   assert.equal(r1.state, "RECONCILING");
@@ -255,7 +277,8 @@ test("A1 Application: validateAndConsumeOfflineSaleSafety accepts valid offline 
     warehouseId: "wh-001",
     deviceId: "dev-001",
     productId: "prod-01",
-    allocatedCapacity: 10
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
   });
 
   const result = validateAndConsumeOfflineSaleSafety(context, {
@@ -286,7 +309,8 @@ test("A1 Application: validateAndConsumeOfflineSaleSafety rejects scope mismatch
     warehouseId: "wh-001",
     deviceId: "dev-001",
     productId: "prod-01",
-    allocatedCapacity: 10
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
   });
 
   // Branch mismatch
@@ -342,7 +366,8 @@ test("A1 Application: validateAndConsumeOfflineSaleSafety rejects non-ACTIVE all
     warehouseId: "wh-001",
     deviceId: "dev-001",
     productId: "prod-01",
-    allocatedCapacity: 10
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
   });
 
   const expired = expireOfflineAllocation(alloc);
@@ -368,11 +393,13 @@ test("A1 Application: validateAndConsumeOfflineSaleSafety rejects non-ACTIVE all
 
 const m1 = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/001_p0_4_foundation.sql", import.meta.url), "utf8");
 const m2 = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/002_sales_vertical_slice.sql", import.meta.url), "utf8");
+const m3 = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/003_offline_allocation_validity.sql", import.meta.url), "utf8");
 
 function createTestHarness() {
   const db = new DatabaseSync(":memory:");
   db.exec(m1);
   db.exec(m2);
+  db.exec(m3);
 
   const persistence = new SqliteSalesPersistence(db);
   const service = new SalesService(persistence);
@@ -433,10 +460,13 @@ function seedBatch(db, b) {
 }
 
 function seedAllocation(db, a) {
+  const issuedAt = a.issuedAt ?? "2026-10-11T00:00:00.000Z";
+  const validFrom = a.validFrom ?? "2026-10-11T00:00:00.000Z";
+  const expiresAt = a.expiresAt ?? "2026-10-11T23:59:59.000Z";
   db.prepare(`
-    INSERT INTO offline_allocations (id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(a.id, a.branchId, a.warehouseId, a.deviceId, a.productId, a.allocatedCapacity, a.consumedCapacity, a.releasedCapacity, a.state, a.version);
+    INSERT INTO offline_allocations (id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version, issued_at, valid_from, expires_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(a.id, a.branchId, a.warehouseId, a.deviceId, a.productId, a.allocatedCapacity, a.consumedCapacity, a.releasedCapacity, a.state, a.version, issuedAt, validFrom, expiresAt);
 }
 
 test("A1 SQLite Integration: SalesService processes offline sale and atomically persists allocation deduction", async () => {
@@ -643,7 +673,8 @@ test("A1 SQLite Integration: SalesService rejects offline sale on non-ACTIVE all
       consumedCapacity: 0,
       releasedCapacity: 0,
       state: "SUSPENDED",
-      version: 1
+      version: 1,
+      ...VALID_TEMPORAL
     }),
     executeSaleAtomic: async () => {},
     getSale: async () => null,
@@ -882,5 +913,405 @@ test("A1 SQLite Integration: Multi-product offline sale atomically deducts both 
   const row2 = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-p2");
   assert.equal(Number(row2.consumed_capacity), 11);
   assert.equal(row2.state, "ACTIVE");
+});
+
+// --- A1-FOLLOWUP-EXPIRY Tests ---
+
+test("A1 Expiry: normalizeCanonicalUtc accepts strict UTC and non-canonical timezone offsets", () => {
+  const utc = "2026-10-11T12:00:00.000Z";
+  assert.equal(normalizeCanonicalUtc(utc), utc);
+
+  // Normalizes timezone offset to canonical UTC ISO string
+  const offset = "2026-10-11T14:00:00.000+02:00";
+  assert.equal(normalizeCanonicalUtc(offset), "2026-10-11T12:00:00.000Z");
+
+  // Rejects invalid formats
+  assert.throws(() => normalizeCanonicalUtc("invalid-date"), /INVALID_TIMESTAMP_FORMAT/);
+  assert.throws(() => normalizeCanonicalUtc("2026-10-11"), /INVALID_TIMESTAMP_FORMAT/);
+  assert.throws(() => normalizeCanonicalUtc("2026-13-01T00:00:00.000Z"), /INVALID_TIMESTAMP_FORMAT/);
+
+  // Rejects calendar rollover (e.g., Feb 29 in non-leap year 2026)
+  assert.throws(() => normalizeCanonicalUtc("2026-02-29T10:00:00.000Z"), /INVALID_CALENDAR_DATE/);
+  // Rejects April 31
+  assert.throws(() => normalizeCanonicalUtc("2026-04-31T10:00:00.000Z"), /INVALID_CALENDAR_DATE/);
+  // Accepts Feb 29 in leap year 2028
+  assert.equal(normalizeCanonicalUtc("2028-02-29T10:00:00.000Z"), "2028-02-29T10:00:00.000Z");
+});
+
+test("A1 Expiry: createOfflineAllocation enforces temporal invariants and rejects missing or ordered timestamps", () => {
+  const base = {
+    id: "alloc-t0",
+    branchId: "branch-01",
+    warehouseId: "wh-01",
+    deviceId: "dev-01",
+    productId: "prod-01",
+    allocatedCapacity: 10
+  };
+
+  // Missing fields throw OFFLINE_ALLOCATION_INVALID
+  assert.throws(() => createOfflineAllocation({ ...base }), /OFFLINE_ALLOCATION_INVALID/);
+  assert.throws(() => createOfflineAllocation({ ...base, issuedAt: "2026-10-11T00:00:00.000Z" }), /OFFLINE_ALLOCATION_INVALID/);
+
+  // issuedAt > validFrom throws INVALID_ALLOCATION_TEMPORAL_WINDOW
+  assert.throws(() => createOfflineAllocation({
+    ...base,
+    issuedAt: "2026-10-11T12:00:00.000Z",
+    validFrom: "2026-10-11T10:00:00.000Z",
+    expiresAt: "2026-10-11T18:00:00.000Z"
+  }), /INVALID_ALLOCATION_TEMPORAL_WINDOW/);
+
+  // validFrom >= expiresAt throws INVALID_ALLOCATION_TEMPORAL_WINDOW
+  assert.throws(() => createOfflineAllocation({
+    ...base,
+    issuedAt: "2026-10-11T10:00:00.000Z",
+    validFrom: "2026-10-11T18:00:00.000Z",
+    expiresAt: "2026-10-11T18:00:00.000Z"
+  }), /INVALID_ALLOCATION_TEMPORAL_WINDOW/);
+
+  assert.throws(() => createOfflineAllocation({
+    ...base,
+    issuedAt: "2026-10-11T10:00:00.000Z",
+    validFrom: "2026-10-11T19:00:00.000Z",
+    expiresAt: "2026-10-11T18:00:00.000Z"
+  }), /INVALID_ALLOCATION_TEMPORAL_WINDOW/);
+});
+
+test("A1 Expiry: assertOfflineAllocationValid enforces temporal boundaries (inclusive lower, exclusive upper)", () => {
+  const alloc = createOfflineAllocation({
+    id: "alloc-b",
+    branchId: "branch-01",
+    warehouseId: "wh-01",
+    deviceId: "dev-01",
+    productId: "prod-01",
+    allocatedCapacity: 10,
+    issuedAt: "2026-10-11T08:00:00.000Z",
+    validFrom: "2026-10-11T09:00:00.000Z",
+    expiresAt: "2026-10-11T17:00:00.000Z"
+  });
+
+  // Before validFrom -> NOT_YET_VALID
+  assert.throws(() => assertOfflineAllocationValid(alloc, "2026-10-11T08:59:59.999Z"), /OFFLINE_ALLOCATION_NOT_YET_VALID/);
+
+  // Exact validFrom boundary -> VALID (inclusive)
+  assert.doesNotThrow(() => assertOfflineAllocationValid(alloc, "2026-10-11T09:00:00.000Z"));
+
+  // Within window -> VALID
+  assert.doesNotThrow(() => assertOfflineAllocationValid(alloc, "2026-10-11T12:00:00.000Z"));
+  assert.equal(isOfflineAllocationExpired(alloc, "2026-10-11T12:00:00.000Z"), false);
+
+  // 1ms before expiresAt -> VALID
+  assert.doesNotThrow(() => assertOfflineAllocationValid(alloc, "2026-10-11T16:59:59.999Z"));
+
+  // Exact expiresAt boundary -> EXPIRED (exclusive upper boundary)
+  assert.throws(() => assertOfflineAllocationValid(alloc, "2026-10-11T17:00:00.000Z"), /OFFLINE_ALLOCATION_EXPIRED/);
+  assert.equal(isOfflineAllocationExpired(alloc, "2026-10-11T17:00:00.000Z"), true);
+
+  // After expiresAt -> EXPIRED
+  assert.throws(() => assertOfflineAllocationValid(alloc, "2026-10-11T17:00:01.000Z"), /OFFLINE_ALLOCATION_EXPIRED/);
+});
+
+test("A1 Expiry: validateAndConsumeOfflineSaleSafety rejects expired and future allocations", () => {
+  const context = {
+    tenantId: "t-001",
+    organizationId: "org-001",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    userId: "usr-01",
+    correlationId: "corr-001"
+  };
+  const alloc = createOfflineAllocation({
+    id: "alloc-exp-01",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    productId: "prod-01",
+    allocatedCapacity: 10,
+    issuedAt: "2026-10-11T08:00:00.000Z",
+    validFrom: "2026-10-11T09:00:00.000Z",
+    expiresAt: "2026-10-11T17:00:00.000Z"
+  });
+
+  // Expired at sale time
+  assert.throws(() => validateAndConsumeOfflineSaleSafety(context, {
+    allocation: alloc,
+    productId: "prod-01",
+    batchExpired: false,
+    fefoEligible: true,
+    quantity: 1,
+    now: "2026-10-11T17:00:00.000Z"
+  }), /OFFLINE_ALLOCATION_EXPIRED/);
+
+  // Future validFrom at sale time
+  assert.throws(() => validateAndConsumeOfflineSaleSafety(context, {
+    allocation: alloc,
+    productId: "prod-01",
+    batchExpired: false,
+    fefoEligible: true,
+    quantity: 1,
+    now: "2026-10-11T08:30:00.000Z"
+  }), /OFFLINE_ALLOCATION_NOT_YET_VALID/);
+
+  // Valid at sale time consumes safely
+  const consumed = validateAndConsumeOfflineSaleSafety(context, {
+    allocation: alloc,
+    productId: "prod-01",
+    batchExpired: false,
+    fefoEligible: true,
+    quantity: 2,
+    now: "2026-10-11T12:00:00.000Z"
+  });
+  assert.equal(consumed.consumedCapacity, 2);
+});
+
+test("A1 SQLite Integration: SalesService rejects sale when current time is past allocation expires_at", async () => {
+  const { db, service, context, cashSession, assignments, authorizationSnapshot } = createTestHarness();
+
+  seedBatch(db, {
+    id: "batch-exp",
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: "prod-exp",
+    batchNumber: "BN-EXP",
+    expiryDate: "2028-12-31",
+    quantity: 50,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  seedAllocation(db, {
+    id: "alloc-expired-window",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    productId: "prod-exp",
+    allocatedCapacity: 20,
+    consumedCapacity: 0,
+    releasedCapacity: 0,
+    state: "ACTIVE",
+    version: 0,
+    issuedAt: "2026-10-11T08:00:00.000Z",
+    validFrom: "2026-10-11T09:00:00.000Z",
+    expiresAt: "2026-10-11T12:00:00.000Z"
+  });
+
+  // Attempt sale at 12:00:00Z (exactly expiresAt) -> rejected
+  await assert.rejects(
+    () => service.processSale({
+      idempotencyKey: "idem-expired-window-01",
+      correlationId: "corr-exp-win",
+      context,
+      cashSession,
+      assignments,
+      authorizationSnapshot,
+      offline: true,
+      now: "2026-10-11T12:00:00.000Z",
+      lines: [{ productId: "prod-exp", quantity: 2, unitPrice: money(10, "SDG") }],
+      payments: [{ method: "CASH", amount: money(20, "SDG") }]
+    }),
+    /OFFLINE_ALLOCATION_EXPIRED/
+  );
+
+  // Allocation in DB remains untouched
+  const allocRow = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-expired-window");
+  assert.equal(Number(allocRow.consumed_capacity), 0);
+  assert.equal(Number(allocRow.version), 0);
+});
+
+test("A1 SQLite Integration: SalesService rejects sale when current time is before valid_from", async () => {
+  const { db, service, context, cashSession, assignments, authorizationSnapshot } = createTestHarness();
+
+  seedBatch(db, {
+    id: "batch-fut",
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: "prod-fut",
+    batchNumber: "BN-FUT",
+    expiryDate: "2028-12-31",
+    quantity: 50,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  seedAllocation(db, {
+    id: "alloc-fut-window",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    productId: "prod-fut",
+    allocatedCapacity: 20,
+    consumedCapacity: 0,
+    releasedCapacity: 0,
+    state: "ACTIVE",
+    version: 0,
+    issuedAt: "2026-10-11T08:00:00.000Z",
+    validFrom: "2026-10-11T14:00:00.000Z",
+    expiresAt: "2026-10-11T20:00:00.000Z"
+  });
+
+  // Attempt sale at 10:00:00Z (before validFrom 14:00) -> rejected
+  await assert.rejects(
+    () => service.processSale({
+      idempotencyKey: "idem-fut-window-01",
+      correlationId: "corr-fut-win",
+      context,
+      cashSession,
+      assignments,
+      authorizationSnapshot,
+      offline: true,
+      now: "2026-10-11T10:00:00.000Z",
+      lines: [{ productId: "prod-fut", quantity: 2, unitPrice: money(10, "SDG") }],
+      payments: [{ method: "CASH", amount: money(20, "SDG") }]
+    }),
+    /OFFLINE_ALLOCATION_NOT_YET_VALID/
+  );
+});
+
+test("A1 SQLite Schema: SQLite triggers enforce temporal consistency on direct writes", () => {
+  const db = new DatabaseSync(":memory:");
+  db.exec(m1);
+  db.exec(m2);
+  db.exec(m3);
+
+  // 1. Direct INSERT with issued_at > valid_from fails
+  assert.throws(() => {
+    db.prepare(`
+      INSERT INTO offline_allocations (
+        id, branch_id, warehouse_id, device_id, product_id,
+        allocated_capacity, consumed_capacity, released_capacity,
+        state, version, issued_at, valid_from, expires_at
+      ) VALUES (
+        'alloc-trg-1', 'b-1', 'wh-1', 'd-1', 'p-1',
+        10, 0, 0, 'ACTIVE', 0,
+        '2026-10-11T12:00:00.000Z', '2026-10-11T10:00:00.000Z', '2026-10-11T18:00:00.000Z'
+      )
+    `).run();
+  }, /INVALID_ALLOCATION_TEMPORAL_WINDOW/);
+
+  // 2. Direct INSERT with valid_from >= expires_at fails
+  assert.throws(() => {
+    db.prepare(`
+      INSERT INTO offline_allocations (
+        id, branch_id, warehouse_id, device_id, product_id,
+        allocated_capacity, consumed_capacity, released_capacity,
+        state, version, issued_at, valid_from, expires_at
+      ) VALUES (
+        'alloc-trg-2', 'b-1', 'wh-1', 'd-1', 'p-1',
+        10, 0, 0, 'ACTIVE', 0,
+        '2026-10-11T08:00:00.000Z', '2026-10-11T18:00:00.000Z', '2026-10-11T18:00:00.000Z'
+      )
+    `).run();
+  }, /INVALID_ALLOCATION_TEMPORAL_WINDOW/);
+
+  // 3. Valid INSERT succeeds
+  db.prepare(`
+    INSERT INTO offline_allocations (
+      id, branch_id, warehouse_id, device_id, product_id,
+      allocated_capacity, consumed_capacity, released_capacity,
+      state, version, issued_at, valid_from, expires_at
+    ) VALUES (
+      'alloc-trg-valid', 'b-1', 'wh-1', 'd-1', 'p-1',
+      10, 0, 0, 'ACTIVE', 0,
+      '2026-10-11T08:00:00.000Z', '2026-10-11T10:00:00.000Z', '2026-10-11T18:00:00.000Z'
+    )
+  `).run();
+
+  // 4. Direct UPDATE violating temporal invariant fails
+  assert.throws(() => {
+    db.prepare(`
+      UPDATE offline_allocations
+      SET valid_from = '2026-10-11T19:00:00.000Z'
+      WHERE id = 'alloc-trg-valid'
+    `).run();
+  }, /INVALID_ALLOCATION_TEMPORAL_WINDOW/);
+});
+
+test("A1 SQLite Schema: migrateSqliteSalesSchema is safe and idempotent", () => {
+  const db = new DatabaseSync(":memory:");
+  db.exec(m1);
+  db.exec(m2);
+
+  // First migration run applies columns and triggers
+  migrateSqliteSalesSchema(db);
+
+  // Inspect columns exist
+  const cols = db.prepare("PRAGMA table_info(offline_allocations)").all();
+  const colNames = new Set(cols.map(c => c.name));
+  assert.ok(colNames.has("issued_at"));
+  assert.ok(colNames.has("valid_from"));
+  assert.ok(colNames.has("expires_at"));
+
+  // Second migration run is completely idempotent
+  assert.doesNotThrow(() => migrateSqliteSalesSchema(db));
+});
+
+test("A1 SQLite Integration: multi-table atomic rollback leaves database untouched when sale fails on expiry", async () => {
+  const { db, service, context, cashSession, assignments, authorizationSnapshot } = createTestHarness();
+
+  seedBatch(db, {
+    id: "batch-rb-exp",
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: "prod-rb-exp",
+    batchNumber: "BN-RB",
+    expiryDate: "2028-12-31",
+    quantity: 100,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  seedAllocation(db, {
+    id: "alloc-rb-exp",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    productId: "prod-rb-exp",
+    allocatedCapacity: 20,
+    consumedCapacity: 0,
+    releasedCapacity: 0,
+    state: "ACTIVE",
+    version: 0,
+    issuedAt: "2026-10-11T08:00:00.000Z",
+    validFrom: "2026-10-11T09:00:00.000Z",
+    expiresAt: "2026-10-11T11:00:00.000Z"
+  });
+
+  // Attempt sale past expiry (12:00:00Z)
+  await assert.rejects(
+    () => service.processSale({
+      idempotencyKey: "idem-rb-exp-01",
+      correlationId: "corr-rb-exp-01",
+      context,
+      cashSession,
+      assignments,
+      authorizationSnapshot,
+      offline: true,
+      now: "2026-10-11T12:00:00.000Z",
+      lines: [{ productId: "prod-rb-exp", quantity: 5, unitPrice: money(50, "SDG") }],
+      payments: [{ method: "CASH", amount: money(250, "SDG") }]
+    }),
+    /OFFLINE_ALLOCATION_EXPIRED/
+  );
+
+  // 1. Allocation table untouched
+  const allocRow = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-rb-exp");
+  assert.equal(Number(allocRow.consumed_capacity), 0);
+  assert.equal(Number(allocRow.version), 0);
+
+  // 2. Batches table untouched
+  const batchRow = db.prepare("SELECT * FROM batches WHERE id = ?").get("batch-rb-exp");
+  assert.equal(Number(batchRow.quantity), 100);
+
+  // 3. Sales table has 0 rows
+  const salesCount = db.prepare("SELECT count(*) as cnt FROM sales").get();
+  assert.equal(Number(salesCount.cnt), 0);
+
+  // 4. Outbox table has 0 rows
+  const outboxCount = db.prepare("SELECT count(*) as cnt FROM outbox_events").get();
+  assert.equal(Number(outboxCount.cnt), 0);
+
+  // 5. Stock movements has 0 rows
+  const smCount = db.prepare("SELECT count(*) as cnt FROM stock_movements").get();
+  assert.equal(Number(smCount.cnt), 0);
 });
 
