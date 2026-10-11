@@ -30,6 +30,7 @@ type AllocationRow = {
   id: string; branch_id: string; warehouse_id: string; device_id: string; product_id: string;
   allocated_capacity: string | number; consumed_capacity: string | number; released_capacity: string | number;
   state: string; version: number;
+  issued_at?: Date | string | null; valid_from?: Date | string | null; expires_at?: Date | string | null;
 };
 
 type OutboxRow = {
@@ -141,7 +142,7 @@ export class PostgresSalesPersistence implements SalesPersistence {
 
   async findOfflineAllocation(branchId: string, deviceId: string, productId: string): Promise<OfflineSafetyAllocation | null> {
     const res = await this.db.query<AllocationRow>(
-      "SELECT id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version FROM offline_allocations WHERE branch_id = $1 AND device_id = $2 AND product_id = $3 AND state = 'ACTIVE'",
+      "SELECT id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version, issued_at, valid_from, expires_at FROM offline_allocations WHERE branch_id = $1 AND device_id = $2 AND product_id = $3 AND state = 'ACTIVE'",
       [branchId, deviceId, productId]
     );
     const row = res.rows[0];
@@ -156,7 +157,10 @@ export class PostgresSalesPersistence implements SalesPersistence {
       consumedCapacity: Number(row.consumed_capacity),
       releasedCapacity: Number(row.released_capacity),
       state: row.state as OfflineSafetyAllocation["state"],
-      version: Number(row.version)
+      version: Number(row.version),
+      issuedAt: row.issued_at instanceof Date ? row.issued_at.toISOString() : (row.issued_at ?? ""),
+      validFrom: row.valid_from instanceof Date ? row.valid_from.toISOString() : (row.valid_from ?? ""),
+      expiresAt: row.expires_at instanceof Date ? row.expires_at.toISOString() : (row.expires_at ?? "")
     };
   }
 
@@ -310,12 +314,26 @@ export class PostgresSalesPersistence implements SalesPersistence {
           const res = await client.query<{
             allocated_capacity: string | number; consumed_capacity: string | number;
             released_capacity: string | number; state: string;
+            valid_from: Date | string | null; expires_at: Date | string | null;
+            lock_acquired_at: Date | string;
           }>(
-            "SELECT allocated_capacity, consumed_capacity, released_capacity, state FROM offline_allocations WHERE id = $1 FOR UPDATE",
+            "SELECT allocated_capacity, consumed_capacity, released_capacity, state, valid_from, expires_at, clock_timestamp() as lock_acquired_at FROM offline_allocations WHERE id = $1 FOR UPDATE",
             [alloc.allocationId]
           );
           const row = res.rows[0];
-          if (!row || row.state !== "ACTIVE" || (Number(row.allocated_capacity) - Number(row.consumed_capacity) + Number(row.released_capacity)) < alloc.quantity) {
+          if (!row) throw new Error("OFFLINE_ALLOCATION_NOT_FOUND");
+          if (row.state !== "ACTIVE") throw new Error("OFFLINE_ALLOCATION_UNAVAILABLE");
+          if (!row.valid_from || !row.expires_at) throw new Error("OFFLINE_ALLOCATION_INVALID");
+
+          const lockTimeMs = row.lock_acquired_at instanceof Date ? row.lock_acquired_at.getTime() : Date.parse(row.lock_acquired_at as string);
+          const validFromMs = row.valid_from instanceof Date ? row.valid_from.getTime() : Date.parse(row.valid_from as string);
+          const expiresAtMs = row.expires_at instanceof Date ? row.expires_at.getTime() : Date.parse(row.expires_at as string);
+
+          if (lockTimeMs < validFromMs) throw new Error("OFFLINE_ALLOCATION_NOT_YET_VALID");
+          if (lockTimeMs >= expiresAtMs) throw new Error("OFFLINE_ALLOCATION_EXPIRED");
+
+          const rem = Number(row.allocated_capacity) - Number(row.consumed_capacity) + Number(row.released_capacity);
+          if (rem < alloc.quantity) {
             throw new Error("STALE_ALLOCATION_OR_CAPACITY_EXHAUSTED");
           }
         }
@@ -328,6 +346,8 @@ export class PostgresSalesPersistence implements SalesPersistence {
                 version = version + 1
             WHERE id = $3
               AND state = 'ACTIVE'
+              AND (valid_from IS NULL OR valid_from <= clock_timestamp())
+              AND (expires_at IS NULL OR expires_at > clock_timestamp())
               AND (allocated_capacity - consumed_capacity + released_capacity) >= $4
           `, [alloc.quantity, alloc.quantity, alloc.allocationId, alloc.quantity]);
           if (Number(result.rowCount ?? 0) !== 1) {
@@ -531,7 +551,10 @@ export class PostgresSalesPersistence implements SalesPersistence {
       consumedCapacity: Number(row.consumed_capacity),
       releasedCapacity: Number(row.released_capacity),
       state: row.state as OfflineSafetyAllocation["state"],
-      version: Number(row.version)
+      version: Number(row.version),
+      issuedAt: row.issued_at instanceof Date ? row.issued_at.toISOString() : (row.issued_at ?? ""),
+      validFrom: row.valid_from instanceof Date ? row.valid_from.toISOString() : (row.valid_from ?? ""),
+      expiresAt: row.expires_at instanceof Date ? row.expires_at.toISOString() : (row.expires_at ?? "")
     };
   }
 

@@ -18,6 +18,7 @@ type BatchRow = {
 type AllocationRow = {
   id: string; branch_id: string; warehouse_id: string; device_id: string; product_id: string;
   allocated_capacity: number; consumed_capacity: number; released_capacity: number; state: string; version: number;
+  issued_at?: string | null; valid_from?: string | null; expires_at?: string | null;
 };
 
 type OutboxRow = {
@@ -73,7 +74,7 @@ export class SqliteSalesPersistence implements SalesPersistence {
 
   async findOfflineAllocation(branchId: string, deviceId: string, productId: string): Promise<OfflineSafetyAllocation | null> {
     const stmt = this.db.prepare(
-      "SELECT id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version FROM offline_allocations WHERE branch_id = ? AND device_id = ? AND product_id = ? AND state = 'ACTIVE'"
+      "SELECT * FROM offline_allocations WHERE branch_id = ? AND device_id = ? AND product_id = ? AND state = 'ACTIVE'"
     );
     const row = stmt.get(branchId, deviceId, productId) as unknown as AllocationRow | undefined;
     if (!row) return null;
@@ -87,7 +88,10 @@ export class SqliteSalesPersistence implements SalesPersistence {
       consumedCapacity: Number(row.consumed_capacity),
       releasedCapacity: Number(row.released_capacity),
       state: row.state as OfflineSafetyAllocation["state"],
-      version: row.version
+      version: row.version,
+      issuedAt: row.issued_at ?? "",
+      validFrom: row.valid_from ?? "",
+      expiresAt: row.expires_at ?? ""
     };
   }
 
@@ -230,9 +234,30 @@ export class SqliteSalesPersistence implements SalesPersistence {
 
       // 6. Offline Allocation update (if applicable) with guarded concurrency protection
       if (plan.allocationDeductions && plan.allocationDeductions.length > 0) {
+        const txNow = plan.now ?? plan.sale?.createdAt ?? new Date().toISOString();
+        const txNowMs = Date.parse(txNow);
+
         for (const alloc of plan.allocationDeductions) {
-          const row = this.db.prepare("SELECT allocated_capacity, consumed_capacity, released_capacity, state FROM offline_allocations WHERE id = ?").get(alloc.allocationId) as { allocated_capacity: number; consumed_capacity: number; released_capacity: number; state: string } | undefined;
-          if (!row || row.state !== "ACTIVE" || (Number(row.allocated_capacity) - Number(row.consumed_capacity) + Number(row.released_capacity)) < alloc.quantity) {
+          const row = this.db.prepare("SELECT allocated_capacity, consumed_capacity, released_capacity, state, valid_from, expires_at FROM offline_allocations WHERE id = ?").get(alloc.allocationId) as (AllocationRow & { valid_from?: string; expires_at?: string }) | undefined;
+          if (!row) {
+            throw new Error("OFFLINE_ALLOCATION_NOT_FOUND");
+          }
+          if (row.state !== "ACTIVE") {
+            throw new Error("OFFLINE_ALLOCATION_UNAVAILABLE");
+          }
+          if (!row.valid_from || !row.expires_at) {
+            throw new Error("OFFLINE_ALLOCATION_INVALID");
+          }
+          const validFromMs = Date.parse(row.valid_from);
+          const expiresAtMs = Date.parse(row.expires_at);
+          if (txNowMs < validFromMs) {
+            throw new Error("OFFLINE_ALLOCATION_NOT_YET_VALID");
+          }
+          if (txNowMs >= expiresAtMs) {
+            throw new Error("OFFLINE_ALLOCATION_EXPIRED");
+          }
+          const rem = Number(row.allocated_capacity) - Number(row.consumed_capacity) + Number(row.released_capacity);
+          if (rem < alloc.quantity) {
             throw new Error("STALE_ALLOCATION_OR_CAPACITY_EXHAUSTED");
           }
         }
@@ -244,11 +269,18 @@ export class SqliteSalesPersistence implements SalesPersistence {
               version = version + 1
           WHERE id = ?
             AND state = 'ACTIVE'
+            AND (valid_from IS NULL OR valid_from <= ?)
+            AND (expires_at IS NULL OR expires_at > ?)
             AND (allocated_capacity - consumed_capacity + released_capacity) >= ?
         `);
         for (const alloc of plan.allocationDeductions) {
-          const result = allocStmt.run(alloc.quantity, alloc.quantity, alloc.allocationId, alloc.quantity);
+          const result = allocStmt.run(alloc.quantity, alloc.quantity, alloc.allocationId, txNow, txNow, alloc.quantity);
           if (Number(result.changes) !== 1) {
+            const row = this.db.prepare("SELECT allocated_capacity, consumed_capacity, released_capacity, state, valid_from, expires_at FROM offline_allocations WHERE id = ?").get(alloc.allocationId) as (AllocationRow & { valid_from?: string; expires_at?: string }) | undefined;
+            if (!row || row.state !== "ACTIVE") throw new Error("OFFLINE_ALLOCATION_UNAVAILABLE");
+            if (!row.valid_from || !row.expires_at) throw new Error("OFFLINE_ALLOCATION_INVALID");
+            if (txNowMs < Date.parse(row.valid_from)) throw new Error("OFFLINE_ALLOCATION_NOT_YET_VALID");
+            if (txNowMs >= Date.parse(row.expires_at)) throw new Error("OFFLINE_ALLOCATION_EXPIRED");
             throw new Error("STALE_ALLOCATION_OR_CAPACITY_EXHAUSTED");
           }
         }
@@ -446,7 +478,10 @@ export class SqliteSalesPersistence implements SalesPersistence {
       consumedCapacity: Number(r.consumed_capacity),
       releasedCapacity: Number(r.released_capacity),
       state: r.state as OfflineSafetyAllocation["state"],
-      version: r.version
+      version: r.version,
+      issuedAt: r.issued_at ?? "",
+      validFrom: r.valid_from ?? "",
+      expiresAt: r.expires_at ?? ""
     };
   }
 
@@ -488,3 +523,61 @@ export class SqliteSalesPersistence implements SalesPersistence {
     }));
   }
 }
+
+export function migrateSqliteSalesSchema(db: DatabaseSync): void {
+  db.exec("BEGIN IMMEDIATE;");
+  try {
+    const columns = db.prepare("PRAGMA table_info(offline_allocations)").all() as { name: string }[];
+    const columnNames = new Set(columns.map(c => c.name));
+
+    if (!columnNames.has("issued_at")) {
+      db.exec("ALTER TABLE offline_allocations ADD COLUMN issued_at TEXT;");
+    }
+    if (!columnNames.has("valid_from")) {
+      db.exec("ALTER TABLE offline_allocations ADD COLUMN valid_from TEXT;");
+    }
+    if (!columnNames.has("expires_at")) {
+      db.exec("ALTER TABLE offline_allocations ADD COLUMN expires_at TEXT;");
+    }
+
+    db.exec(`
+      UPDATE offline_allocations 
+      SET state = 'SUSPENDED', version = version + 1 
+      WHERE (issued_at IS NULL OR valid_from IS NULL OR expires_at IS NULL) 
+        AND state = 'ACTIVE';
+
+      CREATE INDEX IF NOT EXISTS idx_offline_allocations_expiry 
+      ON offline_allocations (branch_id, device_id, product_id, state, expires_at);
+
+      CREATE TRIGGER IF NOT EXISTS trg_offline_allocations_insert_temporal
+      BEFORE INSERT ON offline_allocations
+      FOR EACH ROW
+      WHEN NEW.state = 'ACTIVE' AND (
+        NEW.issued_at IS NULL OR NEW.valid_from IS NULL OR NEW.expires_at IS NULL OR
+        LENGTH(NEW.issued_at) != 24 OR LENGTH(NEW.valid_from) != 24 OR LENGTH(NEW.expires_at) != 24 OR
+        NEW.issued_at > NEW.valid_from OR NEW.valid_from >= NEW.expires_at
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'INVALID_ALLOCATION_TEMPORAL_WINDOW');
+      END;
+
+      CREATE TRIGGER IF NOT EXISTS trg_offline_allocations_update_temporal
+      BEFORE UPDATE OF state, issued_at, valid_from, expires_at ON offline_allocations
+      FOR EACH ROW
+      WHEN NEW.state = 'ACTIVE' AND (
+        NEW.issued_at IS NULL OR NEW.valid_from IS NULL OR NEW.expires_at IS NULL OR
+        LENGTH(NEW.issued_at) != 24 OR LENGTH(NEW.valid_from) != 24 OR LENGTH(NEW.expires_at) != 24 OR
+        NEW.issued_at > NEW.valid_from OR NEW.valid_from >= NEW.expires_at
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'INVALID_ALLOCATION_TEMPORAL_WINDOW');
+      END;
+    `);
+
+    db.exec("COMMIT;");
+  } catch (err) {
+    db.exec("ROLLBACK;");
+    throw err;
+  }
+}
+

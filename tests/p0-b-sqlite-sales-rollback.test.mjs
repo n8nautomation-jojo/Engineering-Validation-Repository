@@ -9,6 +9,7 @@ import { openCashSession } from "../dist/src/domain/cash/cash-session.js";
 
 const m1 = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/001_p0_4_foundation.sql", import.meta.url), "utf8");
 const m2 = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/002_sales_vertical_slice.sql", import.meta.url), "utf8");
+const m3 = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/003_offline_allocation_validity.sql", import.meta.url), "utf8");
 
 const failureStages = [
   "AFTER_SALE_INSERT",
@@ -27,6 +28,7 @@ for (const stage of failureStages) {
     const db = new DatabaseSync(":memory:");
     db.exec(m1);
     db.exec(m2);
+    db.exec(m3);
 
     const persistence = new SqliteSalesPersistence(db);
     const service = new SalesService(persistence);
@@ -71,9 +73,9 @@ for (const stage of failureStages) {
 
     // Seed allocation
     db.prepare(`
-      INSERT INTO offline_allocations (id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run("alloc-fail-test", "branch-001", "wh-001", "dev-001", "prod-fail", 30, 0, 0, "ACTIVE", 0);
+      INSERT INTO offline_allocations (id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version, issued_at, valid_from, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run("alloc-fail-test", "branch-001", "wh-001", "dev-001", "prod-fail", 30, 0, 0, "ACTIVE", 0, "2026-10-07T00:00:00.000Z", "2026-10-07T00:00:00.000Z", "2026-10-08T00:00:00.000Z");
 
     const authorizationSnapshot = {
       snapshotId: "snap-001",

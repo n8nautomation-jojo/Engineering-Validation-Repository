@@ -19,6 +19,7 @@ const maybe = (name, fn) => test(name, { skip: !shouldRun }, fn);
 
 const pgFoundation = fs.readFileSync(new URL("../docs/05-data/migrations/postgresql/001_p0_4_foundation.sql", import.meta.url), "utf8");
 const pgSalesMigration = fs.readFileSync(new URL("../docs/05-data/migrations/postgresql/003_sales_vertical_slice.sql", import.meta.url), "utf8");
+const pgValidityMigration = fs.readFileSync(new URL("../docs/05-data/migrations/postgresql/004_offline_allocation_validity.sql", import.meta.url), "utf8");
 
 const sqliteFoundation = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/001_p0_4_foundation.sql", import.meta.url), "utf8");
 const sqliteSalesMigration = fs.readFileSync(new URL("../docs/05-data/migrations/sqlite/002_sales_vertical_slice.sql", import.meta.url), "utf8");
@@ -26,6 +27,7 @@ const sqliteSalesMigration = fs.readFileSync(new URL("../docs/05-data/migrations
 async function setupPostgresDb(pool) {
   await pool.query(pgFoundation);
   await pool.query(pgSalesMigration);
+  await pool.query(pgValidityMigration);
   await pool.query(`
     TRUNCATE
       sale_lines, payments, stock_movements,
@@ -91,10 +93,13 @@ async function seedPgBatch(pool, b) {
 }
 
 async function seedPgAllocation(pool, a) {
+  const issuedAt = a.issuedAt ?? "2026-01-01T00:00:00.000Z";
+  const validFrom = a.validFrom ?? "2026-01-01T00:00:00.000Z";
+  const expiresAt = a.expiresAt ?? "2099-12-31T23:59:59.000Z";
   await pool.query(`
-    INSERT INTO offline_allocations (id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-  `, [a.id, a.branchId, a.warehouseId, a.deviceId, a.productId, a.allocatedCapacity, a.consumedCapacity, a.releasedCapacity, a.state, a.version]);
+    INSERT INTO offline_allocations (id, branch_id, warehouse_id, device_id, product_id, allocated_capacity, consumed_capacity, released_capacity, state, version, issued_at, valid_from, expires_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+  `, [a.id, a.branchId, a.warehouseId, a.deviceId, a.productId, a.allocatedCapacity, a.consumedCapacity, a.releasedCapacity, a.state, a.version, issuedAt, validFrom, expiresAt]);
 }
 
 // 1. Successful atomic sale
@@ -984,4 +989,115 @@ test("P0 Parity: SQLite vs PostgreSQL persistence adapters produce identical dom
   }
 
   sqliteDb.close();
+});
+
+// 12. PostgreSQL Lock-wait & Expiry Boundary Tests (A1-FOLLOWUP-EXPIRY)
+maybe("P0 PostgreSQL: Lock-wait evaluation rejects allocation that expires while waiting for row lock", async (t) => {
+  const pool = new Pool({ connectionString: databaseUrl });
+  t.after(async () => pool.end());
+  await setupPostgresDb(pool);
+
+  const persistence = new PostgresSalesPersistence(pool);
+  const service = new SalesService(persistence);
+  const { context, cashSession, assignments, authorizationSnapshot } = createTestContext();
+
+  await seedPgBatch(pool, {
+    id: "batch-lock-wait",
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: "prod-lock-wait",
+    batchNumber: "BN-LW",
+    expiryDate: "2028-01-01",
+    quantity: 50,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  // Allocation with validity window on 2026-10-07 (matching cashier session and snapshot)
+  // which will be expired relative to real database clock_timestamp()
+  await seedPgAllocation(pool, {
+    id: "alloc-lock-wait",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    productId: "prod-lock-wait",
+    allocatedCapacity: 20,
+    consumedCapacity: 0,
+    releasedCapacity: 0,
+    state: "ACTIVE",
+    version: 0,
+    issuedAt: "2026-10-07T00:00:00.000Z",
+    validFrom: "2026-10-07T00:00:00.000Z",
+    expiresAt: "2026-10-07T23:59:59.000Z"
+  });
+
+  const client1 = await pool.connect();
+  try {
+    // Client 1 holds row lock before sales transaction begins
+    await client1.query("BEGIN");
+    await client1.query("SELECT * FROM offline_allocations WHERE id = 'alloc-lock-wait' FOR UPDATE");
+
+    // Launch sales service processSale concurrently (which will wait for client 1's lock in DB)
+    const salePromise = service.processSale({
+      idempotencyKey: "idem-lw-001",
+      correlationId: "corr-lw-001",
+      context,
+      cashSession,
+      assignments,
+      authorizationSnapshot,
+      offline: true,
+      now: "2026-10-07T12:00:00Z",
+      lines: [{ productId: "prod-lock-wait", quantity: 2, unitPrice: money(50, "SDG") }],
+      payments: [{ method: "CASH", amount: money(100, "SDG") }]
+    });
+
+    // Wait 200ms to allow client 2 to block on row lock
+    await new Promise(r => setTimeout(r, 200));
+
+    // Client 1 commits, releasing the lock
+    await client1.query("COMMIT");
+
+    // Client 2 acquires lock, evaluates clock_timestamp() post-lock, and rejects
+    await assert.rejects(() => salePromise, /OFFLINE_ALLOCATION_EXPIRED/);
+  } finally {
+    client1.release();
+  }
+});
+
+maybe("P0 PostgreSQL: Schema constraint chk_offline_allocations_temporal_integrity blocks invalid writes", async (t) => {
+  const pool = new Pool({ connectionString: databaseUrl });
+  t.after(async () => pool.end());
+  await setupPostgresDb(pool);
+
+  // 1. Direct insert with issued_at > valid_from fails
+  await assert.rejects(
+    () => pool.query(`
+      INSERT INTO offline_allocations (
+        id, branch_id, warehouse_id, device_id, product_id,
+        allocated_capacity, consumed_capacity, released_capacity,
+        state, version, issued_at, valid_from, expires_at
+      ) VALUES (
+        'alloc-chk-1', 'branch-001', 'wh-001', 'dev-001', 'prod-001',
+        10, 0, 0, 'ACTIVE', 0,
+        '2026-10-11T12:00:00.000Z', '2026-10-11T10:00:00.000Z', '2026-10-11T18:00:00.000Z'
+      )
+    `),
+    /chk_offline_allocations_temporal_integrity/
+  );
+
+  // 2. Direct insert with valid_from >= expires_at fails
+  await assert.rejects(
+    () => pool.query(`
+      INSERT INTO offline_allocations (
+        id, branch_id, warehouse_id, device_id, product_id,
+        allocated_capacity, consumed_capacity, released_capacity,
+        state, version, issued_at, valid_from, expires_at
+      ) VALUES (
+        'alloc-chk-2', 'branch-001', 'wh-001', 'dev-001', 'prod-001',
+        10, 0, 0, 'ACTIVE', 0,
+        '2026-10-11T08:00:00.000Z', '2026-10-11T18:00:00.000Z', '2026-10-11T18:00:00.000Z'
+      )
+    `),
+    /chk_offline_allocations_temporal_integrity/
+  );
 });
