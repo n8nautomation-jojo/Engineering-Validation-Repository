@@ -1262,25 +1262,29 @@ maybe("R1 PostgreSQL: Two concurrent sales on same batch under independent conne
 
   const winnerOutbox = await pool1.query("SELECT aggregate_id, event_type FROM outbox_events WHERE aggregate_id = $1", [winner.saleId]);
   assert.equal(winnerOutbox.rows.length, 1, "Winning outbox event must exist");
-  assert.equal(winnerOutbox.rows[0].eventType, "sale.completed");
+  assert.equal(winnerOutbox.rows[0].event_type, "sale.completed");
 
   const winnerAudit = await pool1.query("SELECT resource_id, action FROM audit_records WHERE resource_id = $1", [winner.saleId]);
   assert.equal(winnerAudit.rows.length, 1, "Winning audit record must exist");
 
-  const winnerIdem = await pool1.query("SELECT key FROM idempotency_records WHERE key = $1", [commandA.idempotencyKey]);
+  // Determine winner and loser commands dynamically based on committed idempotency key
+  const winningCommand = winnerSale.rows[0].idempotency_key === commandA.idempotencyKey ? commandA : commandB;
+  const losingCommand = winningCommand === commandA ? commandB : commandA;
+
+  const winnerIdem = await pool1.query("SELECT key FROM idempotency_records WHERE key = $1", [winningCommand.idempotencyKey]);
   assert.equal(winnerIdem.rows.length, 1, "Winning idempotency record must exist");
 
   // Complete absence of loser's records scoped strictly to loser's idempotency key and correlation ID
-  const loserIdem = await pool1.query("SELECT key FROM idempotency_records WHERE key = $1", [commandB.idempotencyKey]);
+  const loserIdem = await pool1.query("SELECT key FROM idempotency_records WHERE key = $1", [losingCommand.idempotencyKey]);
   assert.equal(loserIdem.rows.length, 0, "Rejected sale idempotency record must NOT exist");
 
-  const loserAudit = await pool1.query("SELECT resource_id FROM audit_records WHERE correlation_id = $1", [commandB.correlationId]);
+  const loserAudit = await pool1.query("SELECT resource_id FROM audit_records WHERE correlation_id = $1", [losingCommand.correlationId]);
   assert.equal(loserAudit.rows.length, 0, "Rejected sale audit record must NOT exist");
 
-  const loserOutbox = await pool1.query("SELECT event_id FROM outbox_events WHERE correlation_id = $1", [commandB.correlationId]);
+  const loserOutbox = await pool1.query("SELECT event_id FROM outbox_events WHERE correlation_id = $1", [losingCommand.correlationId]);
   assert.equal(loserOutbox.rows.length, 0, "Rejected sale outbox event must NOT exist");
 
-  const loserSales = await pool1.query("SELECT id FROM sales WHERE idempotency_key = $1 OR correlation_id = $2", [commandB.idempotencyKey, commandB.correlationId]);
+  const loserSales = await pool1.query("SELECT id FROM sales WHERE idempotency_key = $1 OR correlation_id = $2", [losingCommand.idempotencyKey, losingCommand.correlationId]);
   assert.equal(loserSales.rows.length, 0, "Rejected sale record must NOT exist");
 });
 
