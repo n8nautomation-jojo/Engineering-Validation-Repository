@@ -23,10 +23,30 @@ export function consumeOfflineAllocation(a:OfflineSafetyAllocation,quantity:numb
   return Object.freeze({...a,consumedCapacity:consumed,state:remainingCapacity({...a,consumedCapacity:consumed})===0?"EXHAUSTED":"ACTIVE",version:a.version+1});
 }
 export function suspendOfflineAllocation(a:OfflineSafetyAllocation):OfflineSafetyAllocation {
-  if(a.state!=="ACTIVE") throw new Error("INVALID_ALLOCATION_TRANSITION");
+  if(a.state!=="ACTIVE" && a.state!=="EXHAUSTED") throw new Error("INVALID_ALLOCATION_TRANSITION");
   return Object.freeze({...a,state:"SUSPENDED" as const,version:a.version+1});
+}
+export function expireOfflineAllocation(a:OfflineSafetyAllocation):OfflineSafetyAllocation {
+  if(a.state!=="ACTIVE") throw new Error("INVALID_ALLOCATION_TRANSITION");
+  return Object.freeze({...a,state:"EXPIRED" as const,version:a.version+1});
+}
+export function activateOfflineAllocation(a:OfflineSafetyAllocation):OfflineSafetyAllocation {
+  if(a.state!=="SUSPENDED") throw new Error("INVALID_ALLOCATION_TRANSITION");
+  if(remainingCapacity(a)<=0) throw new Error("CANNOT_ACTIVATE_EMPTY_ALLOCATION");
+  return Object.freeze({...a,state:"ACTIVE" as const,version:a.version+1});
+}
+export function replenishOfflineAllocation(a:OfflineSafetyAllocation,additionalCapacity:number):OfflineSafetyAllocation {
+  if(!Number.isFinite(additionalCapacity)||additionalCapacity<=0) throw new Error("INVALID_ALLOCATION_CAPACITY");
+  if(a.state==="EXPIRED"||a.state==="SUSPENDED") throw new Error("ALLOCATION_NOT_REPLENISHABLE");
+  if(a.state!=="EXHAUSTED"&&a.state!=="ACTIVE") throw new Error("INVALID_ALLOCATION_TRANSITION");
+  return Object.freeze({...a,allocatedCapacity:a.allocatedCapacity+additionalCapacity,state:"ACTIVE" as const,version:a.version+1});
+}
+export function startReconciliation(a:OfflineSafetyAllocation):OfflineSafetyAllocation {
+  if(a.state!=="ACTIVE"&&a.state!=="EXHAUSTED"&&a.state!=="SUSPENDED"&&a.state!=="EXPIRED") throw new Error("INVALID_ALLOCATION_TRANSITION");
+  return Object.freeze({...a,state:"RECONCILING" as const,version:a.version+1});
 }
 export function reconcileOfflineAllocation(a:OfflineSafetyAllocation):OfflineSafetyAllocation {
   if(a.state!=="RECONCILING") throw new Error("INVALID_ALLOCATION_TRANSITION");
   return Object.freeze({...a,state:"RECONCILED" as const,version:a.version+1});
 }
+

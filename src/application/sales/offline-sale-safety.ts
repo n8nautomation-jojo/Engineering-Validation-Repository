@@ -8,7 +8,8 @@ export function validateAndConsumeOfflineSaleSafety(context:RequestContext,input
   assertTrustedScope(context);
   if(!context.branchId || context.branchId!==input.allocation.branchId) throw new Error("BRANCH_SCOPE_MISMATCH");
   if(!context.deviceId || context.deviceId!==input.allocation.deviceId) throw new Error("DEVICE_SCOPE_MISMATCH");
-  if(context.warehouseId && context.warehouseId!==input.allocation.warehouseId) throw new Error("WAREHOUSE_SCOPE_MISMATCH");
+  if(!context.warehouseId || context.warehouseId!==input.allocation.warehouseId) throw new Error("WAREHOUSE_SCOPE_MISMATCH");
+  if(input.allocation.state!=="ACTIVE") throw new Error("OFFLINE_ALLOCATION_UNAVAILABLE");
   if(input.productId!==input.allocation.productId) throw new Error("PRODUCT_SCOPE_MISMATCH");
   if(input.batchExpired) throw new Error("EXPIRED_BATCH");
   if(!input.fefoEligible) throw new Error("FEFO_VIOLATION");

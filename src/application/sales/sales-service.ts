@@ -186,6 +186,7 @@ export class SalesService {
       if (isOffline) {
         const allocation = await this.persistence.findOfflineAllocation(context.branchId, context.deviceId, productId);
         if (!allocation) throw new Error("OFFLINE_ALLOCATION_NOT_FOUND");
+        if (allocation.warehouseId !== context.warehouseId) throw new Error("WAREHOUSE_SCOPE_MISMATCH");
         if (allocation.state !== "ACTIVE") throw new Error("OFFLINE_ALLOCATION_UNAVAILABLE");
         if (totalDemanded > remainingCapacity(allocation)) throw new Error("OFFLINE_ALLOCATION_EXHAUSTED");
         updatedAllocation = consumeOfflineAllocation(allocation, totalDemanded);
