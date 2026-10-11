@@ -11,8 +11,8 @@ import { openCashSession } from "../dist/src/domain/cash/cash-session.js";
 
 const { Pool } = pg;
 const databaseUrl = process.env.DATABASE_URL;
-if (process.env.CI && !databaseUrl) {
-  throw new Error("FAIL: DATABASE_URL is required in CI. PostgreSQL tests must not be skipped.");
+if (process.env.POSTGRES_REQUIRED === "true" && !databaseUrl) {
+  throw new Error("FAIL: DATABASE_URL is required when POSTGRES_REQUIRED=true. PostgreSQL tests must not be skipped.");
 }
 const shouldRun = Boolean(databaseUrl);
 const maybe = (name, fn) => test(name, { skip: !shouldRun }, fn);

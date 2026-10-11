@@ -39,5 +39,7 @@ jobs:
         env: { PGPASSWORD: postgres }
         run: psql -h 127.0.0.1 -U postgres -d pharmatech_test -f docs/05-data/migrations/postgresql/003_sales_vertical_slice.sql
       - name: Validate PostgreSQL sales persistence
-        env: { DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/pharmatech_test }
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/pharmatech_test
+          POSTGRES_REQUIRED: "true"
         run: node --test tests/p0-c-postgres-sales-persistence.test.mjs
