@@ -1,5 +1,5 @@
 // PharmaTech Desktop POS Interactive Controller
-// Adheres strictly to FEFO, Offline Allocation Safety, and Multi-Payment invariants
+// Adheres strictly to Clinical Enterprise UI/UX Specification v1.0, FEFO, Offline Allocation Safety, and Multi-Payment invariants
 
 const CATALOG_DATA = [
   {
@@ -7,8 +7,11 @@ const CATALOG_DATA = [
     sku: "MED-AMX-500",
     barcode: "6291100123456",
     name: "Amoxicillin 500mg Capsules",
-    nameAr: "أموكسيسيلين 500 مجم كبسولات",
+    nameAr: "أموكسيسيلين",
+    strength: "500 مجم",
+    dosageForm: "كبسولات فموية",
     category: "Antibiotics",
+    categoryAr: "مضاد حيوي",
     unit: "علبة (20 كبسولة)",
     price: 3200.00,
     prescriptionRequired: true,
@@ -23,8 +26,11 @@ const CATALOG_DATA = [
     sku: "MED-PAN-EXT",
     barcode: "6291100987654",
     name: "Panadol Extra Tablets",
-    nameAr: "بنادول إكسترا أقراص",
+    nameAr: "بنادول إكسترا",
+    strength: "500 مجم + 65 كافيين",
+    dosageForm: "أقراص مغلفة",
     category: "Analgesics",
+    categoryAr: "مسكن وخافض حرارة",
     unit: "شريط (24 قرص)",
     price: 1800.00,
     prescriptionRequired: false,
@@ -37,8 +43,11 @@ const CATALOG_DATA = [
     sku: "MED-MET-500",
     barcode: "6291100456789",
     name: "Metformin 500mg Tablets",
-    nameAr: "ميتفورمين 500 مجم (منظم سكر)",
+    nameAr: "ميتفورمين (منظم سكر)",
+    strength: "500 مجم",
+    dosageForm: "أقراص صيدلانية",
     category: "Chronic",
+    categoryAr: "أمراض مزمنة",
     unit: "علبة (50 قرص)",
     price: 4500.00,
     prescriptionRequired: true,
@@ -51,8 +60,11 @@ const CATALOG_DATA = [
     sku: "MED-OME-020",
     barcode: "6291100554433",
     name: "Omeprazole 20mg Capsules",
-    nameAr: "أوميبرازول 20 مجم للمعدة",
+    nameAr: "أوميبرازول للمعدة",
+    strength: "20 مجم",
+    dosageForm: "كبسولات مقاومة للحموضة",
     category: "Chronic",
+    categoryAr: "أمراض مزمنة",
     unit: "علبة (14 كبسولة)",
     price: 2900.00,
     prescriptionRequired: false,
@@ -65,8 +77,11 @@ const CATALOG_DATA = [
     sku: "MED-VEN-INH",
     barcode: "6291100778899",
     name: "Ventolin Evohaler 100mcg",
-    nameAr: "بخاخ فنتولين موسع للشعب",
+    nameAr: "بخاخ فنتولين",
+    strength: "100 ميكروجرام / بخة",
+    dosageForm: "مستنشق موسع للشعب",
     category: "Chronic",
+    categoryAr: "أمراض مزمنة",
     unit: "بخاخ (200 جرعة)",
     price: 6800.00,
     prescriptionRequired: true,
@@ -79,8 +94,11 @@ const CATALOG_DATA = [
     sku: "MED-VIT-C1K",
     barcode: "6291100112233",
     name: "Vitamin C 1000mg Effervescent",
-    nameAr: "فيتامين سي فوار 1000 مجم",
+    nameAr: "فيتامين سي فوار",
+    strength: "1000 مجم",
+    dosageForm: "أقراص فوارة سريعة الامتصاص",
     category: "Vitamins",
+    categoryAr: "فيتامينات ومكملات",
     unit: "أنبوبة (20 قرص)",
     price: 2100.00,
     prescriptionRequired: false,
@@ -104,10 +122,19 @@ const state = {
   lastCompletedSale: null
 };
 
+// Barcode scanner deduplication guard (300ms window)
+let lastScannedBarcode = null;
+let lastScannedTimestamp = 0;
+const SCANNER_DEDUPLICATION_WINDOW_MS = 300;
+
+// Search debounce timer
+let searchDebounceTimer = null;
+
 // DOM Elements
 const productsGrid = document.getElementById("products-grid");
 const cartList = document.getElementById("cart-list");
 const emptyCartMsg = document.getElementById("empty-cart-msg");
+const cartItemsCount = document.getElementById("cart-items-count");
 const subtotalDisplay = document.getElementById("subtotal-display");
 const taxDisplay = document.getElementById("tax-display");
 const grandTotalDisplay = document.getElementById("grand-total-display");
@@ -175,12 +202,9 @@ function getFefoBatch(product) {
   return validBatches[0] || null;
 }
 
-// --- Render Products ---
-function renderProducts() {
-  const query = searchInput.value.trim().toLowerCase();
-  productsGrid.innerHTML = "";
-
-  const filtered = CATALOG_DATA.filter(prod => {
+function getFilteredProducts() {
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+  return CATALOG_DATA.filter(prod => {
     const matchesCategory = state.currentCategory === "ALL" || prod.category === state.currentCategory;
     const matchesQuery = !query || 
       prod.name.toLowerCase().includes(query) ||
@@ -189,9 +213,25 @@ function renderProducts() {
       prod.sku.toLowerCase().includes(query);
     return matchesCategory && matchesQuery;
   });
+}
+
+// --- Render Products (Strict 4-Level Clinical Hierarchy) ---
+function renderProducts() {
+  if (!productsGrid) return;
+  productsGrid.innerHTML = "";
+
+  const filtered = getFilteredProducts();
 
   if (filtered.length === 0) {
-    productsGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 2rem;">لم يتم العثور على أدوية مطابقة لبحثك</div>`;
+    productsGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 3rem 1rem; background: var(--surface); border-radius: var(--radius-lg); border: 1px dashed var(--border-default);">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 38px; height: 38px; margin: 0 auto 10px; color: var(--text-muted); display: block;" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <strong style="display:block; font-size: 1rem; color: var(--text-primary); margin-bottom: 4px;">لم يتم العثور على أدوية مطابقة للبحث</strong>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">تحقق من اسم الدواء أو الباركود المدخل أو جرب اختيار "كافة الأدوية".</p>
+      </div>
+    `;
     return;
   }
 
@@ -200,25 +240,59 @@ function renderProducts() {
     const card = document.createElement("div");
     card.className = "product-card";
     card.setAttribute("id", `card-${prod.id}`);
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("role", "button");
+    card.setAttribute("aria-label", `${prod.nameAr} - ${prod.strength || ""} - السعر ${prod.price} جنيه`);
 
-    const badgeHtml = fefoBatch ? 
-      `<span class="fefo-badge" title="صالح حتى ${fefoBatch.expiryDate}">FEFO: ${fefoBatch.batchNumber}</span>` :
-      `<span class="fefo-badge expiring-soon">غير متوفر</span>`;
+    // Level 4: Category & SKU
+    const catLabel = prod.categoryAr || prod.category;
+    const fefoHtml = fefoBatch ? 
+      `<span class="fefo-pill" title="صلاحية التشغيلة حتى ${fefoBatch.expiryDate}"><span aria-hidden="true">●</span> FEFO: ${fefoBatch.batchNumber}</span>` :
+      `<span class="fefo-pill expired">غير متوفر</span>`;
+
+    const availableQty = fefoBatch ? fefoBatch.availableQuantity : 0;
 
     card.innerHTML = `
-      ${badgeHtml}
-      <div>
-        <span class="product-sku">${prod.sku} | ${prod.barcode}</span>
-        <h3>${prod.nameAr}</h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted);">${prod.name}</p>
+      <div class="card-header-row">
+        <span class="card-cat-tag">${catLabel}</span>
+        <span class="card-sku-code" dir="ltr">${prod.sku}</span>
       </div>
-      <div class="product-meta-row">
-        <span class="stock-tag">المتوفر: ${fefoBatch ? fefoBatch.availableQuantity : 0} ${prod.unit}</span>
-        <span class="product-price">${formatCurrency(prod.price)}</span>
+
+      <div class="card-body-content">
+        <div class="prod-name-ar">${prod.nameAr}</div>
+        <div class="prod-strength-form">${prod.strength || ""} — ${prod.dosageForm || prod.unit}</div>
+        <div class="prod-name-en" dir="ltr">${prod.name}</div>
+      </div>
+
+      <div class="card-footer-section">
+        <div class="card-meta-indicators">
+          ${fefoHtml}
+          <span class="stock-indicator">المتوفر: <strong>${availableQty}</strong></span>
+        </div>
+        <div class="card-price-action-row">
+          <div class="prod-final-price" dir="ltr">
+            ${Number(prod.price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            <small>SDG</small>
+          </div>
+          <button class="btn-card-add" type="button" aria-label="إضافة ${prod.nameAr} إلى السلة">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" style="width:14px;height:14px;" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            <span>إضافة</span>
+          </button>
+        </div>
       </div>
     `;
 
+    // Interactive Selection
     card.addEventListener("click", () => addProductToCart(prod));
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        addProductToCart(prod);
+      }
+    });
+
     productsGrid.appendChild(card);
   });
 }
@@ -231,7 +305,7 @@ function addProductToCart(product) {
     return;
   }
 
-  // Check offline quota
+  // Check offline quota (ADR-011)
   if (state.isOffline) {
     const currentUnits = state.cart.reduce((sum, item) => sum + item.quantity, 0);
     if (currentUnits + 1 > state.offlineAllocation.remaining) {
@@ -266,18 +340,25 @@ function addProductToCart(product) {
 }
 
 function updateCartView() {
+  if (!cartList) return;
   cartList.innerHTML = "";
+
+  const totalQuantity = state.cart.reduce((sum, item) => sum + item.quantity, 0);
+  if (cartItemsCount) {
+    cartItemsCount.textContent = totalQuantity;
+  }
+
   if (state.cart.length === 0) {
-    emptyCartMsg.style.display = "flex";
-    openPaymentModalBtn.disabled = true;
-    subtotalDisplay.textContent = "0.00 SDG";
-    grandTotalDisplay.textContent = "0.00 SDG";
-    btnPayAmount.textContent = "0.00 SDG";
+    if (emptyCartMsg) emptyCartMsg.style.display = "flex";
+    if (openPaymentModalBtn) openPaymentModalBtn.disabled = true;
+    if (subtotalDisplay) subtotalDisplay.textContent = "0.00 SDG";
+    if (grandTotalDisplay) grandTotalDisplay.textContent = "0.00 SDG";
+    if (btnPayAmount) btnPayAmount.textContent = "0.00 SDG";
     return;
   }
 
-  emptyCartMsg.style.display = "none";
-  openPaymentModalBtn.disabled = false;
+  if (emptyCartMsg) emptyCartMsg.style.display = "none";
+  if (openPaymentModalBtn) openPaymentModalBtn.disabled = false;
 
   let grandTotal = 0;
   state.cart.forEach((item, index) => {
@@ -287,25 +368,33 @@ function updateCartView() {
     li.innerHTML = `
       <div class="cart-item-header">
         <span class="cart-item-title">${item.nameAr}</span>
-        <button class="btn-text-danger" style="font-size:0.75rem;" data-index="${index}">حذف</button>
+        <button class="btn-remove-item" data-index="${index}" title="حذف الصنف من السلة" aria-label="حذف الصنف من السلة">
+          <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 15px; height: 15px;" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
-      <div class="cart-item-batch">تشغيلة: ${item.batchNumber} (تنتهي: ${item.expiryDate})</div>
-      <div class="cart-item-controls">
-        <div class="qty-controls">
-          <button class="qty-btn" data-action="dec" data-index="${index}">-</button>
-          <span class="qty-val">${item.quantity}</span>
-          <button class="qty-btn" data-action="inc" data-index="${index}">+</button>
+      <div class="cart-item-batch-info" dir="ltr">Batch: ${item.batchNumber} | Exp: ${item.expiryDate}</div>
+      <div class="cart-item-actions">
+        <div class="qty-stepper">
+          <button class="stepper-btn" data-action="dec" data-index="${index}" aria-label="تقليل الكمية">-</button>
+          <span class="qty-val" dir="ltr">${item.quantity}</span>
+          <button class="stepper-btn" data-action="inc" data-index="${index}" aria-label="زيادة الكمية">+</button>
         </div>
-        <span class="item-line-total">${formatCurrency(item.lineTotal)}</span>
+        <span class="cart-item-price" dir="ltr">${formatCurrency(item.lineTotal)}</span>
       </div>
     `;
 
-    li.querySelector(`button[data-action="inc"]`).addEventListener("click", () => {
+    // Increment
+    li.querySelector(`button[data-action="inc"]`).addEventListener("click", (e) => {
+      e.stopPropagation();
       const prod = CATALOG_DATA.find(p => p.id === item.productId);
-      addProductToCart(prod);
+      if (prod) addProductToCart(prod);
     });
 
-    li.querySelector(`button[data-action="dec"]`).addEventListener("click", () => {
+    // Decrement
+    li.querySelector(`button[data-action="dec"]`).addEventListener("click", (e) => {
+      e.stopPropagation();
       if (item.quantity > 1) {
         item.quantity -= 1;
         item.lineTotal = item.quantity * item.unitPrice;
@@ -315,7 +404,9 @@ function updateCartView() {
       updateCartView();
     });
 
-    li.querySelector(".btn-text-danger").addEventListener("click", () => {
+    // Remove
+    li.querySelector(".btn-remove-item").addEventListener("click", (e) => {
+      e.stopPropagation();
       state.cart.splice(index, 1);
       updateCartView();
     });
@@ -324,9 +415,40 @@ function updateCartView() {
   });
 
   const formattedTotal = formatCurrency(grandTotal);
-  subtotalDisplay.textContent = formattedTotal;
-  grandTotalDisplay.textContent = formattedTotal;
-  btnPayAmount.textContent = formattedTotal;
+  if (subtotalDisplay) subtotalDisplay.textContent = formattedTotal;
+  if (grandTotalDisplay) grandTotalDisplay.textContent = formattedTotal;
+  if (btnPayAmount) btnPayAmount.textContent = formattedTotal;
+}
+
+// --- Barcode Scanner Handling with Deduplication Guard ---
+function processBarcodeScan(barcode) {
+  const cleanBarcode = barcode.trim();
+  if (!cleanBarcode) return;
+
+  const now = Date.now();
+  if (lastScannedBarcode === cleanBarcode && (now - lastScannedTimestamp) < SCANNER_DEDUPLICATION_WINDOW_MS) {
+    // Deduplicate bounce
+    return;
+  }
+  lastScannedBarcode = cleanBarcode;
+  lastScannedTimestamp = now;
+
+  const matched = CATALOG_DATA.find(p => 
+    p.barcode === cleanBarcode || 
+    p.sku.toLowerCase() === cleanBarcode.toLowerCase()
+  );
+
+  if (matched) {
+    addProductToCart(matched);
+    if (searchInput) {
+      searchInput.value = "";
+      renderProducts();
+      searchInput.focus();
+    }
+  } else {
+    // If not direct barcode, trigger filtered search
+    renderProducts();
+  }
 }
 
 // --- Payment Handlers ---
@@ -356,8 +478,10 @@ function updateCashChange() {
   
   if (received < total) {
     modalRemainingTotal.textContent = formatCurrency(total - received);
+    modalRemainingTotal.className = "color-warning";
   } else {
     modalRemainingTotal.textContent = "0.00 SDG (مكتمل)";
+    modalRemainingTotal.className = "";
   }
 }
 
@@ -388,12 +512,12 @@ function confirmSale() {
     paymentMethodDesc = `دفع مجزأ (${c} SDG نقد + ${t} SDG بنكك)`;
   }
 
-  // Deduct from offline quota if offline
+  // Deduct from offline quota if offline (ADR-011)
   if (state.isOffline) {
     const units = state.cart.reduce((sum, item) => sum + item.quantity, 0);
     state.offlineAllocation.consumed += units;
     state.offlineAllocation.remaining -= units;
-    allocationCount.textContent = `${state.offlineAllocation.remaining} / ${state.offlineAllocation.total} وحدة`;
+    allocationCount.textContent = `${state.offlineAllocation.remaining} / ${state.offlineAllocation.total}`;
     meterBarFill.style.width = `${(state.offlineAllocation.remaining / state.offlineAllocation.total) * 100}%`;
   }
 
@@ -422,10 +546,10 @@ function showReceipt(sale) {
   sale.items.forEach(i => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${i.nameAr}<br><small>(${i.batchNumber})</small></td>
-      <td>${i.quantity}</td>
-      <td>${formatCurrency(i.unitPrice)}</td>
-      <td>${formatCurrency(i.lineTotal)}</td>
+      <td>${i.nameAr}<br><small style="color:var(--text-muted); font-family:var(--font-en);">(${i.batchNumber})</small></td>
+      <td dir="ltr">${i.quantity}</td>
+      <td dir="ltr">${formatCurrency(i.unitPrice)}</td>
+      <td dir="ltr">${formatCurrency(i.lineTotal)}</td>
     `;
     receiptItemsBody.appendChild(tr);
   });
@@ -433,100 +557,183 @@ function showReceipt(sale) {
   receiptModal.classList.remove("hidden");
 }
 
-// --- Event Listeners ---
-searchInput.addEventListener("input", renderProducts);
+// --- Event Listeners with Debounce and Shortcut Support ---
+if (searchInput) {
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(renderProducts, 120);
+  });
 
-simulateScanBtn.addEventListener("click", () => {
-  // Simulate scanning Amoxicillin barcode
-  searchInput.value = "6291100123456";
-  renderProducts();
-  const amox = CATALOG_DATA[0];
-  addProductToCart(amox);
-});
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const val = searchInput.value.trim();
+      if (!val) return;
 
-clearCartBtn.addEventListener("click", () => {
-  if (confirm("هل تريد بالتأكيد إفراغ السلة الحالية؟")) {
-    state.cart = [];
-    updateCartView();
-  }
-});
+      const exactMatch = CATALOG_DATA.find(p => 
+        p.barcode === val || 
+        p.sku.toLowerCase() === val.toLowerCase()
+      );
 
-categoryChips.addEventListener("click", (e) => {
-  if (e.target.classList.contains("chip")) {
-    categoryChips.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-    e.target.classList.add("active");
-    state.currentCategory = e.target.dataset.category;
-    renderProducts();
-  }
-});
-
-toggleOfflineBtn.addEventListener("click", () => {
-  state.isOffline = !state.isOffline;
-  if (state.isOffline) {
-    networkDot.className = "status-dot offline";
-    networkText.textContent = "غير متصل (Offline Mode)";
-    toggleOfflineBtn.textContent = "استعادة الاتصال";
-  } else {
-    networkDot.className = "status-dot online";
-    networkText.textContent = "متصل (Online)";
-    toggleOfflineBtn.textContent = "محاكاة غير متصل";
-  }
-});
-
-openPaymentModalBtn.addEventListener("click", openPaymentModal);
-closePaymentModalBtn.addEventListener("click", closePaymentModal);
-cancelPaymentBtn.addEventListener("click", closePaymentModal);
-confirmSaleBtn.addEventListener("click", confirmSale);
-
-cashReceivedInput.addEventListener("input", updateCashChange);
-
-tabCashBtn.addEventListener("click", () => {
-  state.activePaymentMethod = "CASH";
-  [tabCashBtn, tabBankakBtn, tabSplitBtn].forEach(b => b.classList.remove("active"));
-  tabCashBtn.classList.add("active");
-  cashPanel.classList.remove("hidden");
-  bankakPanel.classList.add("hidden");
-  splitPanel.classList.add("hidden");
-  updateCashChange();
-});
-
-tabBankakBtn.addEventListener("click", () => {
-  state.activePaymentMethod = "BANK_TRANSFER";
-  [tabCashBtn, tabBankakBtn, tabSplitBtn].forEach(b => b.classList.remove("active"));
-  tabBankakBtn.classList.add("active");
-  cashPanel.classList.add("hidden");
-  bankakPanel.classList.remove("hidden");
-  splitPanel.classList.add("hidden");
-  modalRemainingTotal.textContent = "0.00 SDG (مطابق)";
-});
-
-tabSplitBtn.addEventListener("click", () => {
-  state.activePaymentMethod = "SPLIT";
-  [tabCashBtn, tabBankakBtn, tabSplitBtn].forEach(b => b.classList.remove("active"));
-  tabSplitBtn.classList.add("active");
-  cashPanel.classList.add("hidden");
-  bankakPanel.classList.add("hidden");
-  splitPanel.classList.remove("hidden");
-});
-
-closeReceiptModalBtn.addEventListener("click", () => receiptModal.classList.add("hidden"));
-newSaleBtn.addEventListener("click", () => receiptModal.classList.add("hidden"));
-printReceiptBtn.addEventListener("click", () => {
-  window.print();
-});
-
-// Theme Toggle Logic
-const posThemeToggleBtn = document.getElementById("pos-theme-toggle-btn");
-function initPosTheme() {
-  const savedTheme = localStorage.getItem("pharmatech-theme") || "dark";
-  document.documentElement.setAttribute("data-theme", savedTheme);
+      if (exactMatch) {
+        processBarcodeScan(exactMatch.barcode);
+      } else {
+        const filtered = getFilteredProducts();
+        if (filtered.length === 1) {
+          addProductToCart(filtered[0]);
+          searchInput.value = "";
+          renderProducts();
+          searchInput.focus();
+        }
+      }
+    }
+  });
 }
+
+if (simulateScanBtn) {
+  simulateScanBtn.addEventListener("click", () => {
+    processBarcodeScan("6291100123456");
+  });
+}
+
+if (clearCartBtn) {
+  clearCartBtn.addEventListener("click", () => {
+    if (state.cart.length === 0) return;
+    if (confirm("هل تريد بالتأكيد إفراغ كافة الأصناف من السلة الحالية؟")) {
+      state.cart = [];
+      updateCartView();
+    }
+  });
+}
+
+if (categoryChips) {
+  categoryChips.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (chip) {
+      categoryChips.querySelectorAll(".chip").forEach(c => {
+        c.classList.remove("active");
+        c.setAttribute("aria-selected", "false");
+      });
+      chip.classList.add("active");
+      chip.setAttribute("aria-selected", "true");
+      state.currentCategory = chip.dataset.category;
+      renderProducts();
+    }
+  });
+}
+
+if (toggleOfflineBtn) {
+  toggleOfflineBtn.addEventListener("click", () => {
+    state.isOffline = !state.isOffline;
+    if (state.isOffline) {
+      networkDot.className = "status-dot offline";
+      networkText.textContent = "غير متصل (Offline Mode)";
+      toggleOfflineBtn.textContent = "استعادة الاتصال";
+    } else {
+      networkDot.className = "status-dot online";
+      networkText.textContent = "متصل (Online)";
+      toggleOfflineBtn.textContent = "محاكاة أوفلاين";
+    }
+  });
+}
+
+if (openPaymentModalBtn) openPaymentModalBtn.addEventListener("click", openPaymentModal);
+if (closePaymentModalBtn) closePaymentModalBtn.addEventListener("click", closePaymentModal);
+if (cancelPaymentBtn) cancelPaymentBtn.addEventListener("click", closePaymentModal);
+if (confirmSaleBtn) confirmSaleBtn.addEventListener("click", confirmSale);
+
+if (cashReceivedInput) cashReceivedInput.addEventListener("input", updateCashChange);
+
+if (tabCashBtn) {
+  tabCashBtn.addEventListener("click", () => {
+    state.activePaymentMethod = "CASH";
+    [tabCashBtn, tabBankakBtn, tabSplitBtn].forEach(b => {
+      b.classList.remove("active");
+      b.setAttribute("aria-selected", "false");
+    });
+    tabCashBtn.classList.add("active");
+    tabCashBtn.setAttribute("aria-selected", "true");
+    cashPanel.classList.remove("hidden");
+    bankakPanel.classList.add("hidden");
+    splitPanel.classList.add("hidden");
+    updateCashChange();
+  });
+}
+
+if (tabBankakBtn) {
+  tabBankakBtn.addEventListener("click", () => {
+    state.activePaymentMethod = "BANK_TRANSFER";
+    [tabCashBtn, tabBankakBtn, tabSplitBtn].forEach(b => {
+      b.classList.remove("active");
+      b.setAttribute("aria-selected", "false");
+    });
+    tabBankakBtn.classList.add("active");
+    tabBankakBtn.setAttribute("aria-selected", "true");
+    cashPanel.classList.add("hidden");
+    bankakPanel.classList.remove("hidden");
+    splitPanel.classList.add("hidden");
+    modalRemainingTotal.textContent = "0.00 SDG (مطابق)";
+    modalRemainingTotal.className = "";
+  });
+}
+
+if (tabSplitBtn) {
+  tabSplitBtn.addEventListener("click", () => {
+    state.activePaymentMethod = "SPLIT";
+    [tabCashBtn, tabBankakBtn, tabSplitBtn].forEach(b => {
+      b.classList.remove("active");
+      b.setAttribute("aria-selected", "false");
+    });
+    tabSplitBtn.classList.add("active");
+    tabSplitBtn.setAttribute("aria-selected", "true");
+    cashPanel.classList.add("hidden");
+    bankakPanel.classList.add("hidden");
+    splitPanel.classList.remove("hidden");
+  });
+}
+
+if (closeReceiptModalBtn) closeReceiptModalBtn.addEventListener("click", () => receiptModal.classList.add("hidden"));
+if (newSaleBtn) newSaleBtn.addEventListener("click", () => receiptModal.classList.add("hidden"));
+if (printReceiptBtn) {
+  printReceiptBtn.addEventListener("click", () => {
+    window.print();
+  });
+}
+
+// Global Keyboard Shortcut: Escape to close modals
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (paymentModal && !paymentModal.classList.contains("hidden")) {
+      closePaymentModal();
+    }
+    if (receiptModal && !receiptModal.classList.contains("hidden")) {
+      receiptModal.classList.add("hidden");
+    }
+  }
+});
+
+// Theme Toggle Logic (Clinical Light Default vs Dark Mode)
+const posThemeToggleBtn = document.getElementById("pos-theme-toggle-btn");
+const themeTextLabel = document.getElementById("theme-text-label");
+
+function setPosTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("pharmatech-theme", theme);
+  if (themeTextLabel) {
+    themeTextLabel.textContent = theme === "dark" ? "الوضع الليلي" : "النهاري المريح";
+  }
+}
+
+function initPosTheme() {
+  const savedTheme = localStorage.getItem("pharmatech-theme") || "light";
+  setPosTheme(savedTheme);
+}
+
 if (posThemeToggleBtn) {
   posThemeToggleBtn.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const current = document.documentElement.getAttribute("data-theme") || "light";
     const next = current === "dark" ? "light" : "dark";
-    document.documentElement.setAttribute("data-theme", next);
-    localStorage.setItem("pharmatech-theme", next);
+    setPosTheme(next);
   });
 }
 
