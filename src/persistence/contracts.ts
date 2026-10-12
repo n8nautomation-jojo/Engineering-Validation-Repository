@@ -36,6 +36,8 @@ export interface ConflictResolutionPersistence {
   updateConflict(id: string, record: ConflictRecord): Promise<void>;
   findResolutionFingerprint(conflictId: string): Promise<string | null>;
   appendAudit(record: AuditRecord): Promise<void>;
+  saveIdempotency?(record: IdempotencyRecord): Promise<void>;
+  findIdempotency?(key: string, commandName: string): Promise<IdempotencyRecord | null>;
 }
 
 export interface ConflictResolutionUnitOfWork {

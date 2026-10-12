@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS sync_conflicts (
   conflict_type TEXT NOT NULL,
   severity TEXT NOT NULL,
   state TEXT NOT NULL,
-  resolution_class TEXT NOT NULL,
+  resolution_class TEXT,
   original_effect_ids TEXT NOT NULL,
   resulting_effect_ids TEXT NOT NULL,
   created_at TEXT NOT NULL,
