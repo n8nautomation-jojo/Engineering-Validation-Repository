@@ -5,7 +5,8 @@ export const CAPABILITIES = [
   "inventory.read","inventory.adjust.create","inventory.adjust.approve",
   "inventory.transfer.create","inventory.transfer.dispatch","inventory.transfer.receive",
   "purchasing.po.create","purchasing.po.read","purchasing.receipt.create",
-  "sync.push","sync.pull","sync.conflict.resolve","audit.read"
+  "sync.push","sync.pull","sync.conflict.resolve","audit.read",
+  "allocations.replenish","authorization.manage","devices.manage"
 ] as const;
 
 export type Capability = typeof CAPABILITIES[number];
@@ -19,7 +20,8 @@ export const OFFLINE_CLASS: Readonly<Record<Capability, OfflineClass>> = {
   "inventory.read":"OFFLINE_ELIGIBLE","inventory.adjust.create":"OFFLINE_RESTRICTED","inventory.adjust.approve":"ONLINE_ONLY",
   "inventory.transfer.create":"OFFLINE_RESTRICTED","inventory.transfer.dispatch":"OFFLINE_RESTRICTED","inventory.transfer.receive":"OFFLINE_RESTRICTED",
   "purchasing.po.create":"ONLINE_ONLY","purchasing.po.read":"ONLINE_ONLY","purchasing.receipt.create":"OFFLINE_RESTRICTED",
-  "sync.push":"OFFLINE_ELIGIBLE","sync.pull":"OFFLINE_ELIGIBLE","sync.conflict.resolve":"ONLINE_ONLY","audit.read":"ONLINE_ONLY"
+  "sync.push":"OFFLINE_ELIGIBLE","sync.pull":"OFFLINE_ELIGIBLE","sync.conflict.resolve":"ONLINE_ONLY","audit.read":"ONLINE_ONLY",
+  "allocations.replenish":"ONLINE_ONLY","authorization.manage":"ONLINE_ONLY","devices.manage":"ONLINE_ONLY"
 };
 
 export function isCapability(value: string): value is Capability {
