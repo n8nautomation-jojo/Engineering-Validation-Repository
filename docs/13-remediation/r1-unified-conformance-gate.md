@@ -22,7 +22,7 @@ A track may only be promoted when its required evidence has actually been observ
 |---|---|---|---|
 | A1 Offline Stock Safety | DURABLE RUNTIME PASS — READY FOR INTEGRATION LOCK | DYNAMIC (SQLite 35/35 runtime tests PASS) | Production CI run & active sync replenishment transport |
 | A2 Conflict Resolution | DURABLE PERSISTENCE & UOW IMPLEMENTED | DYNAMIC (SQLite & PostgreSQL durable tests PASS) | Multi-device transport sync & active sync pipeline integration |
-| A3 Authorization | READY FOR LOCK — SECURITY/EXECUTION GATE REMAINS | Reference model PASS | Production Authorization Runtime absent |
+| A3 Authorization | DURABLE RUNTIME PASS — READY FOR INTEGRATION LOCK | DYNAMIC (AUTH-01 to AUTH-18 PASS, 18/18) | Cloud revocation push transport & R1-B device secret binding integration |
 | B Security | NOT READY FOR LOCK | Reference prototype execution evidence | Windows/SQLite/Tauri production security boundary and key/device/recovery evidence absent |
 | C Compliance | READY FOR RECONCILIATION WITH LEGAL GATES | Design/external-source analysis | Statutory/provider/legal gates remain |
 | D Integration | PROPOSED / NOT LOCKED | Design | Provider contracts/activation evidence absent |
@@ -41,10 +41,10 @@ A reference harness PASS is evidence about the reference model only. It is not e
 
 1. A1 production runtime and persistence verified; cloud sync transport integration pending.
 2. A2 durable persistence and UoW implemented; full sync transport pipeline integration pending.
-3. A3 production Authorization Runtime does not yet exist.
-5. B production security boundary is not verified.
-6. Compliance legal gates remain open.
-7. Product/module/data/development implementation gates remain open.
+3. A3 production Authorization Runtime implemented and verified via durable SQLite/Postgres snapshot stores; cloud revocation push integration pending.
+4. B production security boundary is not verified.
+5. Compliance legal gates remain open.
+6. Product/module/data/development implementation gates remain open.
 
 ## Change-control protection
 

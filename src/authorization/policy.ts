@@ -36,9 +36,12 @@ export type AuthorizationSnapshot = Readonly<{
   expiresAt: string;
   deviceId: DeviceId;
   userId: UserId;
+  tenantId?: TenantId;
+  organizationId?: OrganizationId;
   assignments: readonly AuthorizationAssignment[];
   revoked: boolean;
   integrityVerified: boolean;
+  signature?: string;
 }>;
 
 export type AuthorizationRequest = Readonly<{
