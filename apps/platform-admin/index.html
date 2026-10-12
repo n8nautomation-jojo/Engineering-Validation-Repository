@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PharmaTech Platform Console — لوحة إدارة المنصة المركزية</title>
+  <meta name="description" content="لوحة التحكم المركزية لمنصة فارماتك لإدارة المستأجرين، الاشتراكات، ومراقبة أداء المزامنة والتدقيق الأمني">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-icon">⚡</span>
+        <div>
+          <h2>PharmaTech</h2>
+          <small>Platform Console</small>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="overview">
+          <span class="nav-icon">📊</span>
+          <span>نظرة عامة على المنصة</span>
+        </button>
+        <button class="nav-item" data-tab="tenants">
+          <span class="nav-icon">🏢</span>
+          <span>إدارة المستأجرين (Tenants)</span>
+        </button>
+        <button class="nav-item" data-tab="provisioning">
+          <span class="nav-icon">➕</span>
+          <span>تهيئة صيدلية جديدة</span>
+        </button>
+        <button class="nav-item" data-tab="audit">
+          <span class="nav-icon">🛡️</span>
+          <span>سجل التدقيق الأمني</span>
+        </button>
+      </nav>
+
+      <div class="privacy-boundary-notice">
+        <span class="notice-icon">🔒</span>
+        <p><strong>حدود الخصوصية (D-038):</strong> بيانات الوصفات الطبية وسجلات المرضى محجوبة تماماً عن إدارة المنصة وتخضع للعزل الصارم.</p>
+      </div>
+
+      <div class="sidebar-user">
+        <span class="user-avatar">👑</span>
+        <div>
+          <strong>platform-superadmin</strong>
+          <small>مالك المنصة المركزي</small>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="admin-main">
+      <!-- Top Bar -->
+      <header class="admin-topbar">
+        <div class="topbar-title">
+          <h1 id="page-title">نظرة عامة على النظام السحابي</h1>
+          <span class="badge-env">Production Cloud (MENA/Sudan)</span>
+        </div>
+
+        <div class="telemetry-bar">
+          <div class="telemetry-badge healthy">
+            <span class="telemetry-dot"></span>
+            <span>API Gateway: <strong>99.98% Healthy</strong></span>
+          </div>
+          <div class="telemetry-badge optimal">
+            <span class="telemetry-dot"></span>
+            <span>Sync Engine: <strong>Optimal (0 Backlog)</strong></span>
+          </div>
+        </div>
+      </header>
+
+      <!-- View Container -->
+      <div class="view-content">
+        <!-- 1. Overview Tab -->
+        <section class="tab-view active" id="tab-overview">
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-title">إجمالي المستأجرين المعتمدين</span>
+              <strong class="metric-value" id="total-tenants-count">4</strong>
+              <span class="metric-sub text-success">جميعهم في حالة تشغيل نشطة</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-title">الأجهزة ونقاط البيع المتصلة</span>
+              <strong class="metric-value">28</strong>
+              <span class="metric-sub">عبر 12 فرعاً في الخرطوم والولايات</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-title">حجم أحداث المزامنة اليوم</span>
+              <strong class="metric-value">14,290</strong>
+              <span class="metric-sub text-cyan">معدل التأخير P95: 48ms</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-title">نزاعات المزامنة النشطة</span>
+              <strong class="metric-value">0</strong>
+              <span class="metric-sub text-success">تمت التسوية آلياً بموجب A2</span>
+            </div>
+          </div>
+
+          <div class="card-section">
+            <div class="section-header">
+              <h3>أحدث المستأجرين المنضمين حديثاً</h3>
+              <button class="btn-primary-sm" id="quick-provision-btn">+ تهيئة مستأجر جديد</button>
+            </div>
+            <div class="table-container">
+              <table class="data-table" id="overview-tenants-table">
+                <thead>
+                  <tr>
+                    <th>رمز المستأجر</th>
+                    <th>اسم الصيدلية / المجموعة</th>
+                    <th>الخطة</th>
+                    <th>حالة الاشتراك</th>
+                    <th>تاريخ الاعتماد</th>
+                  </tr>
+                </thead>
+                <tbody id="overview-tenants-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Tenants Management Tab -->
+        <section class="tab-view hidden" id="tab-tenants">
+          <div class="card-section">
+            <div class="section-header">
+              <h3>دليل المستأجرين والاشتراكات</h3>
+              <div class="table-search-box">
+                <input type="text" id="tenant-search-input" placeholder="بحث بالرمز أو اسم الصيدلية...">
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>رمز المستأجر</th>
+                    <th>الاسم التجاري</th>
+                    <th>المسؤول الأولي</th>
+                    <th>حالة الحساب</th>
+                    <th>خطة الاشتراك</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="tenants-list-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. Provisioning Wizard Tab -->
+        <section class="tab-view hidden" id="tab-provisioning">
+          <div class="card-section" style="max-width: 800px; margin: 0 auto;">
+            <div class="section-header">
+              <div>
+                <h3>معالج تهيئة مستأجر جديد (Tenant Provisioning)</h3>
+                <small class="text-muted">تهيئة الحساب وفق متطلبات D-038 & D-041 مع كلمة مرور مؤقتة وتدقيق صارم</small>
+              </div>
+            </div>
+
+            <form id="provisioning-form" class="provisioning-form">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="tenant-code-input">رمز المستأجر الفريد (Tenant Code) *</label>
+                  <input type="text" id="tenant-code-input" placeholder="مثال: PHARMA-SUDAN-05" required>
+                  <small>يجب أن يكون فريداً بالأحرف الإنجليزية الكبيرة</small>
+                </div>
+
+                <div class="form-group">
+                  <label for="tenant-name-input">اسم مجموعة الصيدليات أو المنشأة *</label>
+                  <input type="text" id="tenant-name-input" placeholder="مثال: صيدليات النيل الأزرق" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="org-name-input">اسم المؤسسة التشغيلية *</label>
+                  <input type="text" id="org-name-input" placeholder="مثال: شركة النيل للرعاية الصحية" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="branch-name-input">اسم الفرع الأولي *</label>
+                  <input type="text" id="branch-name-input" placeholder="مثال: فرع بحري المحطة الوسطى" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="admin-user-input">اسم مستخدم المشرف الأولي *</label>
+                  <input type="text" id="admin-user-input" placeholder="مثال: nile_admin" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="admin-email-input">البريد الإلكتروني للمشرف *</label>
+                  <input type="email" id="admin-email-input" placeholder="admin@bluenile.sd" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="sub-plan-select">خطة الاشتراك *</label>
+                  <select id="sub-plan-select" required>
+                    <option value="COMMUNITY">مجتمعية (Community - فرع واحد)</option>
+                    <option value="STANDARD" selected>قياسية (Standard - حتى 3 فروع)</option>
+                    <option value="ENTERPRISE">مؤسسية (Enterprise - فروع متعددة)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn-primary" id="submit-provision-btn">🚀 إنشاء المستأجر وتوليد بيانات الدخول المؤقتة</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- 4. Audit & Security Tab -->
+        <section class="tab-view hidden" id="tab-audit">
+          <div class="card-section">
+            <div class="section-header">
+              <div>
+                <h3>سجل التدقيق الأمني غير القابل للتعديل (Append-Only Audit)</h3>
+                <small class="text-muted">تسجيل غير قابل للحذف لجميع العمليات الإدارية الحساسة بموجب D-009 & D-038</small>
+              </div>
+              <div class="table-search-box">
+                <input type="text" id="audit-search-input" placeholder="تصفية بالإجراء أو رمز المستأجر...">
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>معرف الحدث</th>
+                    <th>الوقت والتاريخ</th>
+                    <th>المنفذ (Actor)</th>
+                    <th>العملية (Action)</th>
+                    <th>رمز المستأجر</th>
+                    <th>التفاصيل والنتائج</th>
+                    <th>رمز الترابط (Correlation ID)</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-log-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Provisioning Success Modal -->
+    <div class="modal-overlay hidden" id="credential-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>✅ تم إنشاء المستأجر بنجاح</h3>
+          <button class="btn-close" id="close-credential-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="credential-box">
+            <p><strong>تنبيه أمان:</strong> تم إنشاء حساب المشرف بحالة إلزامية لتغيير كلمة المرور فور أول تسجيل دخول (<code>PASSWORD_CHANGE_REQUIRED</code>).</p>
+            <div class="credential-fields">
+              <div class="field-row">
+                <span>رمز المستأجر:</span>
+                <strong id="cred-tenant-code">PHARMA-01</strong>
+              </div>
+              <div class="field-row">
+                <span>اسم المستخدم:</span>
+                <strong id="cred-admin-user">admin</strong>
+              </div>
+              <div class="field-row">
+                <span>كلمة المرور المؤقتة:</span>
+                <strong class="temp-pwd" id="cred-temp-pwd">Temp-8X99!2026</strong>
+              </div>
+            </div>
+            <button class="btn-secondary" id="copy-cred-btn" style="width:100%; margin-top:0.75rem;">📋 نسخ بيانات الدخول</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" id="finish-cred-modal-btn">تم وحفظ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

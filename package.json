@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test \"tests/**/*.test.mjs\"",
-    "check": "npm run build && npm test"
+    "check": "npm run build && npm test",
+    "apps:start": "node apps/server.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

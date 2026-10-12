@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PharmaTech POS — نقطة البيع الصيدلانية السحابية والمحلية</title>
+  <meta name="description" content="واجهة نقطة البيع لصيدليات فارماتك بنظام السلامة الدوائية FEFO والدفع المجزأ والعمل دون اتصال">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app-root" class="app-container">
+    <!-- Top Bar / Header -->
+    <header class="pos-header" id="pos-header">
+      <div class="brand-section">
+        <div class="logo-badge">💊</div>
+        <div class="brand-text">
+          <h1>PharmaTech POS <span class="badge-version">v1.0 (MVP-0)</span></h1>
+          <p class="subtitle">نظام الصيدلية المتكامل — فرع الخرطوم الرئيسي</p>
+        </div>
+      </div>
+
+      <div class="header-status-panel">
+        <div class="status-indicator" id="network-status-badge">
+          <span class="status-dot online" id="network-dot"></span>
+          <span class="status-text" id="network-text">متصل (Online)</span>
+          <button id="toggle-offline-btn" class="btn-subtle" title="تبديل وضع الاتصال">محاكاة غير متصل</button>
+        </div>
+
+        <div class="allocation-meter" id="allocation-meter">
+          <div class="meter-label">
+            <span>حصة البيع دون اتصال:</span>
+            <strong id="allocation-count">85 / 100 وحدة</strong>
+          </div>
+          <div class="meter-bar-bg">
+            <div class="meter-bar-fill" id="meter-bar-fill" style="width: 85%;"></div>
+          </div>
+        </div>
+
+        <div class="session-info" id="session-info">
+          <span class="cashier-name">👤 د. أحمد الطاهر</span>
+          <span class="register-id">درج: REG-01</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="pos-main">
+      <!-- Left: Product Catalog & Scanner -->
+      <section class="catalog-section" aria-label="كتالوج الأدوية">
+        <!-- Search & Scanner Bar -->
+        <div class="search-bar-wrapper">
+          <div class="scanner-input-box">
+            <span class="scan-icon">🔍</span>
+            <input type="text" id="product-search-input" placeholder="مسح الباركود ضوئياً أو كتابة اسم الدواء / الرمز..." autocomplete="off" autofocus>
+            <button id="simulate-scan-btn" class="btn-secondary">مسح باركود تجريبي</button>
+          </div>
+          <div class="category-chips" id="category-chips">
+            <button class="chip active" data-category="ALL">الكل</button>
+            <button class="chip" data-category="Antibiotics">مضادات حيوية</button>
+            <button class="chip" data-category="Analgesics">مسكنات</button>
+            <button class="chip" data-category="Chronic">أدوية مزمنة</button>
+            <button class="chip" data-category="Vitamins">فيتامينات</button>
+          </div>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="products-grid" id="products-grid">
+          <!-- Dynamic Products injected here -->
+        </div>
+      </section>
+
+      <!-- Right: Active Cart & Billing -->
+      <aside class="cart-section" aria-label="فاتورة البيع الحالية">
+        <div class="cart-header">
+          <h2>سلة البيع الحالية</h2>
+          <button id="clear-cart-btn" class="btn-text-danger" title="إفراغ السلة">تفريغ السلة</button>
+        </div>
+
+        <!-- Cart Items List -->
+        <div class="cart-items-container" id="cart-items-container">
+          <div class="empty-cart-state" id="empty-cart-msg">
+            <span class="empty-icon">🛒</span>
+            <p>السلة فارغة حالياً</p>
+            <small>امسح باركود الدواء أو انقر على الصنف لإضافته فورياً مع فحص FEFO التلقائي</small>
+          </div>
+          <ul class="cart-list" id="cart-list"></ul>
+        </div>
+
+        <!-- Totals & Payment Summary -->
+        <div class="cart-summary-footer">
+          <div class="summary-row">
+            <span>المجموع الفرعي:</span>
+            <span id="subtotal-display" class="amount">0.00 SDG</span>
+          </div>
+          <div class="summary-row">
+            <span>ضريبة القيمة المضافة (معفي طبياً):</span>
+            <span id="tax-display" class="amount">0.00 SDG</span>
+          </div>
+          <div class="summary-row grand-total">
+            <span>الإجمالي المستحق:</span>
+            <span id="grand-total-display" class="amount-large">0.00 SDG</span>
+          </div>
+
+          <div class="payment-actions">
+            <button id="open-payment-modal-btn" class="btn-primary-large" disabled>
+              <span>💳 إتمام الدفع والفاتورة</span>
+              <span id="btn-pay-amount">0.00 SDG</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Payment & Split Payment Modal -->
+    <div class="modal-overlay hidden" id="payment-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>تسوية الدفع وتأكيد البيع</h3>
+          <button class="btn-close" id="close-payment-modal-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="payment-due-banner">
+            <div>
+              <span>المبلغ الإجمالي المطلوب:</span>
+              <strong id="modal-due-total">0.00 SDG</strong>
+            </div>
+            <div>
+              <span>المتبقي للتسوية:</span>
+              <strong id="modal-remaining-total" class="color-warning">0.00 SDG</strong>
+            </div>
+          </div>
+
+          <div class="payment-methods-tabs">
+            <button class="tab-btn active" id="tab-cash-btn">💵 نقداً (Cash)</button>
+            <button class="tab-btn" id="tab-bankak-btn">📱 بنكك / تحويل بنكي</button>
+            <button class="tab-btn" id="tab-split-btn">⚖️ دفع مجزأ (Split)</button>
+          </div>
+
+          <!-- Cash Payment Tab Panel -->
+          <div class="tab-panel active" id="cash-panel">
+            <div class="input-group">
+              <label for="cash-received-input">المبلغ المستلم نقداً (SDG):</label>
+              <input type="number" id="cash-received-input" placeholder="0.00" step="100">
+            </div>
+            <div class="change-display">
+              <span>المتبقي للعميل (الباقي):</span>
+              <strong id="cash-change-amount">0.00 SDG</strong>
+            </div>
+          </div>
+
+          <!-- Bank Transfer Tab Panel -->
+          <div class="tab-panel hidden" id="bankak-panel">
+            <div class="input-group">
+              <label for="transfer-amount-input">قيمة التحويل (SDG):</label>
+              <input type="number" id="transfer-amount-input" placeholder="0.00">
+            </div>
+            <div class="input-group">
+              <label for="transfer-ref-input">رقم الإشعار / المعاملة المرجعية:</label>
+              <input type="text" id="transfer-ref-input" placeholder="مثال: BNK-20261012-9921">
+            </div>
+            <div class="notice-box">
+              ⚠️ ملاحظة: تسجيل التحويل لا يعني التسوية المالية الآلية لحين المطابقة مع الكشف.
+            </div>
+          </div>
+
+          <!-- Split Payment Tab Panel -->
+          <div class="tab-panel hidden" id="split-panel">
+            <div class="input-group">
+              <label for="split-cash-input">الجزء النقدي (SDG):</label>
+              <input type="number" id="split-cash-input" placeholder="0.00">
+            </div>
+            <div class="input-group">
+              <label for="split-transfer-input">الجزء البنكي (SDG):</label>
+              <input type="number" id="split-transfer-input" placeholder="0.00">
+            </div>
+            <div class="input-group">
+              <label for="split-ref-input">مرجع الإشعار البنكي:</label>
+              <input type="text" id="split-ref-input" placeholder="رقم المعاملة">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-secondary" id="cancel-payment-btn">إلغاء</button>
+          <button class="btn-primary" id="confirm-sale-btn">✓ تأكيد وحفظ البيع وطباعة الفاتورة</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thermal Receipt Modal -->
+    <div class="modal-overlay hidden" id="receipt-modal">
+      <div class="modal-card receipt-card">
+        <div class="modal-header">
+          <h3>فاتورة بيع صيدلانية معتمدة</h3>
+          <button class="btn-close" id="close-receipt-modal-btn">&times;</button>
+        </div>
+        <div class="receipt-paper" id="receipt-paper">
+          <div class="receipt-header">
+            <h4>صيدلية النيلين النموذجية</h4>
+            <p>س.ت: 489201 | الخرطوم — تقاطع القصر</p>
+            <p>هاتف: +249 183 770000</p>
+            <hr class="receipt-divider">
+            <div class="receipt-meta">
+              <span id="receipt-invoice-num">فاتورة: INV-99021</span>
+              <span id="receipt-datetime">2026-10-12 16:30</span>
+            </div>
+            <div class="receipt-meta">
+              <span id="receipt-cashier">الكاشير: د. أحمد</span>
+              <span id="receipt-status">الحالة: مكتملة محلياً</span>
+            </div>
+            <hr class="receipt-divider">
+          </div>
+          <table class="receipt-table">
+            <thead>
+              <tr>
+                <th>الصنف (تشغيلة)</th>
+                <th>الكمية</th>
+                <th>السعر</th>
+                <th>الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody id="receipt-items-body"></tbody>
+          </table>
+          <hr class="receipt-divider">
+          <div class="receipt-totals">
+            <div class="receipt-total-row">
+              <span>المجموع الصافي:</span>
+              <span id="receipt-total-val">0.00 SDG</span>
+            </div>
+            <div class="receipt-total-row">
+              <span>طريقة الدفع:</span>
+              <span id="receipt-payment-method">نقد</span>
+            </div>
+          </div>
+          <div class="receipt-barcode-box">
+            <div class="mock-barcode">||| | ||||| || |||| ||| |||||</div>
+            <small>شكراً لزيارتكم — نتمنى لكم دوام الصحة والعافية</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="new-sale-btn">عملية بيع جديدة</button>
+          <button class="btn-primary" id="print-receipt-btn">🖨️ طباعة الفاتورة</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
