@@ -24,6 +24,16 @@ export async function resolveConflictTransactionally(request:ConflictResolutionR
       before:request.conflict,after:decision.conflict
     };
     await persistence.appendAudit(audit);
+    if (persistence.saveIdempotency) {
+      await persistence.saveIdempotency({
+        key: `conflict-${request.conflict.id}`,
+        commandName: "sync.conflict.resolve",
+        requestHash: requestFingerprint,
+        responseStatus: 200,
+        responseBody: decision,
+        createdAt: request.authorization.now
+      });
+    }
     return {replayed:false,decision};
   });
 }
