@@ -142,6 +142,7 @@ const openPaymentModalBtn = document.getElementById("open-payment-modal-btn");
 const btnPayAmount = document.getElementById("btn-pay-amount");
 const clearCartBtn = document.getElementById("clear-cart-btn");
 const searchInput = document.getElementById("product-search-input");
+const clearSearchBtn = document.getElementById("clear-search-btn");
 const simulateScanBtn = document.getElementById("simulate-scan-btn");
 const categoryChips = document.getElementById("category-chips");
 
@@ -202,6 +203,50 @@ function getFefoBatch(product) {
   return validBatches[0] || null;
 }
 
+function getCategoryIcon(cat) {
+  switch (cat) {
+    case "Antibiotics":
+      return `<svg fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5m14.25-9.396v5.714a2.25 2.25 0 0 0 .659 1.591L21 13.5" /></svg>`;
+    case "Analgesics":
+      return `<svg fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`;
+    case "Chronic":
+      return `<svg fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" /></svg>`;
+    case "Vitamins":
+      return `<svg fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" /></svg>`;
+    default:
+      return `<svg fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>`;
+  }
+}
+
+function showToast(message, type = "success") {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+  const toast = document.createElement("div");
+  toast.className = `toast-item ${type}`;
+  toast.innerHTML = `
+    <svg fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" style="width:18px;height:18px;color:var(--success);flex-shrink:0;">
+      <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+    </svg>
+    <span>${message}</span>
+  `;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(10px)";
+    toast.style.transition = "all 0.2s ease";
+    setTimeout(() => toast.remove(), 200);
+  }, 2200);
+}
+
+function flashCard(productId) {
+  const card = document.getElementById(`card-${productId}`);
+  if (card) {
+    card.classList.remove("just-added");
+    void card.offsetWidth; // trigger reflow
+    card.classList.add("just-added");
+  }
+}
+
 function getFilteredProducts() {
   const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
   return CATALOG_DATA.filter(prod => {
@@ -224,12 +269,12 @@ function renderProducts() {
 
   if (filtered.length === 0) {
     productsGrid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 3rem 1rem; background: var(--surface); border-radius: var(--radius-lg); border: 1px dashed var(--border-default);">
-        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 38px; height: 38px; margin: 0 auto 10px; color: var(--text-muted); display: block;" aria-hidden="true">
+      <div style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 3.5rem 1.5rem; background: var(--surface); border-radius: var(--radius-2xl); border: 1.5px dashed var(--border-default); box-shadow: var(--shadow-card);">
+        <svg fill="none" viewBox="0 0 24 24" stroke-width="1.4" stroke="currentColor" style="width: 44px; height: 44px; margin: 0 auto 12px; color: var(--text-muted); display: block;" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
         </svg>
-        <strong style="display:block; font-size: 1rem; color: var(--text-primary); margin-bottom: 4px;">لم يتم العثور على أدوية مطابقة للبحث</strong>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">تحقق من اسم الدواء أو الباركود المدخل أو جرب اختيار "كافة الأدوية".</p>
+        <strong style="display:block; font-size: 1.05rem; color: var(--text-primary); margin-bottom: 6px;">لم يتم العثور على أدوية مطابقة للبحث</strong>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">تحقق من اسم الدواء أو الباركود المدخل أو انقر على تصنيف "كافة الأدوية".</p>
       </div>
     `;
     return;
@@ -246,6 +291,7 @@ function renderProducts() {
 
     // Level 4: Category & SKU
     const catLabel = prod.categoryAr || prod.category;
+    const catIcon = getCategoryIcon(prod.category);
     const fefoHtml = fefoBatch ? 
       `<span class="fefo-pill" title="صلاحية التشغيلة حتى ${fefoBatch.expiryDate}"><span aria-hidden="true">●</span> FEFO: ${fefoBatch.batchNumber}</span>` :
       `<span class="fefo-pill expired">غير متوفر</span>`;
@@ -254,13 +300,20 @@ function renderProducts() {
 
     card.innerHTML = `
       <div class="card-header-row">
-        <span class="card-cat-tag">${catLabel}</span>
+        <div class="card-cat-tag">
+          ${catIcon}
+          <span>${catLabel}</span>
+        </div>
         <span class="card-sku-code" dir="ltr">${prod.sku}</span>
       </div>
 
       <div class="card-body-content">
         <div class="prod-name-ar">${prod.nameAr}</div>
-        <div class="prod-strength-form">${prod.strength || ""} — ${prod.dosageForm || prod.unit}</div>
+        <div class="prod-strength-form">
+          <span>${prod.strength || ""}</span>
+          <span style="opacity: 0.6;">·</span>
+          <span>${prod.dosageForm || prod.unit}</span>
+        </div>
         <div class="prod-name-en" dir="ltr">${prod.name}</div>
       </div>
 
@@ -275,7 +328,7 @@ function renderProducts() {
             <small>SDG</small>
           </div>
           <button class="btn-card-add" type="button" aria-label="إضافة ${prod.nameAr} إلى السلة">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" style="width:14px;height:14px;" aria-hidden="true">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" style="width:14px;height:14px;" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             <span>إضافة</span>
@@ -336,6 +389,8 @@ function addProductToCart(product) {
     });
   }
 
+  flashCard(product.id);
+  showToast(`تمت إضافة (${product.nameAr}) إلى السلة — تشغيلة: ${fefoBatch.batchNumber}`);
   updateCartView();
 }
 
@@ -442,6 +497,7 @@ function processBarcodeScan(barcode) {
     addProductToCart(matched);
     if (searchInput) {
       searchInput.value = "";
+      if (clearSearchBtn) clearSearchBtn.classList.add("hidden");
       renderProducts();
       searchInput.focus();
     }
@@ -534,6 +590,7 @@ function confirmSale() {
   showReceipt(state.lastCompletedSale);
   state.cart = [];
   updateCartView();
+  showToast(`تم تسجيل الفاتورة (${invoiceNumber}) بنجاح`);
 }
 
 function showReceipt(sale) {
@@ -560,6 +617,13 @@ function showReceipt(sale) {
 // --- Event Listeners with Debounce and Shortcut Support ---
 if (searchInput) {
   searchInput.addEventListener("input", () => {
+    if (clearSearchBtn) {
+      if (searchInput.value.trim().length > 0) {
+        clearSearchBtn.classList.remove("hidden");
+      } else {
+        clearSearchBtn.classList.add("hidden");
+      }
+    }
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(renderProducts, 120);
   });
@@ -582,11 +646,21 @@ if (searchInput) {
         if (filtered.length === 1) {
           addProductToCart(filtered[0]);
           searchInput.value = "";
+          if (clearSearchBtn) clearSearchBtn.classList.add("hidden");
           renderProducts();
           searchInput.focus();
         }
       }
     }
+  });
+}
+
+if (clearSearchBtn) {
+  clearSearchBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    clearSearchBtn.classList.add("hidden");
+    renderProducts();
+    searchInput.focus();
   });
 }
 
@@ -602,6 +676,7 @@ if (clearCartBtn) {
     if (confirm("هل تريد بالتأكيد إفراغ كافة الأصناف من السلة الحالية؟")) {
       state.cart = [];
       updateCartView();
+      showToast("تم إفراغ السلة بالكامل", "warning");
     }
   });
 }
@@ -629,10 +704,12 @@ if (toggleOfflineBtn) {
       networkDot.className = "status-dot offline";
       networkText.textContent = "غير متصل (Offline Mode)";
       toggleOfflineBtn.textContent = "استعادة الاتصال";
+      showToast("تم التبديل إلى وضع العمل المحلي دون اتصال", "warning");
     } else {
       networkDot.className = "status-dot online";
-      networkText.textContent = "متصل (Online)";
+      networkText.textContent = "متصل بالسحابة (Online)";
       toggleOfflineBtn.textContent = "محاكاة أوفلاين";
+      showToast("تم الاتصال بنجاح بالسحابة والمزامنة", "success");
     }
   });
 }
@@ -643,6 +720,20 @@ if (cancelPaymentBtn) cancelPaymentBtn.addEventListener("click", closePaymentMod
 if (confirmSaleBtn) confirmSaleBtn.addEventListener("click", confirmSale);
 
 if (cashReceivedInput) cashReceivedInput.addEventListener("input", updateCashChange);
+
+// Quick cash presets
+document.querySelectorAll(".btn-preset").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const total = state.cart.reduce((sum, item) => sum + item.lineTotal, 0);
+    if (btn.dataset.preset === "full") {
+      cashReceivedInput.value = total;
+    } else if (btn.dataset.add) {
+      const current = parseFloat(cashReceivedInput.value) || 0;
+      cashReceivedInput.value = current + parseFloat(btn.dataset.add);
+    }
+    updateCashChange();
+  });
+});
 
 if (tabCashBtn) {
   tabCashBtn.addEventListener("click", () => {
@@ -700,7 +791,7 @@ if (printReceiptBtn) {
   });
 }
 
-// Global Keyboard Shortcut: Escape to close modals
+// Global Keyboard Shortcuts (F2: search, F9: checkout, Escape: modal close)
 window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (paymentModal && !paymentModal.classList.contains("hidden")) {
@@ -709,10 +800,18 @@ window.addEventListener("keydown", (e) => {
     if (receiptModal && !receiptModal.classList.contains("hidden")) {
       receiptModal.classList.add("hidden");
     }
+  } else if (e.key === "F2") {
+    e.preventDefault();
+    if (searchInput) searchInput.focus();
+  } else if (e.key === "F9") {
+    e.preventDefault();
+    if (openPaymentModalBtn && !openPaymentModalBtn.disabled) {
+      openPaymentModal();
+    }
   }
 });
 
-// Theme Toggle Logic (Clinical Light Default vs Dark Mode)
+// Theme Toggle Logic (Clinical Light Default vs Luxury Dark Mode)
 const posThemeToggleBtn = document.getElementById("pos-theme-toggle-btn");
 const themeTextLabel = document.getElementById("theme-text-label");
 
