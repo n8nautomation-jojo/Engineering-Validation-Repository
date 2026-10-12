@@ -515,6 +515,22 @@ printReceiptBtn.addEventListener("click", () => {
   window.print();
 });
 
+// Theme Toggle Logic
+const posThemeToggleBtn = document.getElementById("pos-theme-toggle-btn");
+function initPosTheme() {
+  const savedTheme = localStorage.getItem("pharmatech-theme") || "dark";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+}
+if (posThemeToggleBtn) {
+  posThemeToggleBtn.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("pharmatech-theme", next);
+  });
+}
+
 // Initial Setup
+initPosTheme();
 renderProducts();
 updateCartView();
