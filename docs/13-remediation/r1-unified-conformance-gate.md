@@ -20,7 +20,7 @@ A track may only be promoted when its required evidence has actually been observ
 
 | Track | Current status | Evidence ceiling | Blocking reason |
 |---|---|---|---|
-| A1 Offline Stock Safety | READY FOR EXECUTION VALIDATION | STATIC / reference harness exists | No observed repository-native CI run; production SQLite/Tauri/power-loss/multi-POS evidence absent |
+| A1 Offline Stock Safety | DURABLE RUNTIME PASS — READY FOR INTEGRATION LOCK | DYNAMIC (SQLite 35/35 runtime tests PASS) | Production CI run & active sync replenishment transport |
 | A2 Conflict Resolution | DURABLE PERSISTENCE & UOW IMPLEMENTED | DYNAMIC (SQLite & PostgreSQL durable tests PASS) | Multi-device transport sync & active sync pipeline integration |
 | A3 Authorization | READY FOR LOCK — SECURITY/EXECUTION GATE REMAINS | Reference model PASS | Production Authorization Runtime absent |
 | B Security | NOT READY FOR LOCK | Reference prototype execution evidence | Windows/SQLite/Tauri production security boundary and key/device/recovery evidence absent |
@@ -39,10 +39,9 @@ A reference harness PASS is evidence about the reference model only. It is not e
 
 ## Current hard blockers
 
-1. A1 execution evidence is not observed.
-2. A1 production runtime does not yet exist.
-3. A2 durable persistence and UoW implemented; full sync transport pipeline integration pending.
-4. A3 production Authorization Runtime does not yet exist.
+1. A1 production runtime and persistence verified; cloud sync transport integration pending.
+2. A2 durable persistence and UoW implemented; full sync transport pipeline integration pending.
+3. A3 production Authorization Runtime does not yet exist.
 5. B production security boundary is not verified.
 6. Compliance legal gates remain open.
 7. Product/module/data/development implementation gates remain open.

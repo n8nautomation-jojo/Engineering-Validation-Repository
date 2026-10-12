@@ -10,6 +10,7 @@ import {
   activateOfflineAllocation,
   expireOfflineAllocation,
   replenishOfflineAllocation,
+  releaseOfflineAllocation,
   startReconciliation,
   reconcileOfflineAllocation,
   normalizeCanonicalUtc,
@@ -1314,4 +1315,513 @@ test("A1 SQLite Integration: multi-table atomic rollback leaves database untouch
   const smCount = db.prepare("SELECT count(*) as cnt FROM stock_movements").get();
   assert.equal(Number(smCount.cnt), 0);
 });
+
+// --- Release and Return Workflow Tests ---
+
+test("A1 Domain: releaseOfflineAllocation releases consumed capacity and restores EXHAUSTED to ACTIVE", () => {
+  const a = createOfflineAllocation({
+    id: "alloc-rel-01",
+    branchId: "branch-01",
+    warehouseId: "wh-01",
+    deviceId: "dev-01",
+    productId: "prod-01",
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
+  });
+
+  const exhausted = consumeOfflineAllocation(a, 10);
+  assert.equal(exhausted.state, "EXHAUSTED");
+  assert.equal(remainingCapacity(exhausted), 0);
+
+  const restored = releaseOfflineAllocation(exhausted, 4);
+  assert.equal(restored.state, "ACTIVE");
+  assert.equal(restored.consumedCapacity, 10);
+  assert.equal(restored.releasedCapacity, 4);
+  assert.equal(remainingCapacity(restored), 4);
+  assert.equal(restored.version, 2);
+});
+
+test("A1 Domain: releaseOfflineAllocation enforces invariants and rejects invalid transitions", () => {
+  const a = createOfflineAllocation({
+    id: "alloc-rel-02",
+    branchId: "branch-01",
+    warehouseId: "wh-01",
+    deviceId: "dev-01",
+    productId: "prod-01",
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
+  });
+  const partial = consumeOfflineAllocation(a, 4);
+
+  // Cannot release non-positive quantity
+  assert.throws(() => releaseOfflineAllocation(partial, 0), /INVALID_ALLOCATION_RELEASE/);
+  assert.throws(() => releaseOfflineAllocation(partial, -2), /INVALID_ALLOCATION_RELEASE/);
+
+  // Cannot release more than consumed capacity
+  assert.throws(() => releaseOfflineAllocation(partial, 5), /RELEASE_EXCEEDS_CONSUMED_CAPACITY/);
+
+  // Cannot release expired or suspended allocation
+  const expired = expireOfflineAllocation(a);
+  assert.throws(() => releaseOfflineAllocation(expired, 2), /ALLOCATION_NOT_RELEASABLE/);
+
+  const suspended = suspendOfflineAllocation(a);
+  assert.throws(() => releaseOfflineAllocation(suspended, 2), /ALLOCATION_NOT_RELEASABLE/);
+});
+
+// --- Replenishment Tests (RP-01 to RP-05) ---
+
+test("A1 Replenishment: RP-01 to RP-05 authoritative replenishment invariants", async () => {
+  const { db, context, cashSession, assignments, authorizationSnapshot } = createTestHarness();
+
+  seedAllocation(db, {
+    id: "alloc-rp-01",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    productId: "prod-rp-01",
+    allocatedCapacity: 10,
+    consumedCapacity: 10,
+    releasedCapacity: 0,
+    state: "EXHAUSTED",
+    version: 1
+  });
+
+  // RP-01: Authorized replenishment adds capacity and transitions EXHAUSTED to ACTIVE
+  const beforeRow = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-rp-01");
+  assert.equal(beforeRow.state, "EXHAUSTED");
+
+  const additional = 15;
+  db.prepare(`
+    UPDATE offline_allocations
+    SET allocated_capacity = allocated_capacity + ?,
+        state = 'ACTIVE',
+        version = version + 1
+    WHERE id = ? AND state IN ('ACTIVE', 'EXHAUSTED')
+  `).run(additional, "alloc-rp-01");
+
+  const afterRow = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-rp-01");
+  assert.equal(afterRow.state, "ACTIVE");
+  assert.equal(Number(afterRow.allocated_capacity), 25);
+  assert.equal(Number(afterRow.allocated_capacity) - Number(afterRow.consumed_capacity) + Number(afterRow.released_capacity), 15);
+
+  // RP-02: Duplicate replenishment delivery is idempotent
+  const appliedReplenishments = new Set();
+  function applyReplenishment(deliveryId, allocId, amount) {
+    if (appliedReplenishments.has(deliveryId)) {
+      return false;
+    }
+    appliedReplenishments.add(deliveryId);
+    db.prepare("UPDATE offline_allocations SET allocated_capacity = allocated_capacity + ?, version = version + 1 WHERE id = ?")
+      .run(amount, allocId);
+    return true;
+  }
+
+  assert.equal(applyReplenishment("rep-tx-001", "alloc-rp-01", 10), true);
+  assert.equal(applyReplenishment("rep-tx-001", "alloc-rp-01", 10), false);
+
+  const idempRow = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-rp-01");
+  assert.equal(Number(idempRow.allocated_capacity), 35);
+
+  // RP-03: Cashier lacks authority to self-replenish locally
+  const cashierHasReplenish = assignments[0].capabilities.includes("allocations.replenish");
+  assert.equal(cashierHasReplenish, false, "Cashier must not have allocation replenishment capability");
+
+  // RP-04: Wrong device replenishment cannot be consumed
+  seedAllocation(db, {
+    id: "alloc-rp-dev2",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-002",
+    productId: "prod-rp-01",
+    allocatedCapacity: 20,
+    consumedCapacity: 0,
+    releasedCapacity: 0,
+    state: "ACTIVE",
+    version: 0
+  });
+
+  const dev1Alloc = db.prepare("SELECT * FROM offline_allocations WHERE branch_id = ? AND device_id = ? AND product_id = ? AND id = ?")
+    .get("branch-001", "dev-001", "prod-rp-01", "alloc-rp-dev2");
+  assert.equal(dev1Alloc, undefined);
+
+  // RP-05: Replenishing expired allocation is blocked by domain transition rule
+  const expiredAlloc = createOfflineAllocation({
+    id: "alloc-rp-exp",
+    branchId: "branch-01",
+    warehouseId: "wh-01",
+    deviceId: "dev-01",
+    productId: "prod-01",
+    allocatedCapacity: 10,
+    ...VALID_TEMPORAL
+  });
+  const expObj = expireOfflineAllocation(expiredAlloc);
+  assert.throws(() => replenishOfflineAllocation(expObj, 10), /ALLOCATION_NOT_REPLENISHABLE/);
+});
+
+// --- Multi-POS Isolation Tests ---
+
+test("A1 Multi-POS: Independent device scopes enforce isolation without cross-device borrowing", async () => {
+  const { db, service } = createTestHarness();
+
+  seedBatch(db, {
+    id: "batch-multi-pos",
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: "prod-multi-pos",
+    batchNumber: "BN-MP",
+    expiryDate: "2028-12-31",
+    quantity: 100,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  seedAllocation(db, {
+    id: "alloc-dev1",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    productId: "prod-multi-pos",
+    allocatedCapacity: 5,
+    consumedCapacity: 0,
+    releasedCapacity: 0,
+    state: "ACTIVE",
+    version: 0
+  });
+
+  seedAllocation(db, {
+    id: "alloc-dev2",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-002",
+    productId: "prod-multi-pos",
+    allocatedCapacity: 10,
+    consumedCapacity: 0,
+    releasedCapacity: 0,
+    state: "ACTIVE",
+    version: 0
+  });
+
+  const ctxDev1 = {
+    tenantId: "t-001",
+    organizationId: "org-001",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    userId: "usr-cashier-1",
+    correlationId: "corr-dev1"
+  };
+
+  const csDev1 = openCashSession({
+    id: "cs-dev1",
+    branchId: "branch-001",
+    deviceId: "dev-001",
+    cashRegisterId: "reg-001",
+    openedBy: "usr-cashier-1",
+    openedAt: "2026-10-07T08:00:00Z",
+    openingFloat: money(1000, "SDG")
+  });
+
+  const ctxDev2 = {
+    tenantId: "t-001",
+    organizationId: "org-001",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-002",
+    userId: "usr-cashier-2",
+    correlationId: "corr-dev2"
+  };
+
+  const csDev2 = openCashSession({
+    id: "cs-dev2",
+    branchId: "branch-001",
+    deviceId: "dev-002",
+    cashRegisterId: "reg-002",
+    openedBy: "usr-cashier-2",
+    openedAt: "2026-10-07T08:00:00Z",
+    openingFloat: money(1000, "SDG")
+  });
+
+  const assignmentsDev2 = [{
+    userId: "usr-cashier-2",
+    capabilities: ["sales.create", "payments.record"],
+    scope: {
+      tenantId: "t-001",
+      organizationId: "org-001",
+      branchIds: ["branch-001"],
+      warehouseIds: ["wh-001"],
+      deviceIds: ["dev-002"]
+    },
+    policyVersion: "v1"
+  }];
+
+  const snapDev2 = {
+    snapshotId: "snap-dev2",
+    version: 1,
+    issuedAt: "2026-10-11T00:00:00Z",
+    expiresAt: "2026-10-11T23:59:59Z",
+    deviceId: "dev-002",
+    userId: "usr-cashier-2",
+    assignments: assignmentsDev2,
+    integrityVerified: true,
+    revoked: false
+  };
+
+  // 1. Device 1 sells 5 units -> exhausts dev1 allocation
+  const res1 = await service.processSale({
+    idempotencyKey: "idem-dev1-sale1",
+    correlationId: "corr-dev1-01",
+    context: ctxDev1,
+    cashSession: csDev1,
+    offline: true,
+    now: "2026-10-11T10:00:00Z",
+    lines: [{ productId: "prod-multi-pos", quantity: 5, unitPrice: money(100, "SDG") }],
+    payments: [{ method: "CASH", amount: money(500, "SDG") }]
+  });
+  assert.equal(res1.status, "COMPLETED");
+
+  const dev1AllocAfter = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-dev1");
+  assert.equal(dev1AllocAfter.state, "EXHAUSTED");
+  assert.equal(Number(dev1AllocAfter.consumed_capacity), 5);
+
+  // Device 2 allocation remains completely untouched
+  const dev2AllocBefore = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-dev2");
+  assert.equal(dev2AllocBefore.state, "ACTIVE");
+  assert.equal(Number(dev2AllocBefore.consumed_capacity), 0);
+
+  // 2. Device 1 cannot borrow or sell further
+  await assert.rejects(
+    () => service.processSale({
+      idempotencyKey: "idem-dev1-sale2",
+      correlationId: "corr-dev1-02",
+      context: ctxDev1,
+      cashSession: csDev1,
+      offline: true,
+      now: "2026-10-11T10:05:00Z",
+      lines: [{ productId: "prod-multi-pos", quantity: 1, unitPrice: money(100, "SDG") }],
+      payments: [{ method: "CASH", amount: money(100, "SDG") }]
+    }),
+    /OFFLINE_ALLOCATION_NOT_FOUND/
+  );
+
+  // 3. Device 2 sells 4 units successfully using its own allocation
+  const res2 = await service.processSale({
+    idempotencyKey: "idem-dev2-sale1",
+    correlationId: "corr-dev2-01",
+    context: ctxDev2,
+    cashSession: csDev2,
+    assignments: assignmentsDev2,
+    authorizationSnapshot: snapDev2,
+    offline: true,
+    now: "2026-10-11T10:10:00Z",
+    lines: [{ productId: "prod-multi-pos", quantity: 4, unitPrice: money(100, "SDG") }],
+    payments: [{ method: "CASH", amount: money(400, "SDG") }]
+  });
+  assert.equal(res2.status, "COMPLETED");
+
+  const dev2AllocAfter = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-dev2");
+  assert.equal(dev2AllocAfter.state, "ACTIVE");
+  assert.equal(Number(dev2AllocAfter.consumed_capacity), 4);
+});
+
+// --- Return/Reversal Compensation Workflow Tests ---
+
+test("A1 Reversal/Return: Compensates inventory and releases allocation capacity while original sale remains immutable", async () => {
+  const { db, service, context, cashSession } = createTestHarness();
+
+  seedBatch(db, {
+    id: "batch-rev",
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: "prod-rev",
+    batchNumber: "BN-REV",
+    expiryDate: "2028-12-31",
+    quantity: 50,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  seedAllocation(db, {
+    id: "alloc-rev",
+    branchId: "branch-001",
+    warehouseId: "wh-001",
+    deviceId: "dev-001",
+    productId: "prod-rev",
+    allocatedCapacity: 20,
+    consumedCapacity: 0,
+    releasedCapacity: 0,
+    state: "ACTIVE",
+    version: 0
+  });
+
+  // 1. Initial sale of 8 units
+  const saleRes = await service.processSale({
+    idempotencyKey: "idem-sale-to-reverse",
+    correlationId: "corr-orig-sale",
+    context,
+    cashSession,
+    offline: true,
+    now: "2026-10-11T10:00:00Z",
+    lines: [{ productId: "prod-rev", quantity: 8, unitPrice: money(100, "SDG") }],
+    payments: [{ method: "CASH", amount: money(800, "SDG") }]
+  });
+
+  const saleBefore = db.prepare("SELECT * FROM sales WHERE id = ?").get(saleRes.saleId);
+  assert.equal(saleBefore.status, "COMPLETED");
+
+  const allocAfterSale = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-rev");
+  assert.equal(Number(allocAfterSale.consumed_capacity), 8);
+  assert.equal(Number(allocAfterSale.released_capacity), 0);
+
+  // 2. Perform Return / Reversal compensation
+  const compensationTxId = "itx-reversal-001";
+  const returnQty = 8;
+
+  db.exec("BEGIN");
+  db.prepare("UPDATE batches SET quantity = quantity + ?, version = version + 1 WHERE id = ?")
+    .run(returnQty, "batch-rev");
+
+  db.prepare(`
+    UPDATE offline_allocations
+    SET released_capacity = released_capacity + ?,
+        state = CASE WHEN (allocated_capacity - consumed_capacity + (released_capacity + ?)) > 0 THEN 'ACTIVE' ELSE state END,
+        version = version + 1
+    WHERE id = ?
+  `).run(returnQty, returnQty, "alloc-rev");
+
+  db.prepare(`
+    INSERT INTO inventory_transactions (id, tenant_id, organization_id, branch_id, source_type, source_id, reversal_of_transaction_id, status, created_at, version)
+    VALUES (?, ?, ?, ?, 'SALE_RETURN', ?, ?, 'POSTED', ?, 0)
+  `).run(compensationTxId, context.tenantId, context.organizationId, context.branchId, saleRes.saleId, saleRes.inventoryTransactionId, "2026-10-11T11:00:00.000Z");
+
+  db.prepare(`
+    INSERT INTO audit_records (id, occurred_at, actor_id, action, resource_type, resource_id, tenant_id, organization_id, branch_id, device_id, correlation_id, reason, after_json)
+    VALUES (?, ?, ?, 'sales.return', 'SALE', ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    "audit-rev-01",
+    "2026-10-11T11:00:00.000Z",
+    context.userId,
+    saleRes.saleId,
+    context.tenantId,
+    context.organizationId,
+    context.branchId,
+    context.deviceId,
+    "corr-return-01",
+    "Customer requested return with merchandise restock",
+    JSON.stringify({ reversalOf: saleRes.saleId, returnedQuantity: returnQty })
+  );
+  db.exec("COMMIT");
+
+  // Verify: Original sale remains strictly COMPLETED
+  const saleAfter = db.prepare("SELECT * FROM sales WHERE id = ?").get(saleRes.saleId);
+  assert.equal(saleAfter.status, "COMPLETED");
+  assert.equal(saleAfter.version, saleBefore.version);
+
+  // Verify: Batch quantity restored to 50
+  const batchAfter = db.prepare("SELECT * FROM batches WHERE id = ?").get("batch-rev");
+  assert.equal(Number(batchAfter.quantity), 50);
+
+  // Verify: Allocation released_capacity is 8 and remaining is 20
+  const allocAfterReturn = db.prepare("SELECT * FROM offline_allocations WHERE id = ?").get("alloc-rev");
+  assert.equal(Number(allocAfterReturn.released_capacity), 8);
+  assert.equal(Number(allocAfterReturn.allocated_capacity) - Number(allocAfterReturn.consumed_capacity) + Number(allocAfterReturn.released_capacity), 20);
+});
+
+// --- Durable Crash Recovery Tests ---
+
+test("A1 Crash Recovery: Offline allocation capacity and state survive process restart from disk", async () => {
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const dbPath = path.join(os.tmpdir(), `pharmatech-a1-crash-${Date.now()}-${Math.random().toString(36).slice(2)}.sqlite`);
+
+  try {
+    let diskDb = new DatabaseSync(dbPath);
+    diskDb.exec(m1);
+    diskDb.exec(m2);
+    diskDb.exec(m3);
+    migrateSqliteSalesSchema(diskDb);
+
+    seedBatch(diskDb, {
+      id: "batch-crash",
+      organizationId: "org-001",
+      warehouseId: "wh-001",
+      productId: "prod-crash",
+      batchNumber: "BN-CRASH",
+      expiryDate: "2028-12-31",
+      quantity: 50,
+      status: "ACTIVE",
+      version: 0
+    });
+
+    seedAllocation(diskDb, {
+      id: "alloc-crash",
+      branchId: "branch-001",
+      warehouseId: "wh-001",
+      deviceId: "dev-001",
+      productId: "prod-crash",
+      allocatedCapacity: 20,
+      consumedCapacity: 0,
+      releasedCapacity: 0,
+      state: "ACTIVE",
+      version: 0
+    });
+
+    const persistence1 = new SqliteSalesPersistence(diskDb);
+    const service1 = new SalesService(persistence1);
+
+    const ctx = {
+      tenantId: "t-001",
+      organizationId: "org-001",
+      branchId: "branch-001",
+      warehouseId: "wh-001",
+      deviceId: "dev-001",
+      userId: "usr-cashier-1",
+      correlationId: "corr-crash-01"
+    };
+
+    const cs = openCashSession({
+      id: "cs-crash",
+      branchId: "branch-001",
+      deviceId: "dev-001",
+      cashRegisterId: "reg-001",
+      openedBy: "usr-cashier-1",
+      openedAt: "2026-10-07T08:00:00Z",
+      openingFloat: money(1000, "SDG")
+    });
+
+    const saleRes = await service1.processSale({
+      idempotencyKey: "idem-crash-01",
+      correlationId: "corr-crash-01",
+      context: ctx,
+      cashSession: cs,
+      offline: true,
+      now: "2026-10-11T10:00:00Z",
+      lines: [{ productId: "prod-crash", quantity: 7, unitPrice: money(100, "SDG") }],
+      payments: [{ method: "CASH", amount: money(700, "SDG") }]
+    });
+    assert.equal(saleRes.status, "COMPLETED");
+
+    // Close database connection simulating crash / restart
+    diskDb.close();
+
+    // Reopen from disk file
+    const restartedDb = new DatabaseSync(dbPath);
+    const restartedPersistence = new SqliteSalesPersistence(restartedDb);
+
+    const recoveredAlloc = await restartedPersistence.getOfflineAllocation("alloc-crash");
+    assert.ok(recoveredAlloc);
+    assert.equal(recoveredAlloc.consumedCapacity, 7);
+    assert.equal(recoveredAlloc.allocatedCapacity, 20);
+    assert.equal(remainingCapacity(recoveredAlloc), 13);
+    assert.equal(recoveredAlloc.state, "ACTIVE");
+
+    const recoveredSale = await restartedPersistence.getSale(saleRes.saleId);
+    assert.ok(recoveredSale);
+    assert.equal(recoveredSale.status, "COMPLETED");
+
+    restartedDb.close();
+  } finally {
+    try { fs.unlinkSync(dbPath); } catch {}
+  }
+});
+
 
