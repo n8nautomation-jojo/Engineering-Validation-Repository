@@ -98,6 +98,29 @@ export class SqliteSalesPersistence implements SalesPersistence {
   async executeSaleAtomic(plan: SalesExecutionPlan): Promise<void> {
     this.db.exec("BEGIN IMMEDIATE");
     try {
+      // 0. In-transaction re-verification of batches under write lock in deterministic canonical order
+      const aggregatedBatchDeductions = new Map<string, number>();
+      for (const b of plan.batchDeductions) {
+        const cur = aggregatedBatchDeductions.get(b.batchId) ?? 0;
+        aggregatedBatchDeductions.set(b.batchId, cur + b.quantity);
+      }
+
+      const txDate = (plan.now ?? plan.sale?.createdAt ?? new Date().toISOString()).slice(0, 10);
+      const sortedBatchIds = Array.from(aggregatedBatchDeductions.keys()).sort();
+
+      for (const batchId of sortedBatchIds) {
+        const requiredQty = aggregatedBatchDeductions.get(batchId)!;
+        const row = this.db.prepare("SELECT quantity, status, expiry_date FROM batches WHERE id = ?").get(batchId) as { quantity: number; status: string; expiry_date: string } | undefined;
+        if (
+          !row ||
+          (row.status !== "ACTIVE" && row.status !== "NEAR_EXPIRY") ||
+          (row.expiry_date && row.expiry_date <= txDate) ||
+          Number(row.quantity) < requiredQty
+        ) {
+          throw new Error("STALE_BATCH_OR_INSUFFICIENT_STOCK");
+        }
+      }
+
       // 1. Sale
       const saleStmt = this.db.prepare(`
         INSERT INTO sales (
@@ -119,8 +142,8 @@ export class SqliteSalesPersistence implements SalesPersistence {
         plan.totalAmount,
         plan.sale.createdAt,
         plan.sale.version,
-        plan.idempotencyKey,
-        plan.correlationId
+        plan.idempotencyKey ?? null,
+        plan.correlationId ?? null
       );
       if (plan.failureInjectionStage === "AFTER_SALE_INSERT") throw new Error("INJECTED_FAILURE_AFTER_SALE_INSERT");
 
@@ -206,14 +229,6 @@ export class SqliteSalesPersistence implements SalesPersistence {
         );
       }
 
-      // In-transaction re-verification of batches under write lock
-      for (const b of plan.batchDeductions) {
-        const row = this.db.prepare("SELECT quantity, status, expiry_date FROM batches WHERE id = ?").get(b.batchId) as { quantity: number; status: string; expiry_date: string } | undefined;
-        if (!row || (row.status !== "ACTIVE" && row.status !== "NEAR_EXPIRY") || Number(row.quantity) < b.quantity) {
-          throw new Error("STALE_BATCH_OR_INSUFFICIENT_STOCK");
-        }
-      }
-
       // Guarded atomic update: decrements quantity only if current quantity >= requested deduction
       const updateBatchStmt = this.db.prepare(`
         UPDATE batches
@@ -223,9 +238,11 @@ export class SqliteSalesPersistence implements SalesPersistence {
         WHERE id = ?
           AND quantity >= ?
           AND status IN ('ACTIVE', 'NEAR_EXPIRY')
+          AND (expiry_date IS NULL OR expiry_date > ?)
       `);
-      for (const b of plan.batchDeductions) {
-        const result = updateBatchStmt.run(b.quantity, b.quantity, b.batchId, b.quantity);
+      for (const batchId of sortedBatchIds) {
+        const totalDeduction = aggregatedBatchDeductions.get(batchId)!;
+        const result = updateBatchStmt.run(totalDeduction, totalDeduction, batchId, totalDeduction, txDate);
         if (Number(result.changes) !== 1) {
           throw new Error("STALE_BATCH_OR_INSUFFICIENT_STOCK");
         }

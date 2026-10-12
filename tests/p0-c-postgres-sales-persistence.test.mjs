@@ -822,6 +822,129 @@ maybe("P0 PostgreSQL: Concurrency guard rejects deduction when concurrent writer
   assert.equal(salesCount.rows[0].n, 0);
 });
 
+maybe("P0 PostgreSQL: Concurrency guard rejects sale when batch expiry_date has passed at execution time", async (t) => {
+  const pool = new Pool({ connectionString: databaseUrl });
+  t.after(async () => pool.end());
+  await setupPostgresDb(pool);
+
+  const persistence = new PostgresSalesPersistence(pool);
+
+  await seedPgBatch(pool, {
+    id: "batch-pg-expired",
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: "prod-exp-pg",
+    batchNumber: "BN-EXP-PG",
+    expiryDate: "2026-10-01",
+    quantity: 10,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  const expiredPlan = {
+    tenantId: "t-001",
+    warehouseId: "wh-001",
+    currency: "SDG",
+    totalAmount: 50,
+    now: "2026-10-07T12:00:00Z",
+    idempotencyKey: "idem-pg-exp",
+    correlationId: "corr-pg-exp",
+    sale: {
+      id: "sale-pg-exp",
+      organizationId: "org-001",
+      branchId: "branch-001",
+      deviceId: "dev-001",
+      cashSessionId: "cs-001",
+      status: "COMPLETED",
+      createdAt: "2026-10-07T12:00:00Z",
+      lines: [],
+      payments: [],
+      version: 0
+    },
+    lines: [{
+      id: "line-pg-exp",
+      productId: "prod-exp-pg",
+      batchId: "batch-pg-expired",
+      quantity: 5,
+      unitPrice: { amount: 10, currency: "SDG" },
+      lineTotal: { amount: 50, currency: "SDG" }
+    }],
+    payments: [{
+      id: "pmt-pg-exp",
+      method: "CASH",
+      amount: { amount: 50, currency: "SDG" },
+      verificationStatus: "LOCAL_RECORDED",
+      recordedAt: "2026-10-07T12:00:00Z"
+    }],
+    inventoryTransaction: {
+      id: "tx-pg-exp",
+      organizationId: "org-001",
+      branchId: "branch-001",
+      sourceType: "SALE",
+      sourceId: "sale-pg-exp",
+      status: "POSTED",
+      movements: [],
+      createdAt: "2026-10-07T12:00:00Z",
+      version: 0
+    },
+    movements: [{
+      id: "mv-pg-exp",
+      productId: "prod-exp-pg",
+      batchId: "batch-pg-expired",
+      warehouseId: "wh-001",
+      direction: "OUT",
+      quantity: { value: 5 },
+      sourceTransactionId: "tx-pg-exp"
+    }],
+    batchDeductions: [{
+      batchId: "batch-pg-expired",
+      quantity: 5,
+      newQuantity: 5,
+      newStatus: "ACTIVE"
+    }],
+    outboxEvent: {
+      eventId: "ev-pg-exp",
+      eventType: "sale.completed",
+      aggregateId: "sale-pg-exp",
+      aggregateVersion: 0,
+      occurredAt: "2026-10-07T12:00:00Z",
+      tenantId: "t-001",
+      organizationId: "org-001",
+      correlationId: "corr-pg-exp",
+      payload: {}
+    },
+    auditRecord: {
+      id: "aud-pg-exp",
+      occurredAt: "2026-10-07T12:00:00Z",
+      actorId: "usr-cashier-1",
+      action: "SALE_COMPLETED",
+      resourceType: "Sale",
+      resourceId: "sale-pg-exp",
+      tenantId: "t-001",
+      organizationId: "org-001",
+      correlationId: "corr-pg-exp"
+    },
+    idempotencyRecord: {
+      key: "idem-pg-exp",
+      commandName: "sales.create",
+      requestHash: "hash-pg-exp",
+      responseStatus: 201,
+      responseBody: {},
+      createdAt: "2026-10-07T12:00:00Z"
+    }
+  };
+
+  await assert.rejects(
+    () => persistence.executeSaleAtomic(expiredPlan),
+    /STALE_BATCH_OR_INSUFFICIENT_STOCK/
+  );
+
+  const batchAfter = await persistence.getBatch("batch-pg-expired");
+  assert.equal(batchAfter.quantity.value, 10);
+  const salesCount = await pool.query("SELECT count(*)::int as n FROM sales");
+  assert.equal(salesCount.rows[0].n, 0);
+});
+
 // 11. Disconnect / Reconnect Recovery Simulation
 maybe("P0 PostgreSQL: Process disconnect and reconnect recovery maintains committed state and idempotency", async (t) => {
   // Phase 1: Connect, seed, execute sale, abruptly close pool

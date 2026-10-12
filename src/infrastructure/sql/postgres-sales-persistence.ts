@@ -176,6 +176,7 @@ export class PostgresSalesPersistence implements SalesPersistence {
         aggregatedBatchDeductions.set(b.batchId, cur + b.quantity);
       }
 
+      const txDate = (plan.now ?? plan.sale?.createdAt ?? new Date().toISOString()).slice(0, 10);
       const sortedBatchIds = Array.from(aggregatedBatchDeductions.keys()).sort();
       for (const batchId of sortedBatchIds) {
         const requiredQty = aggregatedBatchDeductions.get(batchId)!;
@@ -184,7 +185,12 @@ export class PostgresSalesPersistence implements SalesPersistence {
           [batchId]
         );
         const row = res.rows[0];
-        if (!row || (row.status !== "ACTIVE" && row.status !== "NEAR_EXPIRY") || Number(row.quantity) < requiredQty) {
+        if (
+          !row ||
+          (row.status !== "ACTIVE" && row.status !== "NEAR_EXPIRY") ||
+          (row.expiry_date && row.expiry_date <= txDate) ||
+          Number(row.quantity) < requiredQty
+        ) {
           throw new Error("STALE_BATCH_OR_INSUFFICIENT_STOCK");
         }
       }
@@ -311,7 +317,8 @@ export class PostgresSalesPersistence implements SalesPersistence {
           WHERE id = $3
             AND quantity >= $4
             AND status IN ('ACTIVE', 'NEAR_EXPIRY')
-        `, [totalDeduction, totalDeduction, batchId, totalDeduction]);
+            AND (expiry_date IS NULL OR expiry_date > $5)
+        `, [totalDeduction, totalDeduction, batchId, totalDeduction, txDate]);
         if (Number(result.rowCount ?? 0) !== 1) {
           throw new Error("STALE_BATCH_OR_INSUFFICIENT_STOCK");
         }
