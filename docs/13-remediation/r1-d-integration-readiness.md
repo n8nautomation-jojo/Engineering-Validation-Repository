@@ -1,9 +1,10 @@
 # R1-D — Integration Readiness & Provider Adapter Baseline
 
-Status: ACTIVE REMEDIATION WORK PACKAGE — PROPOSED / NOT LOCKED
-Track: R1-D Integration Readiness
-Purpose: Define implementation-ready integration boundaries without inventing provider behavior.
-Depends on: Domain Model v1.1, Payment ADR-012, Phase 2.2–2.4, Phase 3.1–3.3, R1-C Compliance.
+Status: IMPLEMENTED & VERIFIED — READY FOR LOCK  
+Track: R1-D Integration Readiness  
+Execution Evidence: `tests/p0-12-c-d-integration-compliance.test.mjs` (INT-01 to INT-08 PASS)  
+Purpose: Define implementation-ready integration boundaries without inventing provider behavior.  
+Depends on: Domain Model v1.1, Payment ADR-012, Phase 2.2–2.4, Phase 3.1–3.3, R1-C Compliance, R1-B Security.  
 Does not supersede: Locked baselines.
 
 ## 1. Executive Decision

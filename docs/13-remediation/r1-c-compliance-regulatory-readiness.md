@@ -1,7 +1,8 @@
 # R1-C — Compliance & Regulatory Readiness
 
-**Status:** ACTIVE COMPLIANCE WORK PACKAGE — PROPOSED / NOT LOCKED  
-**Track:** R1-C  
+**Status:** IMPLEMENTED & VERIFIED — READY FOR LOCK  
+**Track:** R1-C Compliance  
+**Execution Evidence:** `tests/p0-12-c-d-integration-compliance.test.mjs` (COMP-01 to COMP-04 PASS)  
 **Purpose:** Establish evidence-based Sudan compliance requirements that materially affect PharmaTech product behavior, records, security, payments, and operations without hard-coding unverified legal assumptions.
 
 > This is an engineering compliance baseline candidate, not legal advice and not a declaration that PharmaTech is itself a licensed financial institution, pharmacy, or pharmaceutical regulator.
