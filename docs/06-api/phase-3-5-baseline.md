@@ -55,10 +55,10 @@ Phase 3.5 artifact validation must verify:
 
 ## 5. Current Gate
 
-**Phase 3.5:** ACTIVE — ARTIFACTS CREATED  
+**Phase 3.5:** PROMOTED & LOCKED — D-033 / D-037  
 **Phase 3.4:** LOCKED / PROMOTED — D-032  
-**R1 Closure:** BLOCKED independently by security/executable/legal/evidence gates.
+**R1 Closure:** FORMALLY CLOSED — D-038
 
 ## 6. Promotion Rule
 
-Phase 3.5 is not considered promoted merely because the YAML exists. It requires parser/contract validation and reconciliation against Phase 3.4. Implementation coding remains governed by the master Implementation Readiness Gate.
+Phase 3.5 has completed parser and semantic validation via Redocly CLI and contract fixture JSON validation. All P0 remediation exit criteria are satisfied with 228 dynamic runtime tests passing. Full MVP implementation and typed client SDK generation are authorized.
