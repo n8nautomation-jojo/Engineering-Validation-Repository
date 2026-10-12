@@ -822,6 +822,129 @@ maybe("P0 PostgreSQL: Concurrency guard rejects deduction when concurrent writer
   assert.equal(salesCount.rows[0].n, 0);
 });
 
+maybe("P0 PostgreSQL: Concurrency guard rejects sale when batch expiry_date has passed at execution time", async (t) => {
+  const pool = new Pool({ connectionString: databaseUrl });
+  t.after(async () => pool.end());
+  await setupPostgresDb(pool);
+
+  const persistence = new PostgresSalesPersistence(pool);
+
+  await seedPgBatch(pool, {
+    id: "batch-pg-expired",
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: "prod-exp-pg",
+    batchNumber: "BN-EXP-PG",
+    expiryDate: "2026-10-01",
+    quantity: 10,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  const expiredPlan = {
+    tenantId: "t-001",
+    warehouseId: "wh-001",
+    currency: "SDG",
+    totalAmount: 50,
+    now: "2026-10-07T12:00:00Z",
+    idempotencyKey: "idem-pg-exp",
+    correlationId: "corr-pg-exp",
+    sale: {
+      id: "sale-pg-exp",
+      organizationId: "org-001",
+      branchId: "branch-001",
+      deviceId: "dev-001",
+      cashSessionId: "cs-001",
+      status: "COMPLETED",
+      createdAt: "2026-10-07T12:00:00Z",
+      lines: [],
+      payments: [],
+      version: 0
+    },
+    lines: [{
+      id: "line-pg-exp",
+      productId: "prod-exp-pg",
+      batchId: "batch-pg-expired",
+      quantity: 5,
+      unitPrice: { amount: 10, currency: "SDG" },
+      lineTotal: { amount: 50, currency: "SDG" }
+    }],
+    payments: [{
+      id: "pmt-pg-exp",
+      method: "CASH",
+      amount: { amount: 50, currency: "SDG" },
+      verificationStatus: "LOCAL_RECORDED",
+      recordedAt: "2026-10-07T12:00:00Z"
+    }],
+    inventoryTransaction: {
+      id: "tx-pg-exp",
+      organizationId: "org-001",
+      branchId: "branch-001",
+      sourceType: "SALE",
+      sourceId: "sale-pg-exp",
+      status: "POSTED",
+      movements: [],
+      createdAt: "2026-10-07T12:00:00Z",
+      version: 0
+    },
+    movements: [{
+      id: "mv-pg-exp",
+      productId: "prod-exp-pg",
+      batchId: "batch-pg-expired",
+      warehouseId: "wh-001",
+      direction: "OUT",
+      quantity: { value: 5 },
+      sourceTransactionId: "tx-pg-exp"
+    }],
+    batchDeductions: [{
+      batchId: "batch-pg-expired",
+      quantity: 5,
+      newQuantity: 5,
+      newStatus: "ACTIVE"
+    }],
+    outboxEvent: {
+      eventId: "ev-pg-exp",
+      eventType: "sale.completed",
+      aggregateId: "sale-pg-exp",
+      aggregateVersion: 0,
+      occurredAt: "2026-10-07T12:00:00Z",
+      tenantId: "t-001",
+      organizationId: "org-001",
+      correlationId: "corr-pg-exp",
+      payload: {}
+    },
+    auditRecord: {
+      id: "aud-pg-exp",
+      occurredAt: "2026-10-07T12:00:00Z",
+      actorId: "usr-cashier-1",
+      action: "SALE_COMPLETED",
+      resourceType: "Sale",
+      resourceId: "sale-pg-exp",
+      tenantId: "t-001",
+      organizationId: "org-001",
+      correlationId: "corr-pg-exp"
+    },
+    idempotencyRecord: {
+      key: "idem-pg-exp",
+      commandName: "sales.create",
+      requestHash: "hash-pg-exp",
+      responseStatus: 201,
+      responseBody: {},
+      createdAt: "2026-10-07T12:00:00Z"
+    }
+  };
+
+  await assert.rejects(
+    () => persistence.executeSaleAtomic(expiredPlan),
+    /STALE_BATCH_OR_INSUFFICIENT_STOCK/
+  );
+
+  const batchAfter = await persistence.getBatch("batch-pg-expired");
+  assert.equal(batchAfter.quantity.value, 10);
+  const salesCount = await pool.query("SELECT count(*)::int as n FROM sales");
+  assert.equal(salesCount.rows[0].n, 0);
+});
+
 // 11. Disconnect / Reconnect Recovery Simulation
 maybe("P0 PostgreSQL: Process disconnect and reconnect recovery maintains committed state and idempotency", async (t) => {
   // Phase 1: Connect, seed, execute sale, abruptly close pool
@@ -1101,3 +1224,188 @@ maybe("P0 PostgreSQL: Schema constraint chk_offline_allocations_temporal_integri
     /chk_offline_allocations_temporal_integrity/
   );
 });
+
+// 15. R1 — Real Database Concurrency Validation: Two competing sales on same batch under independent connections
+maybe("R1 PostgreSQL: Two concurrent sales on same batch under independent connections enforce atomic stock guard", async (t) => {
+  // Use two independent connection pools to guarantee separate physical PostgreSQL connections
+  const pool1 = new Pool({ connectionString: databaseUrl, max: 5 });
+  const pool2 = new Pool({ connectionString: databaseUrl, max: 5 });
+  t.after(async () => {
+    await pool1.end();
+    await pool2.end();
+  });
+
+  await setupPostgresDb(pool1);
+
+  const persistence1 = new PostgresSalesPersistence(pool1);
+  const persistence2 = new PostgresSalesPersistence(pool2);
+
+  // Deterministic coordination barrier (Zero sleep, zero random timing):
+  // Guarantees that service2 has read the initial batch at quantity 10 before
+  // service1's transaction can execute and commit.
+  // This guarantees that BOTH sales pass in-memory pre-checks and enter
+  // in-transaction PostgreSQL execution with independent connections, proving
+  // that rejection occurs exclusively via the database concurrency guard.
+  let notifyTx2ReadBatches;
+  const tx2HasReadBatches = new Promise(resolve => { notifyTx2ReadBatches = resolve; });
+
+  const origFindBatches2 = persistence2.findBatchesForProduct.bind(persistence2);
+  persistence2.findBatchesForProduct = async (wId, pId) => {
+    const batches = await origFindBatches2(wId, pId);
+    notifyTx2ReadBatches();
+    return batches;
+  };
+
+  const origExecute1 = persistence1.executeSaleAtomic.bind(persistence1);
+  persistence1.executeSaleAtomic = async (plan) => {
+    await tx2HasReadBatches;
+    return origExecute1(plan);
+  };
+
+  const service1 = new SalesService(persistence1);
+  const service2 = new SalesService(persistence2);
+
+  const { context, cashSession, assignments } = createTestContext();
+
+  const batchId = "batch-r1-concurrent";
+  const productId = "prod-r1-concurrent";
+
+  // Controlled scenario: Batch initial stock is exactly 10 units
+  await seedPgBatch(pool1, {
+    id: batchId,
+    organizationId: "org-001",
+    warehouseId: "wh-001",
+    productId: productId,
+    batchNumber: "BN-R1-CONC",
+    expiryDate: "2028-12-31",
+    quantity: 10,
+    status: "ACTIVE",
+    version: 0
+  });
+
+  // Verify initial quantity in PostgreSQL
+  const initialBatch = await persistence1.getBatch(batchId);
+  assert.equal(initialBatch.quantity.value, 10);
+
+  // Two concurrent sales commands, each requesting 7 units (7 + 7 = 14 > 10, cannot both succeed)
+  const commandA = {
+    idempotencyKey: "idem-r1-sale-a",
+    correlationId: "corr-r1-sale-a",
+    context,
+    cashSession,
+    assignments,
+    now: "2026-10-07T12:00:00Z",
+    lines: [{
+      productId,
+      quantity: 7,
+      unitPrice: money(10, "SDG")
+    }],
+    payments: [{
+      method: "CASH",
+      amount: money(70, "SDG")
+    }]
+  };
+
+  const commandB = {
+    idempotencyKey: "idem-r1-sale-b",
+    correlationId: "corr-r1-sale-b",
+    context,
+    cashSession,
+    assignments,
+    now: "2026-10-07T12:00:00Z",
+    lines: [{
+      productId,
+      quantity: 7,
+      unitPrice: money(10, "SDG")
+    }],
+    payments: [{
+      method: "CASH",
+      amount: money(70, "SDG")
+    }]
+  };
+
+  // Launch both sales concurrently on two independent PostgreSQL connection pools
+  const [resA, resB] = await Promise.allSettled([
+    service1.processSale(commandA),
+    service2.processSale(commandB)
+  ]);
+
+  const fulfilled = [resA, resB].filter(r => r.status === "fulfilled");
+  const rejected = [resA, resB].filter(r => r.status === "rejected");
+
+  // 1. Exactly one sale succeeds and the other is rejected
+  assert.equal(fulfilled.length, 1, "Exactly one concurrent sale must complete successfully");
+  assert.equal(rejected.length, 1, "Exactly one concurrent sale must be rejected");
+
+  const winner = fulfilled[0].value;
+  const loserError = rejected[0].reason;
+
+  assert.equal(winner.status, "COMPLETED");
+  assert.equal(winner.totalAmount, 70);
+
+  // The competing sale must fail strictly with the intended domain error under deterministic row-lock serialization:
+  // It must fail with STALE_BATCH_OR_INSUFFICIENT_STOCK, and must NEVER deadlock or fail with in-memory pre-check.
+  assert.equal(
+    loserError.message,
+    "STALE_BATCH_OR_INSUFFICIENT_STOCK",
+    "Rejected sale must fail strictly with STALE_BATCH_OR_INSUFFICIENT_STOCK via row-lock concurrency serialization, without deadlock"
+  );
+
+  // 2. Exact batch stock verification in PostgreSQL: 10 - 7 = exactly 3
+  const batchAfter = await pool1.query("SELECT quantity, version, status FROM batches WHERE id = $1", [batchId]);
+  assert.equal(Number(batchAfter.rows[0].quantity), 3, "Batch quantity must remain exactly 3; double spend prevented");
+  assert.equal(Number(batchAfter.rows[0].version), 1, "Batch version must increment exactly once");
+  assert.equal(batchAfter.rows[0].status, "ACTIVE");
+
+  // 3. Isolated data verification: All assertions scoped strictly to operation IDs
+  // Winning sale verification
+  const winnerSale = await pool1.query("SELECT id, status, total_amount, idempotency_key FROM sales WHERE id = $1", [winner.saleId]);
+  assert.equal(winnerSale.rows.length, 1, "Winning sale record must exist in sales table");
+  assert.equal(winnerSale.rows[0].status, "COMPLETED");
+  assert.equal(Number(winnerSale.rows[0].total_amount), 70);
+
+  const winnerLines = await pool1.query("SELECT sale_id, product_id, quantity FROM sale_lines WHERE sale_id = $1", [winner.saleId]);
+  assert.equal(winnerLines.rows.length, 1, "Winning sale line must exist");
+  assert.equal(Number(winnerLines.rows[0].quantity), 7);
+
+  const winnerPayments = await pool1.query("SELECT sale_id, amount_value FROM payments WHERE sale_id = $1", [winner.saleId]);
+  assert.equal(winnerPayments.rows.length, 1, "Winning payment must exist");
+  assert.equal(Number(winnerPayments.rows[0].amount_value), 70);
+
+  const winnerInvTx = await pool1.query("SELECT id, source_id, status FROM inventory_transactions WHERE id = $1", [winner.inventoryTransactionId]);
+  assert.equal(winnerInvTx.rows.length, 1, "Winning inventory transaction must exist");
+  assert.equal(winnerInvTx.rows[0].status, "POSTED");
+
+  const winnerMovements = await pool1.query("SELECT inventory_transaction_id, quantity, direction FROM stock_movements WHERE inventory_transaction_id = $1", [winner.inventoryTransactionId]);
+  assert.equal(winnerMovements.rows.length, 1, "Winning stock movement must exist");
+  assert.equal(Number(winnerMovements.rows[0].quantity), 7);
+  assert.equal(winnerMovements.rows[0].direction, "OUT");
+
+  const winnerOutbox = await pool1.query("SELECT aggregate_id, event_type FROM outbox_events WHERE aggregate_id = $1", [winner.saleId]);
+  assert.equal(winnerOutbox.rows.length, 1, "Winning outbox event must exist");
+  assert.equal(winnerOutbox.rows[0].event_type, "sale.completed");
+
+  const winnerAudit = await pool1.query("SELECT resource_id, action FROM audit_records WHERE resource_id = $1", [winner.saleId]);
+  assert.equal(winnerAudit.rows.length, 1, "Winning audit record must exist");
+
+  // Determine winner and loser commands dynamically based on committed idempotency key
+  const winningCommand = winnerSale.rows[0].idempotency_key === commandA.idempotencyKey ? commandA : commandB;
+  const losingCommand = winningCommand === commandA ? commandB : commandA;
+
+  const winnerIdem = await pool1.query("SELECT key FROM idempotency_records WHERE key = $1", [winningCommand.idempotencyKey]);
+  assert.equal(winnerIdem.rows.length, 1, "Winning idempotency record must exist");
+
+  // Complete absence of loser's records scoped strictly to loser's idempotency key and correlation ID
+  const loserIdem = await pool1.query("SELECT key FROM idempotency_records WHERE key = $1", [losingCommand.idempotencyKey]);
+  assert.equal(loserIdem.rows.length, 0, "Rejected sale idempotency record must NOT exist");
+
+  const loserAudit = await pool1.query("SELECT resource_id FROM audit_records WHERE correlation_id = $1", [losingCommand.correlationId]);
+  assert.equal(loserAudit.rows.length, 0, "Rejected sale audit record must NOT exist");
+
+  const loserOutbox = await pool1.query("SELECT event_id FROM outbox_events WHERE correlation_id = $1", [losingCommand.correlationId]);
+  assert.equal(loserOutbox.rows.length, 0, "Rejected sale outbox event must NOT exist");
+
+  const loserSales = await pool1.query("SELECT id FROM sales WHERE idempotency_key = $1 OR correlation_id = $2", [losingCommand.idempotencyKey, losingCommand.correlationId]);
+  assert.equal(loserSales.rows.length, 0, "Rejected sale record must NOT exist");
+});
+

@@ -166,6 +166,35 @@ export class PostgresSalesPersistence implements SalesPersistence {
 
   async executeSaleAtomic(plan: SalesExecutionPlan): Promise<void> {
     await this.withTransaction(async client => {
+      // 0. Acquire locks on all required batch rows upfront in deterministic global order
+      // Aggregates requested deductions per batchId to handle duplicate batch entries safely.
+      // Acquiring FOR UPDATE before child foreign-key inserts (sale_lines, stock_movements)
+      // prevents PostgreSQL foreign-key ShareLock deadlocks (40P01).
+      const aggregatedBatchDeductions = new Map<string, number>();
+      for (const b of plan.batchDeductions) {
+        const cur = aggregatedBatchDeductions.get(b.batchId) ?? 0;
+        aggregatedBatchDeductions.set(b.batchId, cur + b.quantity);
+      }
+
+      const txDate = (plan.now ?? plan.sale?.createdAt ?? new Date().toISOString()).slice(0, 10);
+      const sortedBatchIds = Array.from(aggregatedBatchDeductions.keys()).sort();
+      for (const batchId of sortedBatchIds) {
+        const requiredQty = aggregatedBatchDeductions.get(batchId)!;
+        const res = await client.query<{ quantity: string | number; status: string; expiry_date: string }>(
+          "SELECT quantity, status, expiry_date FROM batches WHERE id = $1 FOR UPDATE",
+          [batchId]
+        );
+        const row = res.rows[0];
+        if (
+          !row ||
+          (row.status !== "ACTIVE" && row.status !== "NEAR_EXPIRY") ||
+          (row.expiry_date && row.expiry_date <= txDate) ||
+          Number(row.quantity) < requiredQty
+        ) {
+          throw new Error("STALE_BATCH_OR_INSUFFICIENT_STOCK");
+        }
+      }
+
       // 1. Sale
       await client.query(`
         INSERT INTO sales (
@@ -277,20 +306,9 @@ export class PostgresSalesPersistence implements SalesPersistence {
         ]);
       }
 
-      // In-transaction re-verification of batches under row lock
-      for (const b of plan.batchDeductions) {
-        const res = await client.query<{ quantity: string | number; status: string; expiry_date: string }>(
-          "SELECT quantity, status, expiry_date FROM batches WHERE id = $1 FOR UPDATE",
-          [b.batchId]
-        );
-        const row = res.rows[0];
-        if (!row || (row.status !== "ACTIVE" && row.status !== "NEAR_EXPIRY") || Number(row.quantity) < b.quantity) {
-          throw new Error("STALE_BATCH_OR_INSUFFICIENT_STOCK");
-        }
-      }
-
       // Guarded atomic update: decrements quantity only if current quantity >= requested deduction
-      for (const b of plan.batchDeductions) {
+      for (const batchId of sortedBatchIds) {
+        const totalDeduction = aggregatedBatchDeductions.get(batchId)!;
         const result = await client.query(`
           UPDATE batches
           SET quantity = quantity - $1,
@@ -299,7 +317,8 @@ export class PostgresSalesPersistence implements SalesPersistence {
           WHERE id = $3
             AND quantity >= $4
             AND status IN ('ACTIVE', 'NEAR_EXPIRY')
-        `, [b.quantity, b.quantity, b.batchId, b.quantity]);
+            AND (expiry_date IS NULL OR expiry_date > $5)
+        `, [totalDeduction, totalDeduction, batchId, totalDeduction, txDate]);
         if (Number(result.rowCount ?? 0) !== 1) {
           throw new Error("STALE_BATCH_OR_INSUFFICIENT_STOCK");
         }

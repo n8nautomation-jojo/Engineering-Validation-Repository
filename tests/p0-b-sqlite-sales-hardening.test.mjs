@@ -438,3 +438,235 @@ test("PR B Hardening Gate: Source of truth is stock_movements ledger, batches ta
 
   db.close();
 });
+
+test("PR B: In-transaction concurrency guard rejects sale if batch expiry_date <= txDate", async () => {
+  const { db, persistence } = createTestHarness();
+
+  // Seed a batch whose status is ACTIVE but expiry_date has passed
+  db.prepare(`
+    INSERT INTO batches (id, organization_id, warehouse_id, product_id, batch_number, expiry_date, quantity, status, version)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run("batch-expired-tx", "org-001", "wh-001", "prod-exp-tx", "BN-EXP-TX", "2026-10-01", 10, "ACTIVE", 0);
+
+  const expiredPlan = {
+    tenantId: "t-001",
+    warehouseId: "wh-001",
+    currency: "SDG",
+    totalAmount: 50,
+    now: "2026-10-07T10:00:00Z",
+    idempotencyKey: "idem-exp-tx",
+    correlationId: "corr-exp-tx",
+    sale: {
+      id: "sale-exp-tx",
+      organizationId: "org-001",
+      branchId: "branch-001",
+      deviceId: "dev-001",
+      cashSessionId: "cs-001",
+      status: "COMPLETED",
+      createdAt: "2026-10-07T10:00:00Z",
+      lines: [],
+      payments: [],
+      version: 0
+    },
+    lines: [{
+      id: "line-exp",
+      productId: "prod-exp-tx",
+      batchId: "batch-expired-tx",
+      quantity: 5,
+      unitPrice: { amount: 10, currency: "SDG" },
+      lineTotal: { amount: 50, currency: "SDG" }
+    }],
+    payments: [{
+      id: "pmt-exp",
+      method: "CASH",
+      amount: { amount: 50, currency: "SDG" },
+      verificationStatus: "LOCAL_RECORDED",
+      recordedAt: "2026-10-07T10:00:00Z"
+    }],
+    inventoryTransaction: {
+      id: "tx-exp-tx",
+      organizationId: "org-001",
+      branchId: "branch-001",
+      sourceType: "SALE",
+      sourceId: "sale-exp-tx",
+      status: "POSTED",
+      movements: [],
+      createdAt: "2026-10-07T10:00:00Z",
+      version: 0
+    },
+    movements: [{
+      id: "mv-exp-tx",
+      productId: "prod-exp-tx",
+      batchId: "batch-expired-tx",
+      warehouseId: "wh-001",
+      direction: "OUT",
+      quantity: { value: 5 },
+      sourceTransactionId: "tx-exp-tx"
+    }],
+    batchDeductions: [{
+      batchId: "batch-expired-tx",
+      quantity: 5,
+      newQuantity: 5,
+      newStatus: "ACTIVE"
+    }],
+    outboxEvent: {
+      eventId: "ev-exp-tx",
+      eventType: "sale.completed",
+      aggregateId: "sale-exp-tx",
+      aggregateVersion: 0,
+      occurredAt: "2026-10-07T10:00:00Z",
+      tenantId: "t-001",
+      organizationId: "org-001",
+      correlationId: "corr-exp-tx",
+      payload: {}
+    },
+    auditRecord: {
+      id: "aud-exp-tx",
+      occurredAt: "2026-10-07T10:00:00Z",
+      actorId: "usr-cashier-1",
+      action: "SALE_COMPLETED",
+      resourceType: "Sale",
+      resourceId: "sale-exp-tx",
+      tenantId: "t-001",
+      organizationId: "org-001",
+      correlationId: "corr-exp-tx"
+    },
+    idempotencyRecord: {
+      key: "idem-exp-tx",
+      commandName: "sales.create",
+      requestHash: "hash-exp-tx",
+      responseStatus: 201,
+      responseBody: {},
+      createdAt: "2026-10-07T10:00:00Z"
+    }
+  };
+
+  // Must reject under in-transaction guard and rollback
+  await assert.rejects(
+    () => persistence.executeSaleAtomic(expiredPlan),
+    /STALE_BATCH_OR_INSUFFICIENT_STOCK/
+  );
+
+  // Batch remains at original quantity 10
+  const batchAfter = await persistence.getBatch("batch-expired-tx");
+  assert.equal(batchAfter.quantity.value, 10);
+
+  // No sale or movements persisted
+  const salesCount = db.prepare("SELECT count(*) as n FROM sales").get().n;
+  assert.equal(salesCount, 0);
+
+  db.close();
+});
+
+test("PR B: Multi-batch sale aggregates multiple deductions on same batch and executes in canonical order", async () => {
+  const { db, persistence } = createTestHarness();
+
+  // Seed two batches with intentional reverse order keys to test canonical sorting
+  db.prepare(`
+    INSERT INTO batches (id, organization_id, warehouse_id, product_id, batch_number, expiry_date, quantity, status, version)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run("b-z-last", "org-001", "wh-001", "prod-multi", "BN-Z", "2028-01-01", 10, "ACTIVE", 0);
+
+  db.prepare(`
+    INSERT INTO batches (id, organization_id, warehouse_id, product_id, batch_number, expiry_date, quantity, status, version)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run("b-a-first", "org-001", "wh-001", "prod-multi", "BN-A", "2028-01-01", 10, "ACTIVE", 0);
+
+  const multiPlan = {
+    tenantId: "t-001",
+    warehouseId: "wh-001",
+    currency: "SDG",
+    totalAmount: 120,
+    now: "2026-10-07T10:00:00Z",
+    idempotencyKey: "idem-multi",
+    correlationId: "corr-multi",
+    sale: {
+      id: "sale-multi-canonical",
+      organizationId: "org-001",
+      branchId: "branch-001",
+      deviceId: "dev-001",
+      cashSessionId: "cs-001",
+      status: "COMPLETED",
+      createdAt: "2026-10-07T10:00:00Z",
+      lines: [],
+      payments: [],
+      version: 0
+    },
+    lines: [
+      { id: "l-1", productId: "prod-multi", batchId: "b-z-last", quantity: 4, unitPrice: { amount: 10, currency: "SDG" }, lineTotal: { amount: 40, currency: "SDG" } },
+      { id: "l-2", productId: "prod-multi", batchId: "b-a-first", quantity: 3, unitPrice: { amount: 10, currency: "SDG" }, lineTotal: { amount: 30, currency: "SDG" } },
+      { id: "l-3", productId: "prod-multi", batchId: "b-z-last", quantity: 5, unitPrice: { amount: 10, currency: "SDG" }, lineTotal: { amount: 50, currency: "SDG" } }
+    ],
+    payments: [{
+      id: "pmt-multi",
+      method: "CASH",
+      amount: { amount: 120, currency: "SDG" },
+      verificationStatus: "LOCAL_RECORDED",
+      recordedAt: "2026-10-07T10:00:00Z"
+    }],
+    inventoryTransaction: {
+      id: "tx-multi",
+      organizationId: "org-001",
+      branchId: "branch-001",
+      sourceType: "SALE",
+      sourceId: "sale-multi-canonical",
+      status: "POSTED",
+      movements: [],
+      createdAt: "2026-10-07T10:00:00Z",
+      version: 0
+    },
+    movements: [
+      { id: "mv-1", productId: "prod-multi", batchId: "b-z-last", warehouseId: "wh-001", direction: "OUT", quantity: { value: 4 }, sourceTransactionId: "tx-multi" },
+      { id: "mv-2", productId: "prod-multi", batchId: "b-a-first", warehouseId: "wh-001", direction: "OUT", quantity: { value: 3 }, sourceTransactionId: "tx-multi" },
+      { id: "mv-3", productId: "prod-multi", batchId: "b-z-last", warehouseId: "wh-001", direction: "OUT", quantity: { value: 5 }, sourceTransactionId: "tx-multi" }
+    ],
+    // Two separate deduction entries on b-z-last (4 and 5), plus one on b-a-first (3)
+    batchDeductions: [
+      { batchId: "b-z-last", quantity: 4, newQuantity: 6, newStatus: "ACTIVE" },
+      { batchId: "b-a-first", quantity: 3, newQuantity: 7, newStatus: "ACTIVE" },
+      { batchId: "b-z-last", quantity: 5, newQuantity: 1, newStatus: "ACTIVE" }
+    ],
+    outboxEvent: {
+      eventId: "ev-multi",
+      eventType: "sale.completed",
+      aggregateId: "sale-multi-canonical",
+      aggregateVersion: 0,
+      occurredAt: "2026-10-07T10:00:00Z",
+      tenantId: "t-001",
+      organizationId: "org-001",
+      correlationId: "corr-multi",
+      payload: {}
+    },
+    auditRecord: {
+      id: "aud-multi",
+      occurredAt: "2026-10-07T10:00:00Z",
+      actorId: "usr-cashier-1",
+      action: "SALE_COMPLETED",
+      resourceType: "Sale",
+      resourceId: "sale-multi-canonical",
+      tenantId: "t-001",
+      organizationId: "org-001",
+      correlationId: "corr-multi"
+    },
+    idempotencyRecord: {
+      key: "idem-multi",
+      commandName: "sales.create",
+      requestHash: "hash-multi",
+      responseStatus: 201,
+      responseBody: {},
+      createdAt: "2026-10-07T10:00:00Z"
+    }
+  };
+
+  await persistence.executeSaleAtomic(multiPlan);
+
+  // b-z-last should have 10 - (4 + 5) = 1
+  const bZ = await persistence.getBatch("b-z-last");
+  assert.equal(bZ.quantity.value, 1);
+
+  // b-a-first should have 10 - 3 = 7
+  const bA = await persistence.getBatch("b-a-first");
+  assert.equal(bA.quantity.value, 7);
+
+  db.close();
+});
