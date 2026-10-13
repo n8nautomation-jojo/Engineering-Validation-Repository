@@ -2,6 +2,9 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { catalogRepository } from "./api/catalog.mjs";
+import { sessionRepository } from "./api/session.mjs";
+import { salesRepository } from "./api/sales.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -13,383 +16,206 @@ const MIME_TYPES = {
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
   ".jpg": "image/jpeg",
-  ".svg": "image/svg+xml"
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon"
 };
 
-const server = http.createServer((req, res) => {
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", chunk => {
+      body += chunk;
+      if (body.length > 2 * 1024 * 1024) {
+        reject(new Error("PAYLOAD_TOO_LARGE"));
+      }
+    });
+    req.on("end", () => {
+      if (!body) return resolve({});
+      try {
+        resolve(JSON.parse(body));
+      } catch (e) {
+        reject(new Error("INVALID_JSON"));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function sendJson(res, statusCode, data, customHeaders = {}) {
+  res.writeHead(statusCode, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key, X-Correlation-Id",
+    ...customHeaders
+  });
+  res.end(JSON.stringify(data));
+}
+
+function sendError(res, statusCode, code, message, correlationId = `corr-${Date.now()}`) {
+  sendJson(res, statusCode, {
+    error: {
+      code,
+      message,
+      retryable: statusCode >= 500
+    },
+    meta: { correlation_id: correlationId }
+  });
+}
+
+const server = http.createServer(async (req, res) => {
   const parsedUrl = new URL(req.url, `http://localhost:${PORT}`);
   let pathname = parsedUrl.pathname;
+  const correlationId = req.headers["x-correlation-id"] || `corr-${Date.now()}`;
+
+  // CORS Preflight
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key, X-Correlation-Id"
+    });
+    res.end();
+    return;
+  }
+
+  // =========================================================================
+  // 1. HEALTH & METRICS ENDPOINTS
+  // =========================================================================
+  if (pathname === "/health" || pathname === "/api/health") {
+    sendJson(res, 200, {
+      status: "healthy",
+      service: "pharmatech-os",
+      version: "MVP-0.1",
+      timestamp: new Date().toISOString()
+    });
+    return;
+  }
+
+  // =========================================================================
+  // 2. CORE BACKEND REST API ROUTES (/api/*)
+  // =========================================================================
+  if (pathname.startsWith("/api/")) {
+    try {
+      // GET /api/session/current or /api/sessions/current
+      if (req.method === "GET" && (pathname === "/api/session/current" || pathname === "/api/sessions/current")) {
+        sendJson(res, 200, sessionRepository.getCurrentSession(salesRepository.getAllSales()));
+        return;
+      }
+
+      // GET /api/sessions — all sessions (current + past Z-Reports)
+      if (req.method === "GET" && pathname === "/api/sessions") {
+        sendJson(res, 200, sessionRepository.getAllSessions(salesRepository.getAllSales()));
+        return;
+      }
+
+      // POST /api/sessions/open — open new shift
+      if (req.method === "POST" && pathname === "/api/sessions/open") {
+        const body = await readJsonBody(req);
+        const newSession = sessionRepository.openNewSession(body);
+        sendJson(res, 201, newSession);
+        return;
+      }
+
+      // POST /api/sessions/movement — record CASH_IN or CASH_OUT
+      if (req.method === "POST" && pathname === "/api/sessions/movement") {
+        const body = await readJsonBody(req);
+        const movement = sessionRepository.addCashMovement(body.sessionId, body);
+        sendJson(res, 201, movement);
+        return;
+      }
+
+      // POST /api/sessions/close — close shift and generate Z-Report
+      if (req.method === "POST" && pathname === "/api/sessions/close") {
+        const body = await readJsonBody(req);
+        const result = sessionRepository.closeSession(body.sessionId, body.countedCash, body.note, salesRepository.getAllSales());
+        sendJson(res, 200, result);
+        return;
+      }
+
+      // GET /api/allocation/status
+      if (req.method === "GET" && pathname === "/api/allocation/status") {
+        sendJson(res, 200, sessionRepository.getAllocationStatus());
+        return;
+      }
+
+      // GET /api/products — catalog with FEFO batches
+      if (req.method === "GET" && pathname === "/api/products") {
+        sendJson(res, 200, catalogRepository.getAll());
+        return;
+      }
+
+      // POST /api/products — add new medicine / batch
+      if (req.method === "POST" && pathname === "/api/products") {
+        const body = await readJsonBody(req);
+        const newProduct = catalogRepository.addProduct(body);
+        sendJson(res, 201, newProduct);
+        return;
+      }
+
+      // GET /api/sales — completed sales & invoices ledger
+      if (req.method === "GET" && pathname === "/api/sales") {
+        sendJson(res, 200, salesRepository.getAllSales());
+        return;
+      }
+
+      // GET /api/sales/:id — get specific invoice / sale details
+      if (req.method === "GET" && pathname.startsWith("/api/sales/")) {
+        const idOrInv = pathname.replace("/api/sales/", "");
+        const sale = salesRepository.getSaleById(idOrInv);
+        if (!sale) {
+          sendError(res, 404, "SALE_NOT_FOUND", `Sale or Invoice ${idOrInv} not found`, correlationId);
+          return;
+        }
+        sendJson(res, 200, sale);
+        return;
+      }
+
+      // POST /api/sales/:id/reverse — reverse sale
+      if (req.method === "POST" && pathname.startsWith("/api/sales/") && pathname.endsWith("/reverse")) {
+        const saleId = pathname.split("/")[3];
+        const reversed = salesRepository.reverseSale(saleId);
+        sendJson(res, 200, reversed);
+        return;
+      }
+
+      // POST /api/sales — CompleteSale OpenAPI 3.1 endpoint
+      if (req.method === "POST" && pathname === "/api/sales") {
+        const body = await readJsonBody(req);
+        const result = await salesRepository.processSale(body, req.headers);
+        sendJson(res, 201, result, { "X-Correlation-Id": correlationId });
+        return;
+      }
+
+      // 404 for unhandled API route
+      sendError(res, 404, "NOT_FOUND", `Endpoint '${req.method} ${pathname}' not found.`, correlationId);
+      return;
+    } catch (apiErr) {
+      console.error(`[API Error] ${req.method} ${pathname}:`, apiErr);
+      const isValidation = String(apiErr.message).includes("VALIDATION_ERROR") ||
+                           String(apiErr.message).includes("INSUFFICIENT_PAYMENT") ||
+                           String(apiErr.message).includes("BATCH_EXPIRED") ||
+                           String(apiErr.message).includes("INSUFFICIENT_BATCH_STOCK") ||
+                           String(apiErr.message).includes("NO_VALID_STOCK") ||
+                           String(apiErr.message).includes("CASH_SESSION_") ||
+                           String(apiErr.message).includes("INVALID_COUNTED_CASH") ||
+                           String(apiErr.message).includes("INVALID_AMOUNT");
+      
+      const statusCode = isValidation ? 422 : 500;
+      sendError(res, statusCode, isValidation ? "BUSINESS_RULE_VIOLATION" : "INTERNAL_ERROR", apiErr.message, correlationId);
+      return;
+    }
+  }
+
+  // =========================================================================
+  // 3. STATIC ASSETS & SINGLE PAGE APPS SERVING
+  // =========================================================================
 
   // Root landing page
   if (pathname === "/" || pathname === "/index.html") {
+    const indexPath = path.join(__dirname, "landing", "index.html");
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-    res.end(`<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PharmaTech Applications Portal — بوابة تطبيقات فارماتك</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --font-ar: 'Cairo', system-ui, -apple-system, sans-serif;
-      --font-en: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-      --bg-dark: #090d16;
-      --surface-glass: rgba(17, 24, 39, 0.75);
-      --border-glass: rgba(255, 255, 255, 0.1);
-      --primary-cyan: #06b6d4;
-      --primary-emerald: #10b981;
-      --primary-indigo: #6366f1;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font-ar);
-      background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.18) 0%, transparent 45%),
-        radial-gradient(circle at 85% 80%, rgba(16, 185, 129, 0.16) 0%, transparent 45%),
-        radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 60%);
-      color: #f8fafc;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2.5rem 1.5rem;
-      overflow-x: hidden;
-    }
-    .portal-shell {
-      max-width: 960px;
-      width: 100%;
-      background: var(--surface-glass);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid var(--border-glass);
-      border-radius: 24px;
-      padding: 3rem 2.5rem;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px -10px rgba(99, 102, 241, 0.15);
-      position: relative;
-    }
-    .portal-shell::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 10%;
-      right: 10%;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    }
-    .portal-header {
-      text-align: center;
-      margin-bottom: 2.75rem;
-    }
-    .brand-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.4rem 1rem;
-      border-radius: 9999px;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #34d399;
-      font-size: 0.825rem;
-      font-weight: 600;
-      margin-bottom: 1.25rem;
-      letter-spacing: 0.02em;
-    }
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background-color: #10b981;
-      border-radius: 50%;
-      box-shadow: 0 0 10px #10b981;
-      animation: pulseGlow 2s infinite;
-    }
-    @keyframes pulseGlow {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
-    }
-    h1 {
-      font-size: 2.4rem;
-      font-weight: 800;
-      color: #ffffff;
-      line-height: 1.25;
-      margin-bottom: 0.75rem;
-      background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .lead-text {
-      color: #94a3b8;
-      font-size: 1.05rem;
-      max-width: 650px;
-      margin: 0 auto;
-      line-height: 1.6;
-    }
-    .app-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 1.75rem;
-      margin-bottom: 2.5rem;
-    }
-    .app-card {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 18px;
-      padding: 2rem;
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
-    }
-    .app-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 50% 0%, var(--card-glow, rgba(99, 102, 241, 0.15)), transparent 70%);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-    .app-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--card-border, #6366f1);
-      box-shadow: 0 16px 36px -10px var(--card-shadow, rgba(99, 102, 241, 0.25));
-    }
-    .app-card:hover::before {
-      opacity: 1;
-    }
-    .app-card.pos-card {
-      --card-glow: rgba(16, 185, 129, 0.15);
-      --card-border: rgba(16, 185, 129, 0.4);
-      --card-shadow: rgba(16, 185, 129, 0.25);
-    }
-    .app-card.admin-card {
-      --card-glow: rgba(99, 102, 241, 0.18);
-      --card-border: rgba(99, 102, 241, 0.4);
-      --card-shadow: rgba(99, 102, 241, 0.25);
-    }
-    .card-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-      position: relative;
-      z-index: 2;
-    }
-    .icon-wrapper {
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .pos-card .icon-wrapper {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.1));
-      color: #34d399;
-    }
-    .admin-card .icon-wrapper {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.1));
-      color: #818cf8;
-    }
-    .icon-wrapper svg {
-      width: 26px;
-      height: 26px;
-    }
-    .card-badge {
-      font-size: 0.75rem;
-      font-family: var(--font-en);
-      font-weight: 600;
-      padding: 0.25rem 0.65rem;
-      border-radius: 9999px;
-      letter-spacing: 0.03em;
-    }
-    .pos-card .card-badge {
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      color: #34d399;
-    }
-    .admin-card .card-badge {
-      background: rgba(99, 102, 241, 0.12);
-      border: 1px solid rgba(99, 102, 241, 0.25);
-      color: #a5b4fc;
-    }
-    .app-title {
-      font-size: 1.35rem;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 0.5rem;
-      position: relative;
-      z-index: 2;
-    }
-    .app-desc {
-      font-size: 0.925rem;
-      color: #94a3b8;
-      line-height: 1.55;
-      margin-bottom: 1.5rem;
-      flex-grow: 1;
-      position: relative;
-      z-index: 2;
-    }
-    .card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 1.25rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      position: relative;
-      z-index: 2;
-    }
-    .card-tags {
-      display: flex;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-    }
-    .tag {
-      font-size: 0.725rem;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 0.2rem 0.5rem;
-      border-radius: 6px;
-      color: #cbd5e1;
-    }
-    .cta-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.875rem;
-      font-weight: 700;
-      color: #ffffff;
-      transition: gap 0.2s;
-    }
-    .app-card:hover .cta-link {
-      gap: 0.65rem;
-      color: #38bdf8;
-    }
-    .system-status-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 0.85rem 1.25rem;
-      font-size: 0.825rem;
-      color: #94a3b8;
-    }
-    .status-items {
-      display: flex;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-    .status-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .status-item strong {
-      color: #f1f5f9;
-      font-family: var(--font-en);
-    }
-    @media (max-width: 768px) {
-      .portal-shell { padding: 1.75rem 1.25rem; }
-      h1 { font-size: 1.8rem; }
-      .app-cards { grid-template-columns: 1fr; }
-      .system-status-bar { flex-direction: column; gap: 0.75rem; text-align: center; }
-    }
-  </style>
-</head>
-<body>
-  <div class="portal-shell">
-    <div class="portal-header">
-      <div class="brand-tag">
-        <span class="pulse-dot"></span>
-        <span>منظومة فارماتك الذكية (PharmaTech Cloud & POS)</span>
-      </div>
-      <h1>بوابة التطبيقات الموحدة</h1>
-      <p class="lead-text">البيئة التشغيلية المتكاملة لإدارة المنشآت الصيدلانية، المزامنة دون اتصال، ونقاط البيع السريعة وفق المعايير الدوائية العالمية.</p>
-    </div>
-
-    <div class="app-cards">
-      <!-- 1. Desktop POS -->
-      <a href="/desktop-pos/" class="app-card pos-card">
-        <div class="card-top">
-          <div class="icon-wrapper">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 13.5h6m-3-3v6" />
-            </svg>
-          </div>
-          <span class="card-badge">DESKTOP / LOCAL</span>
-        </div>
-        <div class="app-title">نظام نقطة البيع (Desktop POS)</div>
-        <div class="app-desc">واجهة الكاشير السريعة مع الفرز الصيدلاني الصارم (FEFO)، دعم مسح الباركود، التحويل البنكي (بنكك)، والعمل المستمر عند انقطاع الإنترنت.</div>
-        <div class="card-footer">
-          <div class="card-tags">
-            <span class="tag">FEFO Safety</span>
-            <span class="tag">Offline Quota</span>
-            <span class="tag">Bankak Split</span>
-          </div>
-          <span class="cta-link">
-            <span>فتح التطبيق</span>
-            <span>←</span>
-          </span>
-        </div>
-      </a>
-
-      <!-- 2. Platform Admin -->
-      <a href="/platform-admin/" class="app-card admin-card">
-        <div class="card-top">
-          <div class="icon-wrapper">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9 3-3 2.142 2.142a.75.75 0 0 0 1.06 0L16.5 7.5" />
-            </svg>
-          </div>
-          <span class="card-badge">SAAS / CLOUD ADMIN</span>
-        </div>
-        <div class="app-title">لوحة إدارة المنصة (Platform Console)</div>
-        <div class="app-desc">إدارة المستأجرين والمنشآت الصيدلانية، معالج التهيئة الذكي التلقائي، ضبط الاشتراكات، ومراقبة سجلات التدقيق الأمني غير القابل للتعديل.</div>
-        <div class="card-footer">
-          <div class="card-tags">
-            <span class="tag">Auto-Slug Generator</span>
-            <span class="tag">D-038 Privacy</span>
-            <span class="tag">Audit Trail</span>
-          </div>
-          <span class="cta-link">
-            <span>فتح المنصة</span>
-            <span>←</span>
-          </span>
-        </div>
-      </a>
-    </div>
-
-    <div class="system-status-bar">
-      <div class="status-items">
-        <div class="status-item">
-          <span>حالة المنظومة:</span>
-          <strong style="color:#10b981;">Online & Healthy</strong>
-        </div>
-        <div class="status-item">
-          <span>إصدار النواة:</span>
-          <strong>MVP-0.1 (Phase 4 Verified)</strong>
-        </div>
-        <div class="status-item">
-          <span>حماية الخصوصية:</span>
-          <strong style="color:#38bdf8;">Enforced (D-038)</strong>
-        </div>
-      </div>
-      <div>
-        <span>PharmaTech OS © 2026</span>
-      </div>
-    </div>
-  </div>
-</body>
-</html>`);
+    fs.createReadStream(indexPath).pipe(res);
     return;
   }
 
@@ -428,5 +254,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`PharmaTech Apps Server running on http://localhost:${PORT}`);
+  console.log(`PharmaTech Official Enterprise Server running on http://localhost:${PORT}`);
 });

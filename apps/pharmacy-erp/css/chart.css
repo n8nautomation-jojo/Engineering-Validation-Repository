@@ -1,0 +1,243 @@
+/* ==========================================================================
+   PharmaTech Sales Chart & Operational Alerts Panel
+   ========================================================================== */
+.middle-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(300px, 1fr);
+  gap: 18px;
+}
+
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+}
+
+.panel-head.wrap {
+  flex-wrap: wrap;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-title h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.title-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--secondary);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.title-icon.warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.title-icon.lg {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: var(--gradient-primary);
+  color: #FFFFFF;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.segmented button {
+  height: 28px;
+  min-width: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s;
+}
+
+.segmented button[data-active="true"] {
+  background: var(--card);
+  color: var(--primary);
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
+}
+
+.chart-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 22px;
+  flex-wrap: wrap;
+}
+
+.chart-summary strong {
+  font: 800 24px var(--font-display);
+}
+
+.chart-summary strong small {
+  font: 500 12px var(--font-sans);
+  color: var(--muted-foreground);
+  margin-right: 5px;
+}
+
+.chart-legend {
+  margin-right: auto;
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+html[dir="ltr"] .chart-legend {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+.chart-legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.dot-muted {
+  background: var(--muted-foreground);
+  opacity: 0.4;
+}
+
+/* Sales Interactive SVG Chart */
+.sales-chart-wrapper {
+  height: 220px;
+  width: 100%;
+  padding: 12px 14px 10px;
+  direction: ltr;
+}
+
+.sales-chart-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Alerts List */
+.alert-list {
+  padding: 0 14px 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: right;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+html[dir="ltr"] .alert-item {
+  text-align: left;
+}
+
+.alert-item:hover {
+  background: var(--muted);
+  border-color: var(--border);
+}
+
+.alert-item:hover .alert-arrow {
+  transform: translateX(-4px);
+  color: var(--primary);
+}
+
+html[dir="ltr"] .alert-item:hover .alert-arrow {
+  transform: translateX(4px);
+}
+
+.alert-symbol {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.alert-symbol.warning {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.alert-symbol.danger {
+  color: var(--destructive);
+  background: var(--destructive-bg);
+}
+
+.alert-symbol.info {
+  color: var(--blue);
+  background: var(--blue-bg);
+}
+
+.alert-text {
+  flex: 1;
+}
+
+.alert-text strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.alert-text small {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.alert-arrow {
+  color: var(--muted-foreground);
+  transition: transform 0.2s;
+}

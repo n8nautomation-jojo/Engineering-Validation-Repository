@@ -1,0 +1,414 @@
+/**
+ * [Feature / Domain]: Platform Administration — Layout, Shell & Navigation
+ * [Multi-Tenancy Context]: Global Cloud Console Layout
+ * [Security / Entitlement]: Platform Superadmin Context
+ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-color: var(--border-subtle);
+}
+
+html {
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  min-height: 100vh;
+  direction: rtl;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+html[dir="ltr"] body {
+  direction: ltr;
+  font-family: var(--font-latin), var(--font-sans);
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.num {
+  font-family: var(--font-latin);
+  font-variant-numeric: tabular-nums;
+}
+
+/* App Shell Structure */
+.admin-shell {
+  min-height: 100vh;
+  display: flex;
+  position: relative;
+}
+
+/* Sidebar (White Background hosting official logo naturally) */
+.admin-sidebar {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: 270px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 16px;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  border-left: 1px solid var(--sidebar-border);
+  transition: width 0.25s ease, transform 0.25s ease, background 0.25s ease;
+  user-select: none;
+}
+
+html[dir="ltr"] .admin-sidebar {
+  inset: 0 auto 0 0;
+  border-left: none;
+  border-right: 1px solid var(--sidebar-border);
+}
+
+/* Natural Logo Presentation (No frame, no box) */
+.sidebar-brand-natural {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 6px 18px 6px;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 8px;
+}
+
+.brand-logo-img {
+  height: 52px;
+  width: auto;
+  max-width: 195px;
+  object-fit: contain;
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.brand-logo-img:hover {
+  transform: scale(1.02);
+}
+
+.console-pill {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 82, 204, 0.1);
+  color: var(--brand-blue);
+  border: 1px solid rgba(0, 82, 204, 0.2);
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* Sidebar Navigation Items */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  color: var(--sidebar-text);
+  font-weight: 600;
+  font-size: 13.5px;
+  transition: all 0.18s ease;
+  position: relative;
+}
+
+.nav-item:hover {
+  background: var(--border-light);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
+  font-weight: 700;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 4px 0 0 4px;
+  background: var(--accent-primary);
+}
+
+html[dir="ltr"] .nav-item.active::before {
+  right: auto;
+  left: 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.nav-icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Privacy Boundary Notice (Clinical Isolation D-038) */
+.privacy-boundary-notice {
+  background: rgba(0, 179, 126, 0.07);
+  border: 1px solid rgba(0, 179, 126, 0.22);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-size: 12px;
+  margin: 8px 0;
+}
+
+.notice-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--brand-teal);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.privacy-boundary-notice p {
+  color: var(--text-muted);
+  line-height: 1.45;
+  font-size: 11px;
+}
+
+/* Superadmin Profile in Sidebar */
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--border-light);
+  border: 1px solid var(--border-subtle);
+  margin-top: auto;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-brand);
+  color: #FFFFFF;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.user-meta strong {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-primary);
+  font-family: var(--font-latin);
+}
+
+.user-meta small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Main Content Area */
+.admin-main {
+  flex: 1;
+  margin-right: 270px;
+  min-width: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: margin 0.25s ease;
+}
+
+html[dir="ltr"] .admin-main {
+  margin-right: 0;
+  margin-left: 270px;
+}
+
+/* Topbar */
+.admin-topbar {
+  height: 68px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar-title h1 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.badge-env {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 179, 126, 0.12);
+  color: var(--brand-teal);
+  border: 1px solid rgba(0, 179, 126, 0.25);
+  font-family: var(--font-latin);
+}
+
+/* Telemetry Status Bar */
+.telemetry-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.telemetry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: var(--radius-full);
+  background: var(--border-light);
+  border: 1px solid var(--border-subtle);
+  font-size: 11.5px;
+  font-family: var(--font-latin);
+  color: var(--text-secondary);
+}
+
+.telemetry-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--status-success);
+  box-shadow: 0 0 0 3px rgba(0, 179, 126, 0.2);
+}
+
+.telemetry-badge.warning .telemetry-dot {
+  background: var(--status-warning);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-button {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--border-light);
+  color: var(--text-secondary);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.icon-button:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-active);
+}
+
+/* Primary Button with Logo Brand Gradient */
+.btn-brand-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-brand);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow-lift);
+}
+
+.btn-brand-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px -8px rgba(0, 179, 126, 0.45);
+}
+
+/* Views Container */
+.admin-content {
+  padding: 24px 28px 40px 28px;
+  flex: 1;
+}
+
+.view-panel {
+  display: none;
+  animation: fade-up 0.2s ease-out;
+}
+
+.view-panel.active {
+  display: block;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    transform: translateX(100%);
+    box-shadow: var(--shadow-modal);
+  }
+  html[dir="ltr"] .admin-sidebar {
+    transform: translateX(-100%);
+  }
+  .mobile-open .admin-sidebar {
+    transform: translateX(0);
+  }
+  .admin-main {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+  }
+}

@@ -1,0 +1,257 @@
+/**
+ * [Feature / Domain]: Platform Administration — Multi-Tenant Directory Styles
+ * [Multi-Tenancy Context]: B2B Tenant Isolation Management
+ * [Security / Entitlement]: Tenant Lifecycles & Credential Status Badges
+ */
+
+.tenants-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.table-header-controls {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.table-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--border-light);
+  color: var(--text-muted);
+  min-width: 280px;
+  transition: all 0.2s ease;
+}
+
+.table-search-box:focus-within {
+  border-color: var(--border-active);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.12);
+}
+
+.table-search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.custom-select {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--border-light);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+.custom-select:focus {
+  border-color: var(--border-active);
+}
+
+/* Tenant Directory Table */
+.enterprise-table-wrapper {
+  overflow-x: auto;
+}
+
+.enterprise-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+  font-size: 13px;
+}
+
+html[dir="ltr"] .enterprise-table {
+  text-align: left;
+}
+
+.enterprise-table th {
+  padding: 14px 18px;
+  background: var(--border-light);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 11.5px;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.enterprise-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+  color: var(--text-secondary);
+}
+
+.enterprise-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.enterprise-table tbody tr:hover {
+  background: rgba(0, 82, 204, 0.03);
+}
+
+/* Tenant Code & Name Pill */
+.tenant-cell-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tenant-avatar-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--border-light);
+  border: 1px solid var(--border-subtle);
+  color: var(--brand-blue);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-family: var(--font-latin);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.tenant-info strong {
+  display: block;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+
+.tenant-info small {
+  display: block;
+  font-size: 11px;
+  font-family: var(--font-latin);
+  color: var(--text-muted);
+}
+
+/* Plan Badges */
+.plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 800;
+  font-family: var(--font-latin);
+  letter-spacing: 0.02em;
+}
+
+.plan-badge.enterprise {
+  background: rgba(139, 92, 246, 0.12);
+  color: #8B5CF6;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.plan-badge.standard {
+  background: rgba(0, 82, 204, 0.1);
+  color: #0052CC;
+  border: 1px solid rgba(0, 82, 204, 0.25);
+}
+
+.plan-badge.community {
+  background: rgba(0, 179, 126, 0.12);
+  color: #00B37E;
+  border: 1px solid rgba(0, 179, 126, 0.25);
+}
+
+/* Status Badges */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.status-pill.active {
+  background: var(--status-success-bg);
+  color: var(--status-success);
+}
+
+.status-pill.suspended {
+  background: var(--status-danger-bg);
+  color: var(--status-danger);
+}
+
+.status-pill.pending {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+/* Credentials Security Pill */
+.cred-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-family: var(--font-latin);
+  font-weight: 700;
+}
+
+.cred-pill.must-change {
+  background: var(--status-warning-bg);
+  color: #B45309;
+  border: 1px dashed #F59E0B;
+}
+
+.cred-pill.verified {
+  background: var(--border-light);
+  color: var(--text-muted);
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-table-action {
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--border-light);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.btn-table-action:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-active);
+}

@@ -1,59 +1,63 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PharmaTech Platform Console — لوحة إدارة المنصة المركزية</title>
-  <meta name="description" content="لوحة التحكم المركزية لمنصة فارماتك لإدارة المستأجرين، الاشتراكات، ومراقبة أداء المزامنة والتدقيق الأمني">
+  <title>PharmaTech Platform Console — لوحة إدارة المنصة السحابية</title>
+  <meta name="description" content="منظومة فارماتك المركزية لإدارة المستأجرين، تهيئة الصيدليات، وتتبع سجلات التدقيق الأمني">
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="admin-layout">
-    <!-- Sidebar Navigation -->
-    <aside class="admin-sidebar">
-      <div class="sidebar-brand">
-        <div class="brand-logo">
-          <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-          </svg>
-        </div>
-        <div>
-          <h2>PharmaTech</h2>
-          <small>Platform Console</small>
-        </div>
+  <div class="admin-shell" id="admin-shell">
+    
+    <!-- =========================================================================
+         SIDEBAR (CLEAN WHITE BACKGROUND - OFFICIAL LOGO - NO ARTIFICIAL BOX/FRAME)
+         ========================================================================= -->
+    <aside class="admin-sidebar" id="admin-sidebar" aria-label="القائمة الرئيسية لإدارة المنصة">
+      
+      <!-- Natural Logo Presentation on Clean White Sidebar -->
+      <div class="sidebar-brand-natural">
+        <img src="pharmatech-logo.png" alt="PharmaTech" class="brand-logo-img" />
+        <span class="console-pill">Console</span>
       </div>
 
+      <!-- Navigation Tabs -->
       <nav class="sidebar-nav">
         <button class="nav-item active" data-tab="overview">
           <span class="nav-icon">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25V18v-2.25Z" />
             </svg>
           </span>
           <span>نظرة عامة على المنصة</span>
         </button>
+
         <button class="nav-item" data-tab="tenants">
           <span class="nav-icon">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.75a1.5 1.5 0 0 1 1.5-1.5h1.5a1.5 1.5 0 0 1 1.5 1.5V21" />
             </svg>
           </span>
           <span>إدارة المستأجرين (Tenants)</span>
         </button>
+
         <button class="nav-item" data-tab="provisioning">
           <span class="nav-icon">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
             </svg>
           </span>
           <span>تهيئة صيدلية جديدة</span>
         </button>
+
         <button class="nav-item" data-tab="audit">
           <span class="nav-icon">
-            <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+            <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
             </svg>
           </span>
@@ -61,19 +65,21 @@
         </button>
       </nav>
 
+      <!-- Privacy Boundary Notice (Clinical Isolation D-038) -->
       <div class="privacy-boundary-notice">
         <div class="notice-header">
-          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
           </svg>
           <strong>حدود الخصوصية (D-038)</strong>
         </div>
-        <p>بيانات الوصفات الطبية وسجلات المرضى محجوبة تماماً عن إدارة المنصة وتخضع للعزل الصارم.</p>
+        <p>بيانات الوصفات الطبية والمخزون المحلي وسجلات المرضى معزولة تماماً في قواعد بيانات المستأجرين.</p>
       </div>
 
+      <!-- Superadmin Profile -->
       <div class="sidebar-user">
         <div class="user-avatar">
-          <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
           </svg>
         </div>
@@ -84,304 +90,438 @@
       </div>
     </aside>
 
-    <!-- Main Content Area -->
+    <!-- =========================================================================
+         MAIN APPLICATION CONTENT AREA
+         ========================================================================= -->
     <main class="admin-main">
-      <!-- Top Bar -->
+      
+      <!-- Topbar Header -->
       <header class="admin-topbar">
-        <div class="topbar-title">
-          <h1 id="page-title">نظرة عامة على النظام السحابي</h1>
+        <div class="topbar-left">
+          <div class="topbar-title">
+            <h1 id="page-title">نظرة عامة على النظام السحابي</h1>
+          </div>
           <span class="badge-env">Production Cloud (MENA/Sudan)</span>
         </div>
 
-        <div class="topbar-actions">
-          <div class="telemetry-bar">
-            <div class="telemetry-badge healthy">
-              <span class="telemetry-dot"></span>
-              <span>API Gateway: <strong>99.98%</strong></span>
-            </div>
-            <div class="telemetry-badge optimal">
-              <span class="telemetry-dot"></span>
-              <span>Sync Engine: <strong>Optimal</strong></span>
-            </div>
+        <div class="telemetry-bar">
+          <div class="telemetry-badge">
+            <span class="telemetry-dot"></span>
+            <span>API Gateway: <strong>99.98%</strong></span>
           </div>
+          <div class="telemetry-badge">
+            <span class="telemetry-dot"></span>
+            <span>PostgreSQL Pool: <strong>Healthy</strong></span>
+          </div>
+          <div class="telemetry-badge">
+            <span class="telemetry-dot"></span>
+            <span>RLS Isolation: <strong>Enforced</strong></span>
+          </div>
+        </div>
 
-          <!-- Theme Switcher Toggle -->
-          <button id="theme-toggle-btn" class="theme-toggle" title="تبديل المظهر النهاري/الليلي">
-            <span class="theme-icon sun-icon">
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-              </svg>
-            </span>
-            <span class="theme-icon moon-icon">
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
-              </svg>
-            </span>
-            <span class="theme-label" id="theme-label-text">الوضع النهاري المريح</span>
+        <div class="topbar-actions">
+          <button class="btn-brand-primary" id="btn-quick-provision" title="تهيئة صيدلية جديدة">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            تهيئة صيدلية جديدة
+          </button>
+
+          <!-- Day/Night Executive Mode Toggle -->
+          <button class="icon-button" id="theme-toggle-btn" title="تبديل المظهر النهاري / الليلي" aria-label="تبديل المظهر">
+            <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+            </svg>
           </button>
         </div>
       </header>
 
-      <!-- View Container -->
-      <div class="view-content">
-        <!-- 1. Overview Tab -->
-        <section class="tab-view active" id="tab-overview">
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <span class="metric-title">إجمالي المستأجرين المعتمدين</span>
-              <strong class="metric-value" id="total-tenants-count">4</strong>
-              <span class="metric-sub text-success">
-                <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="mini-icon"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
-                جميعهم في حالة تشغيل نشطة
-              </span>
+      <!-- Views Container -->
+      <section class="admin-content">
+
+        <!-- =====================================================================
+             VIEW 1: OVERVIEW & TELEMETRY
+             ===================================================================== -->
+        <div class="view-panel active" id="view-overview">
+          
+          <!-- System Health Banner -->
+          <div class="system-health-banner">
+            <div class="health-info">
+              <h3>البيئة السحابية المركزية تعمل بكفاءة كاملة</h3>
+              <p>نظام العزل المتعدد للمستأجرين (RLS) مفعل ومراقب عبر بروتوكولات التدقيق الأمني المستمر</p>
             </div>
-            <div class="metric-card">
-              <span class="metric-title">الأجهزة ونقاط البيع المتصلة</span>
-              <strong class="metric-value">28</strong>
-              <span class="metric-sub">عبر 12 فرعاً في الخرطوم والولايات</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-title">حجم أحداث المزامنة اليوم</span>
-              <strong class="metric-value">14,290</strong>
-              <span class="metric-sub text-cyan">معدل التأخير P95: 48ms</span>
-            </div>
-            <div class="metric-card">
-              <span class="metric-title">نزاعات المزامنة النشطة</span>
-              <strong class="metric-value">0</strong>
-              <span class="metric-sub text-success">تمت التسوية آلياً بموجب A2</span>
+            <div class="health-metrics-row">
+              <div class="metric-pill">
+                <small>بوابة الـ API</small>
+                <strong>99.98%</strong>
+              </div>
+              <div class="metric-pill">
+                <small>اتصالات قاعدة البيانات</small>
+                <strong>12 / 60</strong>
+              </div>
+              <div class="metric-pill">
+                <small>زمن الاستجابة</small>
+                <strong>1.4 ms</strong>
+              </div>
             </div>
           </div>
 
-          <div class="card-section">
-            <div class="section-header">
-              <div>
-                <h3>أحدث المستأجرين المنضمين حديثاً</h3>
-                <small class="text-muted">بيانات الاشتراكات وحالة النشاط المسجلة في السحابة</small>
+          <!-- Enterprise KPI Cards Grid -->
+          <div class="stats-grid-enterprise">
+            <div class="stat-card-enterprise" style="--card-accent: var(--brand-blue);">
+              <div class="stat-header">
+                <span class="stat-title">إجمالي الصيدليات المشتركة</span>
+                <span class="stat-icon blue">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M6 21V11M10 21V11M14 21V11M18 21V11M6 7h12M12 3l9 4H3l9-4z"/></svg>
+                </span>
               </div>
-              <button class="btn-primary-sm" id="quick-provision-btn">+ تهيئة مستأجر جديد</button>
+              <div class="stat-value" id="metric-total-tenants">4</div>
+              <div class="stat-meta">
+                <span class="trend-badge positive">+100% هذا الشهر</span>
+                <span>مستأجرين نشطين بالكامل</span>
+              </div>
             </div>
-            <div class="table-container">
-              <table class="data-table" id="overview-tenants-table">
+
+            <div class="stat-card-enterprise" style="--card-accent: var(--brand-teal);">
+              <div class="stat-header">
+                <span class="stat-title">الإيراد الشهري المتكرر (MRR)</span>
+                <span class="stat-icon teal">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                </span>
+              </div>
+              <div class="stat-value" id="metric-total-mrr">3,820,000 <small style="font-size:13px; font-weight:600;">ج.س</small></div>
+              <div class="stat-meta">
+                <span class="trend-badge positive">+24.5%</span>
+                <span>مدفوعات خطط SaaS</span>
+              </div>
+            </div>
+
+            <div class="stat-card-enterprise" style="--card-accent: var(--brand-cyan);">
+              <div class="stat-header">
+                <span class="stat-title">جاهزية خوادم المزامنة</span>
+                <span class="stat-icon blue">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </span>
+              </div>
+              <div class="stat-value" id="metric-gateway-uptime">99.98%</div>
+              <div class="stat-meta">
+                <span class="trend-badge positive">مستقر</span>
+                <span>بدون أي انقطاع في الـ Outbox</span>
+              </div>
+            </div>
+
+            <div class="stat-card-enterprise" style="--card-accent: var(--status-warning);">
+              <div class="stat-header">
+                <span class="stat-title">بيانات اعتماد بانتظار التغيير</span>
+                <span class="stat-icon amber">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </span>
+              </div>
+              <div class="stat-value" id="metric-pending-creds">1</div>
+              <div class="stat-meta">
+                <span class="trend-badge neutral">إلزام أمني D-041</span>
+                <span>تحتاج تغيير كلمة المرور</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Tenants Table -->
+          <div class="tenants-container">
+            <div class="table-header-controls">
+              <h3 style="font-size:15px; font-weight:800;">أحدث المستأجرين المهيئين على المنصة</h3>
+              <button class="btn-table-action" onclick="window.adminNavTo('tenants')">عرض جميع الصيدليات ←</button>
+            </div>
+            <div class="enterprise-table-wrapper">
+              <table class="enterprise-table">
                 <thead>
                   <tr>
-                    <th>رمز المستأجر</th>
-                    <th>اسم الصيدلية / المجموعة</th>
-                    <th>الخطة</th>
-                    <th>حالة الاشتراك</th>
-                    <th>تاريخ الاعتماد</th>
+                    <th>المستأجر والرمز</th>
+                    <th>باقة الاشتراك</th>
+                    <th>حالة التشغيل</th>
+                    <th>تاريخ الإطلاق</th>
                   </tr>
                 </thead>
-                <tbody id="overview-tenants-body"></tbody>
+                <tbody id="overview-recent-tenants-tbody">
+                  <!-- Dynamically rendered -->
+                </tbody>
               </table>
             </div>
           </div>
-        </section>
+        </div>
 
-        <!-- 2. Tenants Management Tab -->
-        <section class="tab-view hidden" id="tab-tenants">
-          <div class="card-section">
-            <div class="section-header">
-              <div>
-                <h3>دليل المستأجرين والاشتراكات</h3>
-                <small class="text-muted">التحكم في تفعيل وتعليق المنشآت الصيدلانية</small>
-              </div>
+        <!-- =====================================================================
+             VIEW 2: TENANTS DIRECTORY
+             ===================================================================== -->
+        <div class="view-panel" id="view-tenants">
+          <div class="tenants-container">
+            <div class="table-header-controls">
               <div class="table-search-box">
-                <input type="text" id="tenant-search-input" placeholder="بحث بالرمز أو اسم الصيدلية...">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="tenant-search-input" placeholder="بحث بالاسم، الرمز، المشرف، أو المؤسسة..." />
+              </div>
+
+              <div class="filter-group">
+                <select class="custom-select" id="tenant-plan-filter">
+                  <option value="ALL">جميع باقات الاشتراك</option>
+                  <option value="ENTERPRISE">باقة ENTERPRISE</option>
+                  <option value="STANDARD">باقة STANDARD</option>
+                  <option value="COMMUNITY">باقة COMMUNITY</option>
+                </select>
+
+                <span class="badge-env" style="background:var(--border-light); color:var(--text-secondary); border-color:var(--border-subtle);">
+                  العدد: <strong id="tenants-count-badge" style="color:var(--brand-blue);">4</strong>
+                </span>
               </div>
             </div>
-            <div class="table-container">
-              <table class="data-table">
+
+            <div class="enterprise-table-wrapper">
+              <table class="enterprise-table">
                 <thead>
                   <tr>
-                    <th>رمز المستأجر</th>
-                    <th>الاسم التجاري</th>
-                    <th>المسؤول الأولي</th>
-                    <th>حالة الحساب</th>
-                    <th>خطة الاشتراك</th>
+                    <th>المستأجر (Tenant)</th>
+                    <th>المؤسسة والفرع</th>
+                    <th>الخطة</th>
+                    <th>أمان الحساب (D-041)</th>
                     <th>الحالة</th>
+                    <th>تاريخ التهيئة</th>
                     <th>الإجراءات</th>
                   </tr>
                 </thead>
-                <tbody id="tenants-list-body"></tbody>
+                <tbody id="tenants-table-tbody">
+                  <!-- Dynamically populated -->
+                </tbody>
               </table>
             </div>
           </div>
-        </section>
+        </div>
 
-        <!-- 3. Provisioning Wizard Tab -->
-        <section class="tab-view hidden" id="tab-provisioning">
-          <div class="card-section" style="max-width: 860px; margin: 0 auto;">
-            <div class="section-header">
-              <div>
-                <h3>معالج تهيئة مستأجر جديد (Tenant Provisioning)</h3>
-                <small class="text-muted">اكتب اسم الصيدلية ليقوم النظام تلقائياً باقتراح كود فريد وغير مكرر مع كامل الحرية للتعديل</small>
+        <!-- =====================================================================
+             VIEW 3: ONBOARDING WIZARD (PROVISIONING)
+             ===================================================================== -->
+        <div class="view-panel" id="view-provisioning">
+          <div class="provisioning-grid">
+            
+            <!-- Wizard Input Form -->
+            <div class="provision-card">
+              <div class="provision-card-head">
+                <h2>معالج تهيئة صيدلية جديدة (Tenant Provisioning)</h2>
+                <p>إنشاء الرسم البياني للمستأجر (Tenant Graph) وحساب المشرف وفق عقود الأمان D-038 و D-041</p>
               </div>
-              <span class="badge-env">Smart Auto-Code</span>
+
+              <form id="provisioning-form">
+                <div class="form-section-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v14M21 7v14M6 21V11M10 21V11M14 21V11M18 21V11M6 7h12M12 3l9 4H3l9-4z"/></svg>
+                  بيانات الصيدلية والمؤسسة
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group full">
+                    <label class="form-label">الاسم التجاري للصيدلية <small>(بالعربية)</small></label>
+                    <input type="text" class="form-input" id="input-pharmacy-name" placeholder="مثال: صيدلية النيلين النموذجية" required />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">الكيان القانوني أو الشركة المالكة</label>
+                    <input type="text" class="form-input" id="input-org-name" placeholder="مثال: شركة النيلين للخدمات الطبية" required />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">اسم الفرع الأساسي</label>
+                    <input type="text" class="form-input" id="input-branch-name" placeholder="الخرطوم — شارع القصر" required />
+                  </div>
+                </div>
+
+                <div class="form-section-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+                  الرمز البرمجي المعياري وخطة الاشتراك
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">رمز المستأجر المعياري <small>(مولّد آلياً أو مخصص)</small></label>
+                    <input type="text" class="form-input code-display" id="input-tenant-code" placeholder="PHARMA-SLUG" required dir="ltr" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">اسم مستخدم المشرف الأولي</label>
+                    <input type="text" class="form-input" id="input-admin-user" placeholder="admin_username" required dir="ltr" />
+                  </div>
+                </div>
+
+                <div class="form-group full" style="margin-bottom:16px;">
+                  <label class="form-label">باقة الاشتراك السحابي (Plan Entitlements)</label>
+                  <div class="plan-selector-grid">
+                    <div class="plan-option-card" data-plan="COMMUNITY">
+                      <strong>COMMUNITY</strong>
+                      <span>للصيدليات الفردية الصغيرة</span>
+                    </div>
+                    <div class="plan-option-card selected" data-plan="STANDARD">
+                      <strong>STANDARD</strong>
+                      <span>للصيدليات النموذجية (موصى بها)</span>
+                    </div>
+                    <div class="plan-option-card" data-plan="ENTERPRISE">
+                      <strong>ENTERPRISE</strong>
+                      <span>للسلاسل والمجموعات الكبرى</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; border-top:1px solid var(--border-subtle); padding-top:16px;">
+                  <button type="submit" class="btn-brand-primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+                    تأكيد التهيئة وإصدار بيانات الاعتماد
+                  </button>
+                </div>
+              </form>
             </div>
 
-            <form id="provisioning-form" class="provisioning-form">
-              <div class="form-grid">
-                <!-- 1. Pharmacy / Group Name FIRST -->
-                <div class="form-group full-width">
-                  <label for="tenant-name-input">
-                    اسم صيدلية أو مجموعة المنشآت *
-                    <span class="label-hint">اكتب اسم الصيدلية هنا ليتم توليد الرمز تلقائياً</span>
-                  </label>
-                  <input type="text" id="tenant-name-input" placeholder="مثال: صيدليات النيل الأزرق النموذجية" required autofocus>
-                </div>
+            <!-- Live Provisioning Preview Card -->
+            <div class="preview-summary-card">
+              <div class="preview-badge-header">
+                <h3 style="font-size:15px; font-weight:800;">معاينة الرسم البياني للمستأجر</h3>
+                <span class="badge-env">Live Preview</span>
+              </div>
 
-                <!-- 2. Auto-generated Unique Tenant Code with freedom to edit -->
-                <div class="form-group full-width code-group">
-                  <div class="code-label-row">
-                    <label for="tenant-code-input">رمز المستأجر الفريد (Tenant Code) *</label>
-                    <div class="code-badges-wrap">
-                      <span id="code-status-badge" class="code-status-badge auto">✨ تم التوليد تلقائياً (فريد)</span>
-                      <button type="button" id="regenerate-code-btn" class="btn-regenerate">🔄 كود بديل</button>
-                    </div>
-                  </div>
-                  <div class="input-with-action">
-                    <input type="text" id="tenant-code-input" placeholder="سيتم توليده تلقائياً من اسم الصيدلية..." required>
-                  </div>
-                  <div class="code-suggestions-panel">
-                    <span class="suggestions-label">اقتراحات بديلة سريعة (انقر للاختيار):</span>
-                    <div id="suggested-chips-container" class="suggestion-chips">
-                      <!-- Generated chips injected dynamically -->
-                    </div>
-                  </div>
-                  <small id="code-hint-msg" class="text-hint">يولده النظام آلياً ويضمن عدم تكراره، ولديك كامل الحرية في تعديله كما يناسبك.</small>
+              <div class="preview-metric-list">
+                <div class="preview-metric-item">
+                  <span>اسم الصيدلية:</span>
+                  <strong id="preview-name">—</strong>
                 </div>
-
-                <!-- 3. Operational Org Name -->
-                <div class="form-group">
-                  <label for="org-name-input">اسم المؤسسة التشغيلية *</label>
-                  <input type="text" id="org-name-input" placeholder="مثال: شركة النيل الأزرق للرعاية الصحية" required>
+                <div class="preview-metric-item">
+                  <span>الرمز البرمجي:</span>
+                  <strong id="preview-code">PHARMA-—</strong>
                 </div>
-
-                <!-- 4. Initial Branch Name -->
-                <div class="form-group">
-                  <label for="branch-name-input">اسم الفرع الأولي *</label>
-                  <input type="text" id="branch-name-input" placeholder="مثال: الفرع الرئيسي — بحري المحطة الوسطى" required>
+                <div class="preview-metric-item">
+                  <span>باقة الاشتراك:</span>
+                  <strong id="preview-plan">STANDARD</strong>
                 </div>
-
-                <!-- 5. Initial Admin Username -->
-                <div class="form-group">
-                  <label for="admin-user-input">اسم مستخدم المشرف الأولي *</label>
-                  <input type="text" id="admin-user-input" placeholder="مثال: nile_admin" required>
-                </div>
-
-                <!-- 6. Admin Email -->
-                <div class="form-group">
-                  <label for="admin-email-input">البريد الإلكتروني للمشرف *</label>
-                  <input type="email" id="admin-email-input" placeholder="admin@bluenile.sd" required>
-                </div>
-
-                <!-- 7. Subscription Plan -->
-                <div class="form-group full-width">
-                  <label for="sub-plan-select">خطة الاشتراك *</label>
-                  <select id="sub-plan-select" required>
-                    <option value="COMMUNITY">مجتمعية (Community - فرع واحد، أجهزة محدودة)</option>
-                    <option value="STANDARD" selected>قياسية (Standard - حتى 3 فروع، مزامنة كاملة)</option>
-                    <option value="ENTERPRISE">مؤسسية (Enterprise - فروع متعددة غير محدودة)</option>
-                  </select>
+                <div class="preview-metric-item">
+                  <span>اسم المشرف:</span>
+                  <strong id="preview-admin">—</strong>
                 </div>
               </div>
 
-              <div class="form-actions">
-                <button type="submit" class="btn-primary" id="submit-provision-btn">
-                  <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="btn-icon">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  <span>إنشاء المستأجر وتوليد بيانات الدخول المؤقتة</span>
-                </button>
+              <div class="security-checklist">
+                <div style="font-weight:700; margin-bottom:8px; color:var(--text-primary);">معايير الأمان الإلزامية (D-041):</div>
+                <div class="check-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>فرض حالة PASSWORD_CHANGE_REQUIRED</span>
+                </div>
+                <div class="check-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>حظر أي وصول إداري للمنصة من حساب المستأجر</span>
+                </div>
+                <div class="check-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>تسجيل قيد فوري غير قابل للتعديل في سجل التدقيق</span>
+                </div>
               </div>
-            </form>
+            </div>
+
           </div>
-        </section>
+        </div>
 
-        <!-- 4. Audit & Security Tab -->
-        <section class="tab-view hidden" id="tab-audit">
-          <div class="card-section">
-            <div class="section-header">
-              <div>
-                <h3>سجل التدقيق الأمني غير القابل للتعديل (Append-Only Audit)</h3>
-                <small class="text-muted">تسجيل غير قابل للحذف لجميع العمليات الإدارية الحساسة بموجب D-009 & D-038</small>
-              </div>
+        <!-- =====================================================================
+             VIEW 4: SECURITY AUDIT TRAIL
+             ===================================================================== -->
+        <div class="view-panel" id="view-audit">
+          <div class="audit-container">
+            <div class="audit-header">
               <div class="table-search-box">
-                <input type="text" id="audit-search-input" placeholder="تصفية بالإجراء أو رمز المستأجر...">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="audit-search-input" placeholder="بحث في القيود بالرمز، العملية، أو معرف الارتباط..." />
               </div>
+
+              <span class="badge-env" style="background:var(--border-light); color:var(--text-secondary); border-color:var(--border-subtle);">
+                القيود المسجلة: <strong id="audit-count-badge" style="color:var(--brand-teal);">2</strong>
+              </span>
             </div>
-            <div class="table-container">
-              <table class="data-table">
+
+            <div class="enterprise-table-wrapper">
+              <table class="enterprise-table">
                 <thead>
                   <tr>
-                    <th>معرف الحدث</th>
                     <th>الوقت والتاريخ</th>
-                    <th>المنفذ (Actor)</th>
-                    <th>العملية (Action)</th>
+                    <th>نوع الإجراء</th>
+                    <th>معرّف الارتباط (Correlation ID)</th>
                     <th>رمز المستأجر</th>
-                    <th>التفاصيل والنتائج</th>
-                    <th>رمز الترابط (Correlation ID)</th>
+                    <th>التفاصيل والبيانات</th>
+                    <th>المنفذ</th>
                   </tr>
                 </thead>
-                <tbody id="audit-log-body"></tbody>
+                <tbody id="audit-log-body">
+                  <!-- Dynamically populated -->
+                </tbody>
               </table>
             </div>
           </div>
-        </section>
-      </div>
-    </main>
+        </div>
 
-    <!-- Provisioning Success Modal -->
-    <div class="modal-overlay hidden" id="credential-modal">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div class="modal-title-wrap">
-            <div class="modal-icon-success">
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-              </svg>
-            </div>
-            <h3>تم إنشاء المستأجر بنجاح</h3>
-          </div>
-          <button class="btn-close" id="close-credential-modal-btn">&times;</button>
+      </section>
+    </main>
+  </div>
+
+  <!-- =========================================================================
+       CREDENTIAL HANDOVER MODAL (SECURE ONE-TIME PASSWORD DELIVERY D-041)
+       ========================================================================= -->
+  <div class="modal-backdrop hidden" id="modal-credential-handover">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size:17px; font-weight:800; color:var(--brand-navy);">بيانات اعتماد المشرف الأولي (Handover)</h3>
+        <button class="modal-close-btn" id="btn-close-credential-modal" title="إغلاق">✕</button>
+      </div>
+
+      <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:12px;">
+        تمت تهيئة الصيدلية بنجاح. يرجى تسليم هذه البيانات لمشرف الصيدلية عبر وسيلة اتصال آمنة وموثوقة:
+      </p>
+
+      <div class="credential-display-box">
+        <div class="credential-field">
+          <span>اسم الصيدلية:</span>
+          <strong id="cred-pharmacy-name" style="font-size:13px;">—</strong>
         </div>
-        <div class="modal-body">
-          <div class="credential-box">
-            <div class="security-alert-box">
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="mini-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-              </svg>
-              <span>تم تفعيل الحساب بحالة إلزامية لتغيير كلمة المرور فور أول تسجيل دخول (<code>PASSWORD_CHANGE_REQUIRED</code>).</span>
-            </div>
-            <div class="credential-fields">
-              <div class="field-row">
-                <span>رمز المستأجر المعتمد:</span>
-                <strong id="cred-tenant-code">PHARMA-01</strong>
-              </div>
-              <div class="field-row">
-                <span>اسم المشرف الأولي:</span>
-                <strong id="cred-admin-user">admin</strong>
-              </div>
-              <div class="field-row">
-                <span>كلمة المرور المؤقتة:</span>
-                <strong class="temp-pwd" id="cred-temp-pwd">Temp-8X99!2026</strong>
-              </div>
-            </div>
-            <button class="btn-secondary" id="copy-cred-btn" style="width:100%; margin-top:1rem;">
-              <svg fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="mini-icon">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
-              </svg>
-              <span>نسخ بيانات الدخول إلى الحافظة</span>
-            </button>
-          </div>
+        <div class="credential-field">
+          <span>رمز المستأجر (Tenant Code):</span>
+          <span class="credential-value" id="cred-tenant-code" dir="ltr">—</span>
         </div>
-        <div class="modal-footer">
-          <button class="btn-primary" id="finish-cred-modal-btn">إغلاق والانتقال لدليل المستأجرين</button>
+        <div class="credential-field">
+          <span>اسم المستخدم (Admin Username):</span>
+          <span class="credential-value" id="cred-admin-user" dir="ltr">—</span>
         </div>
+        <div class="credential-field">
+          <span>كلمة المرور المؤقتة (Temporary Password):</span>
+          <span class="credential-value" id="cred-temp-password" dir="ltr" style="color:var(--status-danger);">—</span>
+        </div>
+      </div>
+
+      <div class="security-warning-callout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+        <div>
+          <strong>إلزام أمني صارم (D-041):</strong>
+          <p style="margin-top:2px;">هذه كلمة مرور مؤقتة ولن يتم عرضها مرة أخرى. سيُطلب من المشرف إجبارياً تعيين كلمة مرور شخصية قوية فور محاولة تسجيل الدخول الأولى.</p>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-table-action" id="btn-dismiss-credential-modal">إغلاق</button>
+        <button class="btn-brand-primary" id="btn-copy-credentials">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          نسخ بيانات الدخول كاملة
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- Toast Notification Stack -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Helper for inline navigation buttons -->
+  <script>
+    window.adminNavTo = function(tab) {
+      const btn = document.querySelector(`.nav-item[data-tab="${tab}"]`);
+      if (btn) btn.click();
+    };
+  </script>
+
+  <!-- Main Modular Application Bootstrap -->
   <script type="module" src="app.js"></script>
 </body>
 </html>

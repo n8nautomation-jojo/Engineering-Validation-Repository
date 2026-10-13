@@ -6,3 +6,4 @@ tests/*.db-shm
 *.log
 *.patch
 .DS_Store
+temp-lovable-repo/

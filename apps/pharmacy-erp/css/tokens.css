@@ -1,0 +1,100 @@
+/* ==========================================================================
+   PharmaTech Design System — Tokens & Color Variables
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Typography */
+  --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
+  --font-display: 'Alexandria', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-latin: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  /* Official PharmaTech Logo Palette */
+  --logo-navy: #0A2540;        /* Deep Navy ("Pharma") */
+  --logo-navy-deep: #07192C;
+  --logo-blue: #0052CC;        /* Royal Blue - Icon start */
+  --logo-cyan: #00A3FF;        /* Vibrant Sky/Cyan - Icon middle */
+  --logo-teal: #00B37E;        /* Mint Teal / Emerald ("Tech") */
+  --logo-teal-bright: #00C988; /* Bright Green highlight */
+
+  /* Surfaces & Backgrounds (Clean Daylight Mode) */
+  --background: #F4F6F9;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  
+  /* Sidebar (Pure White: natural logo placement without artificial border) */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #334155;
+  --sidebar-muted: #F1F5F9;
+  --sidebar-border: #E2E8F0;
+
+  /* Primary Brand Tokens */
+  --primary: #00B37E;
+  --primary-strong: #00875A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #E6F8F2;
+  
+  /* Logo Gradients */
+  --gradient-primary: linear-gradient(135deg, #0052CC 0%, #0099FF 50%, #00B37E 100%);
+  --gradient-hero: linear-gradient(135deg, #0A2540 0%, #003B95 38%, #0052CC 72%, #00B37E 100%);
+  --gradient-teal: linear-gradient(135deg, #00C988 0%, #0099FF 100%);
+
+  /* Neutrals & Borders */
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --border: #E2E8F0;
+  --border-light: #F1F5F9;
+
+  /* Semantic Alerts */
+  --success: #00B37E;
+  --success-bg: #E6F8F2;
+  --warning: #F59E0B;
+  --warning-bg: #FEF3C7;
+  --destructive: #EF4444;
+  --destructive-bg: #FEE2E2;
+  --blue: #0284C7;
+  --blue-bg: #E0F2FE;
+  --violet: #8B5CF6;
+  --violet-bg: #EDE9FE;
+
+  /* Shadows */
+  --shadow-soft: 0 1px 3px rgba(15, 23, 42, 0.05), 0 8px 24px -12px rgba(15, 23, 42, 0.08);
+  --shadow-lift: 0 16px 36px -12px rgba(0, 179, 126, 0.35);
+  --shadow-card-hover: 0 12px 28px -8px rgba(15, 23, 42, 0.12);
+  --shadow-modal: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+}
+
+/* Dark Theme Variables */
+.dark, [data-theme="dark"] {
+  --background: #0B1120;
+  --foreground: #F8FAFC;
+  --card: #131B2E;
+  --card-foreground: #F8FAFC;
+
+  --sidebar: #0F172A;
+  --sidebar-foreground: #94A3B8;
+  --sidebar-muted: #1E293B;
+  --sidebar-border: #1E293B;
+
+  --primary: #00C988;
+  --primary-strong: #00B37E;
+  --primary-foreground: #0B1120;
+  --secondary: rgba(0, 201, 136, 0.15);
+
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --border: #1E293B;
+  --border-light: #162032;
+
+  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  --shadow-lift: 0 16px 36px -12px rgba(0, 201, 136, 0.25);
+  --shadow-card-hover: 0 12px 28px -8px rgba(0, 0, 0, 0.6);
+}

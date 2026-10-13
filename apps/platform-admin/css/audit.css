@@ -1,0 +1,68 @@
+/**
+ * [Feature / Domain]: Platform Administration — Security Audit Trail Styles
+ * [Multi-Tenancy Context]: Cross-Tenant Immutable Audit Trail (Append-Only)
+ * [Security / Entitlement]: Security Compliance & Audit Inspector
+ */
+
+.audit-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.audit-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.audit-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-family: var(--font-latin);
+  font-weight: 700;
+}
+
+.audit-tag.provision {
+  background: rgba(0, 179, 126, 0.12);
+  color: #00B37E;
+  border: 1px solid rgba(0, 179, 126, 0.25);
+}
+
+.audit-tag.suspend {
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.audit-tag.credentials {
+  background: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.correlation-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--border-light);
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+.audit-timestamp {
+  font-family: var(--font-latin);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}

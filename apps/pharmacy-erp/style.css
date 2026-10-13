@@ -1,0 +1,31 @@
+/* ==========================================================================
+   PharmaTech — Enterprise Design System (Modular Architecture)
+   ==========================================================================
+   This stylesheet acts as the master manifest, importing isolated,
+   single-responsibility CSS modules for maintainability, theme customization,
+   and zero-regression styling.
+   ========================================================================== */
+
+/* 1. Design Tokens, Brand Palette, Typography & Dark Mode Variables */
+@import './css/tokens.css';
+
+/* 2. Global Shell, Natural White Sidebar, Topbar & Layout Grid */
+@import './css/layout.css';
+
+/* 3. Operational KPI Cards, Dynamic Badges & Metric Pills */
+@import './css/stats.css';
+
+/* 4. Sales Revenue Trends & Morphing SVG Area Chart */
+@import './css/chart.css';
+
+/* 5. Inventory Table, Segmented Filters, FEFO Meters & Pagination */
+@import './css/table.css';
+
+/* 5.1 Integrated POS Terminal, FEFO Batch Ordering & Split Payments */
+@import './css/pos.css';
+
+/* 6. Dialogs, Modals, Forms & 80mm Thermal POS Receipt Layout */
+@import './css/dialogs.css';
+
+/* 7. Toast Notification Engine & Stacked Alerts */
+@import './css/toast.css';
