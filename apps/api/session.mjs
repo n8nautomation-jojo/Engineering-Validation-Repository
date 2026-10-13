@@ -3,7 +3,7 @@
  * Strictly conforms to src/domain/cash/cash-session.ts & OpenAPI 3.1 Cash Session Contracts
  */
 
-import { randomUUID } from "node:crypto";
+const randomUUID = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `018f${Math.random().toString(16).slice(2, 10)}-0000-7000-8000-000000000000`);
 
 class SessionRepository {
   constructor() {

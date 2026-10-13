@@ -3,7 +3,7 @@
  * Adheres strictly to CompleteSaleRequestDto & CompleteSaleResponseDto in src/api/types.ts
  */
 
-import { randomUUID } from "node:crypto";
+const randomUUID = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `018f${Math.random().toString(16).slice(2, 10)}-0000-7000-8000-000000000000`);
 import { catalogRepository } from "./catalog.mjs";
 import { sessionRepository } from "./session.mjs";
 
