@@ -21,15 +21,29 @@ export class PosView {
     this.allocationMeterBar = document.getElementById('allocation-meter-bar-fill');
     this.allocationValEl = document.getElementById('allocation-meter-val');
     this.categoryTabs = document.querySelectorAll('.pos-tab-btn');
-    this.bankakRefInput = document.getElementById('pos-bankak-ref-input');
-
     this.selectedCategory = 'ALL';
+
+    // Mobile Sheet Elements
+    this.cartPanel = document.getElementById('pos-cart-panel');
+    this.openCartSheetBtn = document.getElementById('btn-open-cart-sheet');
+    this.closeCartSheetBtn = document.getElementById('btn-close-cart-sheet');
+    this.mobileCartBadge = document.getElementById('mobile-cart-badge');
+    this.mobileCartTotal = document.getElementById('mobile-cart-total');
 
     this.init();
   }
 
   init() {
     if (!this.container) return;
+
+    // Mobile Bottom Sheet Trigger
+    this.openCartSheetBtn?.addEventListener('click', () => {
+      this.cartPanel?.classList.add('mobile-sheet-open');
+    });
+
+    this.closeCartSheetBtn?.addEventListener('click', () => {
+      this.cartPanel?.classList.remove('mobile-sheet-open');
+    });
 
     // React to store updates (e.g. after backend sync)
     appStore.subscribe((event) => {
@@ -226,8 +240,11 @@ export class PosView {
     }
 
     const grand = posService.grandTotal;
+    const totalQty = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     if (this.subtotalEl) this.subtotalEl.textContent = `${Number(grand).toLocaleString()} ج.س`;
     if (this.grandTotalEl) this.grandTotalEl.textContent = `${Number(grand).toLocaleString()} ج.س`;
+    if (this.mobileCartBadge) this.mobileCartBadge.textContent = totalQty;
+    if (this.mobileCartTotal) this.mobileCartTotal.textContent = `${Number(grand).toLocaleString()} ج.س`;
 
     // Global bridges
     window.posUpdateQty = (idx, q) => {
@@ -257,6 +274,9 @@ export class PosView {
     try {
       // Execute official CompleteSale via Core Backend API
       const responseDto = await posService.completeSale();
+
+      // Close mobile sheet if open
+      this.cartPanel?.classList.remove('mobile-sheet-open');
 
       // Trigger 80mm thermal receipt modal with real sale data
       window.dispatchEvent(new CustomEvent('OPEN_RECEIPT_MODAL', { detail: responseDto }));

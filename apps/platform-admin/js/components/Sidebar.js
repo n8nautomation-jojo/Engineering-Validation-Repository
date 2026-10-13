@@ -8,7 +8,11 @@ import { adminStore } from '../state/adminStore.js';
 
 export class Sidebar {
   constructor() {
-    this.navButtons = document.querySelectorAll('.nav-item');
+    this.shell = document.getElementById('admin-shell');
+    this.mobileToggleBtn = document.getElementById('admin-mobile-toggle-btn');
+    this.closeBtn = document.getElementById('admin-sidebar-close-btn');
+    this.backdrop = document.getElementById('admin-backdrop');
+
     this.init();
   }
 
@@ -19,15 +23,38 @@ export class Sidebar {
         if (!tab) return;
 
         this.setActiveTab(tab);
+        this.closeMobileDrawer();
       });
+    });
+
+    // Mobile Drawer Controls
+    this.mobileToggleBtn?.addEventListener('click', () => this.openMobileDrawer());
+    this.closeBtn?.addEventListener('click', () => this.closeMobileDrawer());
+    this.backdrop?.addEventListener('click', () => this.closeMobileDrawer());
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.shell?.classList.contains('mobile-open')) {
+        this.closeMobileDrawer();
+      }
     });
 
     // Subscribe to external store requests (e.g. from topbar button)
     adminStore.subscribe((event, payload) => {
       if (event === 'TAB_CHANGED') {
         this.updateUI(payload);
+        this.closeMobileDrawer();
       }
     });
+  }
+
+  openMobileDrawer() {
+    this.shell?.classList.add('mobile-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeMobileDrawer() {
+    this.shell?.classList.remove('mobile-open');
+    document.body.style.overflow = '';
   }
 
   setActiveTab(tab) {

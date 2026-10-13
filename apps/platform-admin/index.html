@@ -15,6 +15,9 @@
 <body>
   <div class="admin-shell" id="admin-shell">
     
+    <!-- Mobile Backdrop Overlay -->
+    <div class="admin-backdrop" id="admin-backdrop"></div>
+
     <!-- =========================================================================
          SIDEBAR (CLEAN WHITE BACKGROUND - OFFICIAL LOGO - NO ARTIFICIAL BOX/FRAME)
          ========================================================================= -->
@@ -22,8 +25,16 @@
       
       <!-- Natural Logo Presentation on Clean White Sidebar -->
       <div class="sidebar-brand-natural">
-        <img src="pharmatech-logo.png" alt="PharmaTech" class="brand-logo-img" />
-        <span class="console-pill">Console</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <img src="pharmatech-logo.png" alt="PharmaTech" class="brand-logo-img" />
+          <span class="console-pill">Console</span>
+        </div>
+        <button class="icon-button admin-sidebar-close" id="admin-sidebar-close-btn" aria-label="إغلاق القائمة" title="إغلاق">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
 
       <!-- Navigation Tabs -->
@@ -98,6 +109,13 @@
       <!-- Topbar Header -->
       <header class="admin-topbar">
         <div class="topbar-left">
+          <button class="icon-button admin-mobile-toggle" id="admin-mobile-toggle-btn" aria-label="فتح القائمة الرئيسية" title="القائمة">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" x2="20" y1="12" y2="12"/>
+              <line x1="4" x2="20" y1="6" y2="6"/>
+              <line x1="4" x2="20" y1="18" y2="18"/>
+            </svg>
+          </button>
           <div class="topbar-title">
             <h1 id="page-title">نظرة عامة على النظام السحابي</h1>
           </div>

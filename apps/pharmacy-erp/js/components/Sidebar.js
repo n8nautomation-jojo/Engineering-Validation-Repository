@@ -15,6 +15,8 @@ export class Sidebar {
     this.branchBtn = document.getElementById('branch-select-btn');
     this.navButtons = document.querySelectorAll('.nav-button');
 
+    this.closeMobileBtn = document.getElementById('sidebar-close-mobile-btn');
+
     this.init();
   }
 
@@ -27,17 +29,30 @@ export class Sidebar {
       });
     }
 
-    // Mobile Drawer
+    // Mobile Drawer Open
     if (this.mobileBtn && this.backdrop && this.shell) {
       this.mobileBtn.addEventListener('click', () => {
-        appStore.mobile = true;
-        this.shell.classList.add('mobile-open');
+        this.openMobile();
       });
 
       this.backdrop.addEventListener('click', () => {
         this.closeMobile();
       });
     }
+
+    // Mobile Drawer Close Button
+    if (this.closeMobileBtn) {
+      this.closeMobileBtn.addEventListener('click', () => {
+        this.closeMobile();
+      });
+    }
+
+    // Escape Key to Dismiss Mobile Drawer
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && appStore.mobile) {
+        this.closeMobile();
+      }
+    });
 
     // Branch Selector
     if (this.branchBtn) {
@@ -56,9 +71,16 @@ export class Sidebar {
     });
   }
 
+  openMobile() {
+    appStore.mobile = true;
+    this.shell?.classList.add('mobile-open');
+    document.body.style.overflow = 'hidden';
+  }
+
   closeMobile() {
     appStore.mobile = false;
     this.shell?.classList.remove('mobile-open');
+    document.body.style.overflow = '';
   }
 
   switchView(view, btnEl) {

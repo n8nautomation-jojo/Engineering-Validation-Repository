@@ -53,17 +53,45 @@ export function renderNavbar() {
             </button>
           </div>
 
-          <a href="/platform-admin/" class="btn btn-ghost btn-sm" title="لوحة المنصة المركزية">
+          <a href="/platform-admin/" class="btn btn-ghost btn-sm nav-desktop-only" title="لوحة المنصة المركزية">
             <span>لوحة المنصة</span>
           </a>
 
-          <a href="/pharmacy-erp/" class="btn btn-primary btn-sm" title="دخول منظومة الصيدلية ونقطة البيع">
+          <a href="/pharmacy-erp/" class="btn btn-primary btn-sm nav-desktop-only" title="دخول منظومة الصيدلية ونقطة البيع">
             <span>دخول المنظومة & POS</span>
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
           </a>
+
+          <!-- Mobile Hamburger Toggle -->
+          <button class="icon-btn landing-mobile-toggle" id="landing-mobile-toggle-btn" aria-label="فتح القائمة الرئيسية" title="القائمة">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" x2="20" y1="12" y2="12"/>
+              <line x1="4" x2="20" y1="6" y2="6"/>
+              <line x1="4" x2="20" y1="18" y2="18"/>
+            </svg>
+          </button>
         </div>
+      </div>
+
+      <!-- Mobile Dropdown Navigation Drawer -->
+      <div class="landing-mobile-drawer" id="landing-mobile-drawer">
+        <nav class="mobile-drawer-nav">
+          <a href="#features" class="mobile-nav-link">المميزات التشغيلية</a>
+          <a href="#preview" class="mobile-nav-link">معاينة المنظومة</a>
+          <a href="#pricing" class="mobile-nav-link">باقات الاشتراك</a>
+          <a href="#testimonials" class="mobile-nav-link">آراء الصيادلة</a>
+          <a href="#faq" class="mobile-nav-link">الأسئلة الشائعة</a>
+          <div class="mobile-drawer-actions">
+            <a href="/pharmacy-erp/" class="btn btn-primary" style="width:100%; justify-content:center;">
+              دخول المنظومة & POS
+            </a>
+            <a href="/platform-admin/" class="btn btn-ghost" style="width:100%; justify-content:center; border:1px solid var(--border-color);">
+              لوحة المنصة المركزية
+            </a>
+          </div>
+        </nav>
       </div>
     </header>
   `;
@@ -89,4 +117,32 @@ export function initNavbarEvents() {
       }
     });
   });
+
+  // Mobile Drawer Toggle
+  const toggleBtn = document.getElementById('landing-mobile-toggle-btn');
+  const drawer = document.getElementById('landing-mobile-drawer');
+
+  if (toggleBtn && drawer) {
+    toggleBtn.addEventListener('click', () => {
+      const isOpen = drawer.classList.toggle('open');
+      toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    // Close when clicking on any mobile nav link
+    drawer.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        drawer.classList.remove('open');
+        toggleBtn.setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && drawer.classList.contains('open')) {
+        drawer.classList.remove('open');
+        toggleBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
 }
+

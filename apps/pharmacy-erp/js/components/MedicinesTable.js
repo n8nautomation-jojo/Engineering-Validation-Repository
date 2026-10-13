@@ -129,7 +129,7 @@ export class MedicinesTable {
 
       return `
         <tr onclick="window.openMedicineDetail('${m.id}')">
-          <td>
+          <td data-label="الصنف">
             <div class="medicine-name">
               <div class="medicine-icon ${statusClass}">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
@@ -140,13 +140,13 @@ export class MedicinesTable {
               </div>
             </div>
           </td>
-          <td>
+          <td data-label="التصنيف">
             <span class="tag">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
               ${m.category}
             </span>
           </td>
-          <td>
+          <td data-label="المخزون">
             <div class="stock">
               <span class="num">${m.stock}</span>
               <div class="meter">
@@ -154,26 +154,26 @@ export class MedicinesTable {
               </div>
             </div>
           </td>
-          <td>
+          <td data-label="السعر">
             <strong class="num" dir="ltr">${Number(m.price).toLocaleString()} ج.س</strong>
           </td>
-          <td>
+          <td data-label="الصلاحية">
             <span class="date num" dir="ltr">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
               ${m.expiry}
             </span>
           </td>
-          <td>
+          <td data-label="التشغيلة">
             <span class="num" style="font-size:11.5px; font-weight:700; background:var(--muted); padding:3px 7px; border-radius:6px; border:1px solid var(--border);" dir="ltr">
               ${m.batch}
             </span>
           </td>
-          <td>
+          <td data-label="الحالة">
             <span class="status ${statusClass}">
               ${statusLabel}
             </span>
           </td>
-          <td>
+          <td data-label="الإجراءات">
             <button class="icon-btn" title="تفاصيل الصنف" onclick="event.stopPropagation(); window.openMedicineDetail('${m.id}')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>

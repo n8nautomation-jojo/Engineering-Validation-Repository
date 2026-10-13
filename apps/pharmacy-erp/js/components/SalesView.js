@@ -213,21 +213,21 @@ export class SalesView {
 
               return `
                 <tr>
-                  <td>
+                  <td data-label="رقم الفاتورة">
                     <strong style="color:var(--primary); font-family:var(--font-mono); font-size:13px;" dir="ltr">${s.invoice_number}</strong>
                   </td>
-                  <td>
+                  <td data-label="التاريخ">
                     <span style="font-size:12px; color:var(--muted-foreground);">${dateFormatted}</span>
                   </td>
-                  <td>
+                  <td data-label="الكاشير">
                     <span style="font-size:12.5px; font-weight:600;">${s.cashier_name || 'د. أحمد الطاهر'}</span>
                   </td>
-                  <td>
+                  <td data-label="الأصناف">
                     <div style="font-size:12px;">
                       <span>${itemsPreview || `${itemsCount} صنف`}</span>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="طريقة السداد">
                     ${isBankak ? `
                       <span class="chip" style="background:#EBF5FF; color:#0052CC; font-weight:700; font-size:11px;" title="${bankakRef || 'بنكك'}">
                         بنكك ${bankakRef ? `· ${bankakRef}` : ''}
@@ -238,15 +238,15 @@ export class SalesView {
                       </span>
                     `}
                   </td>
-                  <td>
+                  <td data-label="الإجمالي">
                     <strong style="font-size:13px;" dir="ltr">${Number(s.totals.total).toLocaleString()} ج.س</strong>
                   </td>
-                  <td>
+                  <td data-label="الحالة">
                     <span class="chip ${s.status === 'COMPLETED' ? 'chip-success' : 'chip-warning'}">
                       ${s.status === 'COMPLETED' ? 'مكتملة' : 'ملغاة'}
                     </span>
                   </td>
-                  <td style="text-align:left;">
+                  <td data-label="إجراءات" style="text-align:left;">
                     <button class="btn-table-action" onclick="window.salesReprintReceipt('${s.invoice_number}')" title="طباعة الإيصال الحراري 80mm">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="6 9 6 2 18 2 18 9" />

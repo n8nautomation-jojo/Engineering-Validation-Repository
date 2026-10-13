@@ -70,6 +70,15 @@
   --radius-md: 12px;
   --radius-lg: 18px;
   --radius-full: 9999px;
+
+  /* Mobile-First Layout & Touch Tokens */
+  --touch-target-min: 44px;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --mobile-header-height: 58px;
+  --mobile-bottom-bar-height: 68px;
 }
 
 /* Dark Theme Variables */
