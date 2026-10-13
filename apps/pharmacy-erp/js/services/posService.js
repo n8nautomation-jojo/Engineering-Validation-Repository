@@ -268,6 +268,10 @@ class PosService {
     // Refresh allocation
     await this.loadBackendContext();
 
+    // Notify all interconnected components (Dashboard, Sales, Sessions)
+    window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
+    window.dispatchEvent(new CustomEvent('SESSION_UPDATED'));
+
     // Clear cart after successful transaction
     this.clearCart();
 

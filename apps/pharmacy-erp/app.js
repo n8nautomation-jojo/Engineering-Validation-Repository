@@ -19,6 +19,7 @@ import { SessionsView } from './js/components/SessionsView.js';
 import { CashMovementDialog } from './js/components/CashMovementDialog.js';
 import { CloseSessionDialog } from './js/components/CloseSessionDialog.js';
 import { OpenSessionDialog } from './js/components/OpenSessionDialog.js';
+import { DashboardStats } from './js/components/DashboardStats.js';
 import { showToast } from './js/components/Toast.js';
 
 class PharmaTechApp {
@@ -45,6 +46,7 @@ class PharmaTechApp {
     this.components.movementDialog = new CashMovementDialog();
     this.components.closeDialog = new CloseSessionDialog();
     this.components.openDialog = new OpenSessionDialog();
+    this.components.dashboardStats = new DashboardStats();
 
     // Fetch authoritative live product catalog from Core Backend API
     try {

@@ -3,13 +3,16 @@
  * Single Source of Truth for Dashboard & Inventory Operations
  */
 
-import { INITIAL_MEDICINES, INITIAL_CHART_DATA, INITIAL_NOTIFICATIONS } from './mockData.js';
-
 class Store {
   constructor() {
-    this.medicines = [...INITIAL_MEDICINES];
-    this.chartData = { ...INITIAL_CHART_DATA };
-    this.notifications = [...INITIAL_NOTIFICATIONS];
+    this.medicines = [];
+    this.sales = [];
+    this.currentSession = null;
+    this.chartData = {
+      week: { total: 0, points: [] },
+      month: { total: 0, points: [] }
+    };
+    this.notifications = [];
 
     this.activeView = 'dashboard';
     this.collapsed = false;

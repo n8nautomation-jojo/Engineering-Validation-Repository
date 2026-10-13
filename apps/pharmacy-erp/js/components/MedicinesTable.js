@@ -54,6 +54,7 @@ export class MedicinesTable {
     // Subscribe to store updates
     appStore.subscribe((event) => {
       if ([
+        'MEDICINES_LOADED',
         'FILTER_CHANGED',
         'PAGE_CHANGED',
         'MEDICINE_ADDED',

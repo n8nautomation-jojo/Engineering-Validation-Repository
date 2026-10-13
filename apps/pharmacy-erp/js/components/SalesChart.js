@@ -33,15 +33,25 @@ export class SalesChart {
       });
     }
 
+    // Reactive updates on sales ledger changes
+    window.addEventListener('SALES_UPDATED', () => this.render());
+    appStore.subscribe((event) => {
+      if (event === 'SALES_UPDATED' || event === 'CHART_PERIOD_CHANGED') {
+        this.render();
+      }
+    });
+
     this.render();
   }
 
   render() {
-    const data = appStore.chartData[appStore.chartPeriod];
-    if (!data) return;
+    const sales = appStore.sales || [];
+    const totalSales = sales
+      .filter((s) => s.status === 'COMPLETED')
+      .reduce((sum, s) => sum + (parseFloat(s.totals?.total || s.total || 0) || 0), 0);
 
     if (this.summaryEl) {
-      this.summaryEl.innerHTML = `${Number(data.total).toLocaleString()} <small>ج.س</small>`;
+      this.summaryEl.innerHTML = `${Number(totalSales).toLocaleString('en-US')} <small>ج.س</small>`;
     }
 
     if (appStore.chartPeriod === 'month') {

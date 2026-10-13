@@ -22,23 +22,28 @@ export class AddMedicineDialog {
     this.closeBtn?.addEventListener('click', () => this.close());
     this.cancelBtn?.addEventListener('click', () => this.close());
 
-    this.form?.addEventListener('submit', (e) => {
+    this.form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
 
-      const added = MedicineService.add({
-        name: fd.get('name'),
-        generic: fd.get('generic'),
-        category: fd.get('category'),
-        stock: fd.get('stock'),
-        price: fd.get('price'),
-        expiry: fd.get('expiry'),
-        batch: fd.get('batch')
-      });
+      try {
+        const payload = {
+          name: fd.get('name'),
+          generic: fd.get('generic'),
+          category: fd.get('category'),
+          stock: fd.get('stock'),
+          price: fd.get('price'),
+          expiry: fd.get('expiry'),
+          batch: fd.get('batch')
+        };
+        const added = await MedicineService.add(payload);
 
-      this.close();
-      this.form.reset();
-      showToast('تمت إضافة الدواء بنجاح', `${added.name} · تشغيلة ${added.batch}`, 'success');
+        this.close();
+        this.form.reset();
+        showToast('تمت إضافة الدواء بنجاح', `${payload.name} · تشغيلة ${payload.batch}`, 'success');
+      } catch (err) {
+        showToast('خطأ في إضافة الدواء', err.message, 'danger');
+      }
     });
   }
 
