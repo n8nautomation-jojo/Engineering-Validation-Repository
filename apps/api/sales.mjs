@@ -9,10 +9,17 @@ import { fileURLToPath } from "node:url";
 import { catalogRepository } from "./catalog.mjs";
 import { sessionRepository } from "./session.mjs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, "../data");
-const SALES_FILE = path.join(DATA_DIR, "sales.json");
+const resolveDataDir = () => {
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.url && typeof import.meta.url === "string" && import.meta.url.startsWith("file:")) {
+      return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data");
+    }
+  } catch {}
+  return "";
+};
+
+const DATA_DIR = resolveDataDir();
+const SALES_FILE = DATA_DIR ? path.join(DATA_DIR, "sales.json") : "";
 
 const randomUUID = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `018f${Math.random().toString(16).slice(2, 10)}-0000-7000-8000-000000000000`);
 
@@ -24,7 +31,7 @@ class SalesRepository {
 
   loadSales() {
     try {
-      if (fs.existsSync(SALES_FILE)) {
+      if (SALES_FILE && fs && typeof fs.existsSync === "function" && fs.existsSync(SALES_FILE)) {
         const raw = fs.readFileSync(SALES_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -40,6 +47,7 @@ class SalesRepository {
   }
 
   persistSales(salesList = this.salesLedger) {
+    if (!SALES_FILE || !DATA_DIR || !fs || typeof fs.writeFileSync !== "function") return;
     try {
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });

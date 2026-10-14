@@ -2,10 +2,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, "../data");
-const SETTINGS_FILE = path.join(DATA_DIR, "settings.json");
+const resolveDataDir = () => {
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.url && typeof import.meta.url === "string" && import.meta.url.startsWith("file:")) {
+      return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data");
+    }
+  } catch {}
+  return "";
+};
+
+const DATA_DIR = resolveDataDir();
+const SETTINGS_FILE = DATA_DIR ? path.join(DATA_DIR, "settings.json") : "";
 
 const DEFAULT_SETTINGS = {
   pharmacyName: "صيدلية النيلين النموذجية",
@@ -38,7 +45,7 @@ class SettingsRepository {
 
   loadSettings() {
     try {
-      if (fs.existsSync(SETTINGS_FILE)) {
+      if (SETTINGS_FILE && fs && typeof fs.existsSync === "function" && fs.existsSync(SETTINGS_FILE)) {
         const raw = fs.readFileSync(SETTINGS_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         return { ...DEFAULT_SETTINGS, ...parsed };
@@ -50,6 +57,7 @@ class SettingsRepository {
   }
 
   persistSettings() {
+    if (!SETTINGS_FILE || !DATA_DIR || !fs || typeof fs.writeFileSync !== "function") return;
     try {
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });

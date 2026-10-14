@@ -10,11 +10,18 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { authRepository } from "./auth.mjs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, "../data");
-const TENANTS_FILE = path.join(DATA_DIR, "tenants.json");
-const AUDIT_FILE = path.join(DATA_DIR, "platform-audit.json");
+const resolveDataDir = () => {
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.url && typeof import.meta.url === "string" && import.meta.url.startsWith("file:")) {
+      return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data");
+    }
+  } catch {}
+  return "";
+};
+
+const DATA_DIR = resolveDataDir();
+const TENANTS_FILE = DATA_DIR ? path.join(DATA_DIR, "tenants.json") : "";
+const AUDIT_FILE = DATA_DIR ? path.join(DATA_DIR, "platform-audit.json") : "";
 
 const PLAN_MRR = {
   ENTERPRISE: 1800000,
@@ -31,7 +38,7 @@ class PlatformRepository {
 
   loadTenants() {
     try {
-      if (fs.existsSync(TENANTS_FILE)) {
+      if (TENANTS_FILE && fs && typeof fs.existsSync === "function" && fs.existsSync(TENANTS_FILE)) {
         const raw = fs.readFileSync(TENANTS_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -46,6 +53,7 @@ class PlatformRepository {
 
   persistTenants() {
     try {
+      if (!DATA_DIR || !TENANTS_FILE || !fs || typeof fs.writeFileSync !== "function") return;
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
       }
@@ -57,7 +65,7 @@ class PlatformRepository {
 
   loadAuditLogs() {
     try {
-      if (fs.existsSync(AUDIT_FILE)) {
+      if (AUDIT_FILE && fs && typeof fs.existsSync === "function" && fs.existsSync(AUDIT_FILE)) {
         const raw = fs.readFileSync(AUDIT_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -72,6 +80,7 @@ class PlatformRepository {
 
   persistAuditLogs() {
     try {
+      if (!DATA_DIR || !AUDIT_FILE || !fs || typeof fs.writeFileSync !== "function") return;
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
       }

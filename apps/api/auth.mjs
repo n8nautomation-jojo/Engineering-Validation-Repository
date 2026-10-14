@@ -14,10 +14,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, "../data");
-const USERS_FILE = path.join(DATA_DIR, "users.json");
+const resolveDataDir = () => {
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.url && typeof import.meta.url === "string" && import.meta.url.startsWith("file:")) {
+      return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data");
+    }
+  } catch {}
+  return "";
+};
+
+const DATA_DIR = resolveDataDir();
+const USERS_FILE = DATA_DIR ? path.join(DATA_DIR, "users.json") : "";
 
 // Security Constants
 const MAX_FAILED_ATTEMPTS = 5;
@@ -50,10 +57,10 @@ function timingSafeVerify(password, salt, storedHash) {
 }
 
 function isTenantSuspended(tenantCode) {
-  if (!tenantCode) return false;
+  if (!tenantCode || !DATA_DIR) return false;
   try {
     const tenantsPath = path.join(DATA_DIR, "tenants.json");
-    if (fs.existsSync(tenantsPath)) {
+    if (fs && typeof fs.existsSync === "function" && fs.existsSync(tenantsPath)) {
       const tenants = JSON.parse(fs.readFileSync(tenantsPath, "utf-8"));
       const t = tenants.find(x => x.tenantCode && x.tenantCode.toUpperCase() === tenantCode.toUpperCase());
       return Boolean(t && t.status === "SUSPENDED");
@@ -120,7 +127,7 @@ class AuthRepository {
 
   loadUsers() {
     try {
-      if (fs.existsSync(USERS_FILE)) {
+      if (USERS_FILE && fs && typeof fs.existsSync === "function" && fs.existsSync(USERS_FILE)) {
         const raw = fs.readFileSync(USERS_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -136,6 +143,7 @@ class AuthRepository {
 
   persistUsers(usersList) {
     try {
+      if (!DATA_DIR || !USERS_FILE || !fs || typeof fs.writeFileSync !== "function") return;
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
       }

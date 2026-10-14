@@ -11,11 +11,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { catalogRepository } from "./catalog.mjs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, "../data");
-const ORDERS_FILE = path.join(DATA_DIR, "purchasing-orders.json");
-const SUPPLIERS_FILE = path.join(DATA_DIR, "suppliers.json");
+const resolveDataDir = () => {
+  try {
+    if (typeof import.meta !== "undefined" && import.meta.url && typeof import.meta.url === "string" && import.meta.url.startsWith("file:")) {
+      return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../data");
+    }
+  } catch {}
+  return "";
+};
+
+const DATA_DIR = resolveDataDir();
+const ORDERS_FILE = DATA_DIR ? path.join(DATA_DIR, "purchasing-orders.json") : "";
+const SUPPLIERS_FILE = DATA_DIR ? path.join(DATA_DIR, "suppliers.json") : "";
 
 const randomUUID = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `018f${Math.random().toString(16).slice(2, 10)}-0000-7000-8000-000000000000`);
 
@@ -155,7 +162,7 @@ class PurchasingRepository {
 
   loadSuppliers() {
     try {
-      if (fs.existsSync(SUPPLIERS_FILE)) {
+      if (SUPPLIERS_FILE && fs && typeof fs.existsSync === "function" && fs.existsSync(SUPPLIERS_FILE)) {
         const raw = fs.readFileSync(SUPPLIERS_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -171,6 +178,7 @@ class PurchasingRepository {
   }
 
   persistSuppliers(suppliersList = this.suppliers) {
+    if (!SUPPLIERS_FILE || !DATA_DIR || !fs || typeof fs.writeFileSync !== "function") return;
     try {
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -183,7 +191,7 @@ class PurchasingRepository {
 
   loadOrders() {
     try {
-      if (fs.existsSync(ORDERS_FILE)) {
+      if (ORDERS_FILE && fs && typeof fs.existsSync === "function" && fs.existsSync(ORDERS_FILE)) {
         const raw = fs.readFileSync(ORDERS_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -199,6 +207,7 @@ class PurchasingRepository {
   }
 
   persistOrders(ordersList = this.orders) {
+    if (!ORDERS_FILE || !DATA_DIR || !fs || typeof fs.writeFileSync !== "function") return;
     try {
       if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });

@@ -10,6 +10,8 @@ import { salesRepository } from "./api/sales.mjs";
 import { purchasingRepository } from "./api/purchasing.mjs";
 import { reportsRepository } from "./api/reports.mjs";
 import { settingsRepository } from "./api/settings.mjs";
+import { authRepository } from "./api/auth.mjs";
+import { platformRepository } from "./api/platform.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -18,7 +20,7 @@ function jsonResponse(data, status = 200, customHeaders = {}) {
       "Content-Type": "application/json; charset=utf-8",
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key, X-Correlation-Id",
+      "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key, X-Correlation-Id, Authorization",
       ...customHeaders
     }
   });
@@ -51,7 +53,7 @@ export default {
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key, X-Correlation-Id"
+          "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key, X-Correlation-Id, Authorization"
         }
       });
     }
@@ -121,13 +123,32 @@ export default {
         }
 
         // Products Catalog
-        if (method === "GET" && pathname === "/api/products") {
+        if (method === "GET" && (pathname === "/api/products" || pathname === "/api/catalog")) {
           return jsonResponse(catalogRepository.getAll());
+        }
+
+        if (method === "GET" && (pathname.startsWith("/api/products/") || pathname.startsWith("/api/catalog/"))) {
+          const id = pathname.replace(/^\/api\/(products|catalog)\//, "");
+          const product = catalogRepository.getById(id);
+          if (!product) {
+            return errorResponse(404, "PRODUCT_NOT_FOUND", `Product ${id} not found`, correlationId);
+          }
+          return jsonResponse(product, 200);
         }
 
         if (method === "POST" && pathname === "/api/products") {
           const newProduct = catalogRepository.addProduct(body);
           return jsonResponse(newProduct, 201);
+        }
+
+        if (method === "POST" && pathname === "/api/products/adjust") {
+          const result = catalogRepository.adjustBatchStock(
+            body.productId,
+            body.batchNumber,
+            body.newQuantity,
+            body.reason
+          );
+          return jsonResponse(result, 200);
         }
 
         if (method === "DELETE" && pathname.startsWith("/api/products/")) {
@@ -154,8 +175,16 @@ export default {
         }
 
         if (method === "POST" && pathname.startsWith("/api/sales/") && pathname.endsWith("/reverse")) {
+          const authHeader = request.headers.get("authorization") || "";
+          const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+          if (token) {
+            const session = authRepository.validateToken(token);
+            if (session && session.role === "CASHIER") {
+              return errorResponse(403, "FORBIDDEN", "إرجاع الفواتير يتطلب موافقة مدير الصيدلية (Segregation of Duties)", correlationId);
+            }
+          }
           const saleId = pathname.split("/")[3];
-          const reversed = salesRepository.reverseSale(saleId);
+          const reversed = salesRepository.reverseSale(saleId, body?.reason, body?.note);
           return jsonResponse(reversed, 200);
         }
 
@@ -225,15 +254,108 @@ export default {
         }
 
         if ((method === "POST" || method === "PUT") && pathname === "/api/settings") {
+          const authHeader = request.headers.get("authorization") || "";
+          const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+          if (token) {
+            const session = authRepository.validateToken(token);
+            if (session && session.role === "CASHIER") {
+              return errorResponse(403, "FORBIDDEN", "تعديل الإعدادات والبيانات القانونية للصيدلية مخصص لمدير الصيدلية فقط", correlationId);
+            }
+          }
           const updated = settingsRepository.updateSettings(body);
           return jsonResponse(updated, 200);
+        }
+
+        // =========================================================================
+        // AUTHENTICATION & SECURITY ENDPOINTS (ADR-013 / D-041)
+        // =========================================================================
+        if (method === "POST" && pathname === "/api/auth/login") {
+          const clientIp = request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip") || "127.0.0.1";
+          const result = authRepository.login(body.username, body.password, body.tenantCode, clientIp);
+          return jsonResponse(result, 200);
+        }
+
+        if (method === "POST" && pathname === "/api/auth/change-password") {
+          const result = authRepository.changePassword(body.tempToken, body.newPassword, body.confirmPassword);
+          return jsonResponse(result, 200);
+        }
+
+        if (method === "GET" && pathname === "/api/auth/me") {
+          const authHeader = request.headers.get("authorization") || "";
+          const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+          const session = authRepository.validateToken(token);
+          if (!session) {
+            return errorResponse(401, "UNAUTHORIZED", "الجلسة غير صالحة أو انتهت مدة صلاحيتها", correlationId);
+          }
+          return jsonResponse({ user: session }, 200);
+        }
+
+        if (method === "POST" && pathname === "/api/auth/logout") {
+          const authHeader = request.headers.get("authorization") || "";
+          const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+          const result = authRepository.logout(token);
+          return jsonResponse(result, 200);
+        }
+
+        // =========================================================================
+        // PLATFORM ADMINISTRATION & SAAS MULTI-TENANCY ENDPOINTS (D-038 / D-041)
+        // =========================================================================
+        if (method === "GET" && pathname === "/api/platform/tenants") {
+          return jsonResponse(platformRepository.getAllTenants(), 200);
+        }
+
+        if (method === "POST" && pathname === "/api/platform/tenants") {
+          const idempotencyKey = request.headers.get("idempotency-key") || body.idempotencyKey;
+          const result = platformRepository.provisionTenant({
+            ...body,
+            idempotencyKey
+          });
+          return jsonResponse(result, 201);
+        }
+
+        if ((method === "PATCH" || method === "POST") && pathname.startsWith("/api/platform/tenants/") && pathname.endsWith("/status")) {
+          const tenantId = pathname.replace("/api/platform/tenants/", "").replace("/status", "");
+          const updated = platformRepository.toggleTenantStatus(tenantId);
+          return jsonResponse({ success: true, tenant: updated }, 200);
+        }
+
+        if (method === "GET" && pathname === "/api/platform/audit") {
+          const q = url.searchParams.get("q") || "";
+          return jsonResponse(platformRepository.getAuditTrail(q), 200);
+        }
+
+        if (method === "POST" && pathname === "/api/platform/audit") {
+          const entry = platformRepository.recordAuditEvent(body);
+          return jsonResponse(entry, 201);
+        }
+
+        if (method === "GET" && pathname === "/api/platform/telemetry") {
+          return jsonResponse(platformRepository.getTelemetry(), 200);
         }
 
         return errorResponse(404, "NOT_FOUND", `Endpoint '${method} ${pathname}' not found.`, correlationId);
       } catch (apiErr) {
         console.error(`[Edge API Error] ${method} ${pathname}:`, apiErr);
         const msg = String(apiErr?.message || "");
-        const isValidation =
+        let statusCode = 500;
+        let errorCode = "INTERNAL_ERROR";
+
+        if (msg.includes("SECURITY_VIOLATION")) {
+          statusCode = 400;
+          errorCode = "SECURITY_VIOLATION";
+        } else if (msg.includes("ACCOUNT_LOCKED")) {
+          statusCode = 423;
+          errorCode = "ACCOUNT_LOCKED";
+        } else if (msg.includes("INVALID_CREDENTIALS")) {
+          statusCode = 401;
+          errorCode = "INVALID_CREDENTIALS";
+        } else if (msg.includes("PASSWORD_EXPIRED")) {
+          statusCode = 403;
+          errorCode = "PASSWORD_EXPIRED";
+        } else if (msg.includes("PASSWORD_POLICY_VIOLATION")) {
+          statusCode = 422;
+          errorCode = "PASSWORD_POLICY_VIOLATION";
+        } else if (
           msg.includes("VALIDATION_ERROR") ||
           msg.includes("INSUFFICIENT_PAYMENT") ||
           msg.includes("BATCH_EXPIRED") ||
@@ -241,12 +363,15 @@ export default {
           msg.includes("NO_VALID_STOCK") ||
           msg.includes("CASH_SESSION_") ||
           msg.includes("INVALID_COUNTED_CASH") ||
-          msg.includes("INVALID_AMOUNT");
+          msg.includes("INVALID_AMOUNT")
+        ) {
+          statusCode = 422;
+          errorCode = "BUSINESS_RULE_VIOLATION";
+        }
 
-        const statusCode = isValidation ? 422 : 500;
         return errorResponse(
           statusCode,
-          isValidation ? "BUSINESS_RULE_VIOLATION" : "INTERNAL_ERROR",
+          errorCode,
           apiErr.message,
           correlationId
         );
