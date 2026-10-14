@@ -20,7 +20,7 @@ export class OverviewView {
 
   init() {
     adminStore.subscribe((event) => {
-      if (['TENANT_PROVISIONED', 'TENANT_UPDATED'].includes(event)) {
+      if (['TENANT_PROVISIONED', 'TENANT_UPDATED', 'TENANTS_LOADED', 'TENANT_STATUS_CHANGED'].includes(event)) {
         this.render();
       }
     });

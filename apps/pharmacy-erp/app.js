@@ -16,11 +16,19 @@ import { NotificationsDialog } from './js/components/NotificationsDialog.js';
 import { PosView } from './js/components/PosView.js';
 import { SalesView } from './js/components/SalesView.js';
 import { SessionsView } from './js/components/SessionsView.js';
+import { PurchasingView } from './js/components/PurchasingView.js';
+import { ReportsView } from './js/components/ReportsView.js';
+import { DesignSystemView } from './js/components/DesignSystemView.js';
+import { SettingsDialog } from './js/components/SettingsDialog.js';
+import { HelpDialog } from './js/components/HelpDialog.js';
 import { CashMovementDialog } from './js/components/CashMovementDialog.js';
 import { CloseSessionDialog } from './js/components/CloseSessionDialog.js';
 import { OpenSessionDialog } from './js/components/OpenSessionDialog.js';
 import { DashboardStats } from './js/components/DashboardStats.js';
-import { showToast } from './js/components/Toast.js';
+import { SettingsService } from './js/services/settingsService.js';
+import { AuthService } from './js/services/authService.js';
+import { LoginModal } from './js/components/auth/LoginModal.js';
+import { UserMenuModal } from './js/components/auth/UserMenuModal.js';
 
 class PharmaTechApp {
   constructor() {
@@ -43,24 +51,157 @@ class PharmaTechApp {
     this.components.pos = new PosView();
     this.components.sales = new SalesView();
     this.components.sessions = new SessionsView();
+    this.components.purchasing = new PurchasingView();
+    this.components.reports = new ReportsView();
+    this.components.designSystem = new DesignSystemView();
+    this.components.settingsDialog = new SettingsDialog();
+    this.components.helpDialog = new HelpDialog();
     this.components.movementDialog = new CashMovementDialog();
     this.components.closeDialog = new CloseSessionDialog();
     this.components.openDialog = new OpenSessionDialog();
     this.components.dashboardStats = new DashboardStats();
+    this.components.loginModal = new LoginModal();
+    this.components.userMenuModal = new UserMenuModal();
 
-    // Fetch authoritative live product catalog from Core Backend API
-    try {
-      await MedicineService.fetchFromBackend();
-    } catch (err) {
-      console.warn('Initial catalog fetch deferred:', err);
+    // Event listeners for global dialog triggers
+    window.addEventListener('OPEN_SETTINGS_DIALOG', () => {
+      this.components.settingsDialog.open();
+    });
+
+    window.addEventListener('OPEN_HELP_DIALOG', () => {
+      this.components.helpDialog.open();
+    });
+
+    window.addEventListener('OPEN_USER_MENU_DIALOG', () => {
+      this.components.userMenuModal.open();
+    });
+
+    const updateAuthUI = (user) => {
+      if (!user) return;
+
+      const userNameEl = document.querySelector('#user-profile-btn strong') || document.querySelector('#user-profile-btn .user-name');
+      if (userNameEl) userNameEl.textContent = user.fullName || user.username;
+
+      const userRoleEl = document.querySelector('#user-profile-btn small') || document.querySelector('#user-profile-btn .user-role');
+      if (userRoleEl) userRoleEl.textContent = user.roleNameAr || (user.role === 'CASHIER' ? 'كاشير نقطة بيع' : 'صيدلي مسؤول');
+
+      const userAvatarEl = document.querySelector('#user-profile-btn .avatar');
+      if (userAvatarEl) {
+        userAvatarEl.textContent = (user.fullName || user.username).slice(0, 2);
+        if (user.role === 'CASHIER') {
+          userAvatarEl.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+          userAvatarEl.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.3)';
+        } else {
+          userAvatarEl.style.background = 'linear-gradient(135deg, var(--primary), #0070f3)';
+          userAvatarEl.style.boxShadow = '0 2px 8px rgba(0, 82, 204, 0.3)';
+        }
+      }
+
+      // Restrict Manager actions vs Cashier actions
+      const isManager = AuthService.isManager();
+      const addMedicineBtn = document.getElementById('btn-open-add-dialog');
+      const exportCsvBtn = document.getElementById('btn-export-csv');
+
+      if (addMedicineBtn) {
+        addMedicineBtn.style.display = isManager ? 'inline-flex' : 'none';
+      }
+      if (exportCsvBtn) {
+        exportCsvBtn.style.display = isManager ? 'inline-flex' : 'none';
+      }
+
+      // Apply role permissions to sidebar navigation
+      if (this.components?.sidebar) {
+        this.components.sidebar.applyRolePermissions(user);
+      }
+
+      // If user is Cashier, enforce POS default workstation and cashier branding
+      if (user.role === 'CASHIER') {
+        const targetBtn = document.querySelector('.nav-button[data-view="pos"]');
+        this.components?.sidebar?.switchView('pos', targetBtn);
+
+        const metaEl = document.getElementById('page-heading-pharmacy-meta');
+        if (metaEl) {
+          const dateStr = new Date().toLocaleDateString('ar-SD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          metaEl.textContent = `${dateStr} — كاشير: ${user.fullName} (${user.branchName || 'فرع الخرطوم الرئيسي'})`;
+        }
+      } else {
+        const pageTitle = document.getElementById('page-title-heading');
+        if (pageTitle && appStore.activeView === 'dashboard') {
+          pageTitle.textContent = `صباح الخير، ${user.fullName} 👋`;
+        }
+      }
+    };
+
+    window.addEventListener('AUTH_STATE_CHANGED', (e) => {
+      if (e.detail?.isAuthenticated && e.detail?.user) {
+        updateAuthUI(e.detail.user);
+      } else {
+        this.components.loginModal.open();
+      }
+    });
+
+    // Check authentication state on startup
+    if (!AuthService.isAuthenticated()) {
+      setTimeout(() => {
+        this.components.loginModal.open();
+      }, 100);
+    } else {
+      updateAuthUI(AuthService.getCurrentUser());
+      AuthService.verifySession().catch(() => {});
     }
 
-    // Support direct deep links: /pharmacy-erp/?view=pos | ?view=sales | ?view=sessions
+    const applySettingsToUI = (settings) => {
+      if (!settings) return;
+      if (settings.branchName) {
+        const branchEl = document.getElementById('current-branch-name');
+        if (branchEl) branchEl.textContent = settings.branchName;
+      }
+      if (settings.pharmacyName) {
+        const pharmacyEl = document.getElementById('current-pharmacy-name');
+        if (pharmacyEl) pharmacyEl.textContent = settings.pharmacyName;
+
+        const metaEl = document.getElementById('page-heading-pharmacy-meta');
+        if (metaEl && !AuthService.isCashier()) {
+          const dateStr = new Date().toLocaleDateString('ar-SD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          metaEl.textContent = `${dateStr} — ${settings.pharmacyName}`;
+        }
+
+        document.title = `${settings.pharmacyName} — PharmaTech`;
+      }
+    };
+
+    // Apply cached settings immediately on boot
+    applySettingsToUI(SettingsService.getCachedSettings());
+
+    // Listen for live updates across components
+    window.addEventListener('SETTINGS_UPDATED', (e) => {
+      applySettingsToUI(e.detail);
+    });
+
+    // Fetch authoritative live product catalog and settings from Core Backend API
+    try {
+      const [_, settings] = await Promise.all([
+        MedicineService.fetchFromBackend(),
+        SettingsService.fetchSettings()
+      ]);
+      applySettingsToUI(settings);
+    } catch (err) {
+      console.warn('Initial data fetch deferred:', err);
+    }
+
+    // Support direct deep links with RBAC guards: /pharmacy-erp/?view=pos | ?view=sales | ?view=sessions | ?view=purchasing | ?view=reports
     const urlParams = new URLSearchParams(window.location.search);
     const viewParam = urlParams.get('view');
     if (viewParam) {
-      const targetNavBtn = document.querySelector(`.nav-button[data-view="${viewParam}"]`);
-      if (targetNavBtn) targetNavBtn.click();
+      if (AuthService.canAccessView(viewParam)) {
+        const targetNavBtn = document.querySelector(`.nav-button[data-view="${viewParam}"]`);
+        if (targetNavBtn) targetNavBtn.click();
+      } else {
+        showToast('محاولة وصول مقيدة (RBAC)', `لا تملك صلاحية الوصول إلى شاشة (${viewParam}) بحسابك الحالي`, 'warning');
+        const defaultView = AuthService.getDefaultView();
+        const fallbackBtn = document.querySelector(`.nav-button[data-view="${defaultView}"]`);
+        if (fallbackBtn) fallbackBtn.click();
+      }
     }
 
     // Initial operational feedback

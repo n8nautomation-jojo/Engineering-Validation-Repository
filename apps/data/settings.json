@@ -1,0 +1,23 @@
+{
+  "pharmacyName": "صيدلية النيلين النموذجية",
+  "pharmacyNameEn": "Al-Neelain Model Pharmacy",
+  "branchId": "brn-khartoum-01",
+  "branchName": "فرع الخرطوم بحري",
+  "licenseNumber": "MOH-SD-KHT-2026-9999",
+  "taxRegistrationNumber": "TRN-10294819",
+  "phone": "+249 183 772 410",
+  "mobile": "+249 912 345 678",
+  "email": "info@alneelain-pharma.sd",
+  "address": "الخرطوم — تقاطع شارع الجمهورية مع القصر",
+  "currency": "SDG",
+  "currencySymbol": "ج.س",
+  "taxRate": 0,
+  "taxExempt": true,
+  "receiptHeaderNote": "صيدلية النيل النموذجية الحديثة — خدمة 24 ساعة",
+  "receiptFooterNote": "شكراً لتعاملكم معنا · الشفاء العاجل",
+  "printerType": "THERMAL_80MM",
+  "autoPrintReceipt": true,
+  "offlineQuotaCapacity": 100,
+  "fefoStrictEnforcement": true,
+  "updatedAt": "2026-10-14T12:40:57.907Z"
+}

@@ -1,0 +1,110 @@
+[
+  {
+    "id": "aud-012",
+    "timestamp": "2026-10-14 13:58:57",
+    "actor": "platform-superadmin",
+    "action": "ROTATE_CREDENTIALS",
+    "tenantCode": "PHARMA-BLUENILE",
+    "details": "تسليم بيانات الاعتماد الأولية لمشرف الصيدلية",
+    "correlationId": "corr-cred-7009"
+  },
+  {
+    "id": "aud-011",
+    "timestamp": "2026-10-14 13:48:28",
+    "actor": "platform-superadmin",
+    "action": "ACTIVATE_TENANT",
+    "tenantCode": "PHARMA-E2E8351",
+    "details": "تعديل حالة المستأجر (مجمع صيدليات بحري E2E8351) من SUSPENDED إلى ACTIVE",
+    "correlationId": "corr-stat-8475"
+  },
+  {
+    "id": "aud-010",
+    "timestamp": "2026-10-14 13:48:28",
+    "actor": "platform-superadmin",
+    "action": "SUSPEND_TENANT",
+    "tenantCode": "PHARMA-E2E8351",
+    "details": "تعديل حالة المستأجر (مجمع صيدليات بحري E2E8351) من ACTIVE إلى SUSPENDED",
+    "correlationId": "corr-stat-8429"
+  },
+  {
+    "id": "aud-009",
+    "timestamp": "2026-10-14 13:48:28",
+    "actor": "platform-superadmin",
+    "action": "PROVISION_TENANT",
+    "tenantCode": "PHARMA-E2E8351",
+    "details": "تهيئة مستأجر جديد (مجمع صيدليات بحري E2E8351) وتخصيص خطة ENTERPRISE وحساب المشرف admin_e2e8351",
+    "correlationId": "corr-prov-3753"
+  },
+  {
+    "id": "aud-008",
+    "timestamp": "2026-10-14 13:47:25",
+    "actor": "platform-superadmin",
+    "action": "SUSPEND_TENANT",
+    "tenantCode": "PHARMA-E2E5657",
+    "details": "تعديل حالة المستأجر (مجمع صيدليات بحري E2E5657) من ACTIVE إلى SUSPENDED",
+    "correlationId": "corr-stat-5745"
+  },
+  {
+    "id": "aud-007",
+    "timestamp": "2026-10-14 13:47:25",
+    "actor": "platform-superadmin",
+    "action": "PROVISION_TENANT",
+    "tenantCode": "PHARMA-E2E5657",
+    "details": "تهيئة مستأجر جديد (مجمع صيدليات بحري E2E5657) وتخصيص خطة ENTERPRISE وحساب المشرف admin_e2e5657",
+    "correlationId": "corr-prov-9506"
+  },
+  {
+    "id": "aud-006",
+    "timestamp": "2026-10-14 13:40:07",
+    "actor": "platform-superadmin",
+    "action": "ACTIVATE_TENANT",
+    "tenantCode": "PHARMA-BLUENILE",
+    "details": "تعديل حالة المستأجر (صيدليات النيل الأزرق) من SUSPENDED إلى ACTIVE",
+    "correlationId": "corr-stat-7182"
+  },
+  {
+    "id": "aud-005",
+    "timestamp": "2026-10-14 13:40:07",
+    "actor": "platform-superadmin",
+    "action": "SUSPEND_TENANT",
+    "tenantCode": "PHARMA-BLUENILE",
+    "details": "تعديل حالة المستأجر (صيدليات النيل الأزرق) من ACTIVE إلى SUSPENDED",
+    "correlationId": "corr-stat-7135"
+  },
+  {
+    "id": "aud-004",
+    "timestamp": "2026-10-14 13:39:56",
+    "actor": "platform-superadmin",
+    "action": "ACTIVATE_TENANT",
+    "tenantCode": "PHARMA-BLUENILE",
+    "details": "تعديل حالة المستأجر (صيدليات النيل الأزرق) من SUSPENDED إلى ACTIVE",
+    "correlationId": "corr-stat-6484"
+  },
+  {
+    "id": "aud-003",
+    "timestamp": "2026-10-14 13:39:56",
+    "actor": "platform-superadmin",
+    "action": "SUSPEND_TENANT",
+    "tenantCode": "PHARMA-BLUENILE",
+    "details": "تعديل حالة المستأجر (صيدليات النيل الأزرق) من ACTIVE إلى SUSPENDED",
+    "correlationId": "corr-stat-6479"
+  },
+  {
+    "id": "aud-001",
+    "timestamp": "2026-10-10 11:20:04",
+    "actor": "platform-superadmin",
+    "action": "PROVISION_TENANT",
+    "tenantCode": "PHARMA-BLUENILE",
+    "details": "تهيئة المستأجر وتعيين المشرف في حالة PASSWORD_CHANGE_REQUIRED",
+    "correlationId": "corr-prov-9921"
+  },
+  {
+    "id": "aud-002",
+    "timestamp": "2026-10-01 09:15:10",
+    "actor": "platform-superadmin",
+    "action": "PROVISION_TENANT",
+    "tenantCode": "PHARMA-OMDURMAN",
+    "details": "تهيئة المستأجر وتخصيص خطة COMMUNITY",
+    "correlationId": "corr-prov-8812"
+  }
+]

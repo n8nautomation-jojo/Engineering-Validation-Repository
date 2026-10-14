@@ -150,6 +150,14 @@ class SessionRepository {
     return this.getAllocationStatus();
   }
 
+  restoreAllocation(units = 0) {
+    this.allocation.consumedCapacity = Math.max(
+      0,
+      this.allocation.consumedCapacity - units
+    );
+    return this.getAllocationStatus();
+  }
+
   addCashMovement(sessionId, input) {
     if (!this.session || this.session.status !== "OPEN") {
       throw new Error("CASH_SESSION_NOT_OPEN: لا توجد وردية مفتوحة لتسجيل الحركة");

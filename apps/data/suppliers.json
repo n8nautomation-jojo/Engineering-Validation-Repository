@@ -1,0 +1,48 @@
+[
+  {
+    "id": "SUP-001",
+    "name": "شركة الحكمة للصناعات الدوائية",
+    "nameEn": "Hikma Pharmaceuticals Sudan",
+    "contactPerson": "م. طارق عوض",
+    "phone": "+249 91 234 5678",
+    "email": "supply@hikma-sd.com",
+    "address": "الخرطوم بحري — المنطقة الصناعية",
+    "taxNumber": "TAX-SD-9481029",
+    "status": "ACTIVE",
+    "ordersCount": null,
+    "totalPurchases": null
+  },
+  {
+    "id": "SUP-002",
+    "name": "شركة النيل الأزرق للمستلزمات الطبية",
+    "nameEn": "Blue Nile Medical Supplies",
+    "contactPerson": "د. هبة الرشيد",
+    "phone": "+249 92 887 6543",
+    "email": "orders@bluenilemed.sd",
+    "address": "الخرطوم — شارع السيد علي",
+    "taxNumber": "TAX-SD-8819203",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "SUP-003",
+    "name": "مجموعة رويال كير العالمية للأدوية",
+    "nameEn": "Royal Care Pharma Distribution",
+    "contactPerson": "أ. عثمان البدوي",
+    "phone": "+249 12 345 6789",
+    "email": "distribution@royalcare-pharma.com",
+    "address": "أم درمان — شارع العرضة",
+    "taxNumber": "TAX-SD-7718290",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "SUP-004",
+    "name": "الشركة السودانية للكيماويات الطبية",
+    "nameEn": "Sudanese Medical Chemicals Ltd",
+    "contactPerson": "م. مجدي حسن",
+    "phone": "+249 90 112 3344",
+    "email": "sales@sudamedchem.sd",
+    "address": "سوبا — المجمع الدوائي",
+    "taxNumber": "TAX-SD-6619028",
+    "status": "ACTIVE"
+  }
+]

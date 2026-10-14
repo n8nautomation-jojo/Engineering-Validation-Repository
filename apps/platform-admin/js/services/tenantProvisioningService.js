@@ -14,6 +14,7 @@ import {
 } from '../domain/constants.js';
 import { ProvisionTenantDTO, RFC7807ProblemDetails } from '../domain/dtos.js';
 import { eventBus, DomainEvents } from '../domain/events.js';
+import { apiClient } from './apiClient.js';
 
 export class TenantProvisioningService {
   constructor() {
@@ -89,7 +90,7 @@ export class TenantProvisioningService {
   }
 
   /**
-   * Atomically provisions a new tenant graph adhering to contract D-041.
+   * Atomically provisions a new tenant graph adhering to contract D-041 and backend persistence.
    *
    * @param {ProvisionTenantDTO} dto - Validated tenant provisioning payload.
    * @returns {Promise<{ tenant: Object, correlationId: string }>} Resulting provisioned tenant.
@@ -101,90 +102,111 @@ export class TenantProvisioningService {
       return this._idempotencyCache.get(dto.idempotencyKey);
     }
 
-    // SECURITY: Uniqueness constraint validation
-    const existingCode = adminStore.tenants.find(t => t.tenantCode === dto.tenantCode);
-    if (existingCode) {
-      throw new RFC7807ProblemDetails(
-        'Conflict',
-        409,
-        `Tenant code "${dto.tenantCode}" is already registered on this platform. Choose a unique code.`
-      );
+    try {
+      // 1. Call Backend API to provision tenant, create initial admin in users.json, and append audit log
+      const res = await apiClient.post('/api/platform/tenants', {
+        tenantName: dto.tenantName,
+        orgName: dto.orgName,
+        branchName: dto.branchName,
+        tenantCode: dto.tenantCode,
+        adminUser: dto.adminUser,
+        plan: dto.plan,
+        idempotencyKey: dto.idempotencyKey
+      });
+
+      const newTenant = res.tenant;
+      const correlationId = res.correlationId || `${SecurityPolicy.CORRELATION_PREFIX}${Math.floor(1000 + Math.random() * 9000)}`;
+
+      // Update in-memory state store
+      const idx = adminStore.tenants.findIndex(t => t.tenantCode === newTenant.tenantCode);
+      if (idx >= 0) {
+        adminStore.tenants[idx] = newTenant;
+      } else {
+        adminStore.tenants.unshift(newTenant);
+      }
+
+      const result = { tenant: newTenant, correlationId };
+      if (dto.idempotencyKey) {
+        this._idempotencyCache.set(dto.idempotencyKey, result);
+      }
+
+      eventBus.publish(DomainEvents.TENANT_PROVISIONED, {
+        tenantId: newTenant.tenantId,
+        tenantCode: newTenant.tenantCode,
+        tenantName: newTenant.tenantName,
+        adminUser: newTenant.adminUser,
+        plan: newTenant.plan,
+        correlationId,
+        actor: SecurityPolicy.DEFAULT_SUPERADMIN_ACTOR
+      });
+
+      adminStore.notify('TENANT_PROVISIONED', newTenant);
+      return result;
+    } catch (err) {
+      if (err.status === 409 || err.message?.includes('already registered') || err.message?.includes('already taken') || err.message?.includes('CONFLICT')) {
+        throw new RFC7807ProblemDetails('Conflict', 409, err.message || 'رمز المستأجر أو اسم المشرف مسجل مسبقاً');
+      }
+      throw err;
     }
-
-    const existingUser = adminStore.tenants.find(t => t.adminUser === dto.adminUser);
-    if (existingUser) {
-      throw new RFC7807ProblemDetails(
-        'Conflict',
-        409,
-        `Administrator username "${dto.adminUser}" is already taken across tenants.`
-      );
-    }
-
-    const correlationId = `${SecurityPolicy.CORRELATION_PREFIX}${Math.floor(1000 + Math.random() * 9000)}`;
-    const tempPassword = TenantProvisioningService.generateSecureTemporaryPassword();
-
-    const newTenant = {
-      tenantId: `tnt-${String(adminStore.tenants.length + 1).padStart(3, '0')}`,
-      tenantCode: dto.tenantCode,
-      tenantName: dto.tenantName,
-      orgName: dto.orgName,
-      branchName: dto.branchName,
-      adminUser: dto.adminUser,
-      adminStatus: AdminAccountStatus.PASSWORD_CHANGE_REQUIRED,
-      tempPassword,
-      plan: dto.plan,
-      status: TenantStatus.ACTIVE,
-      createdAt: new Date().toISOString().replace('T', ' ').slice(0, 16)
-    };
-
-    // Commit to in-memory state store
-    adminStore.tenants.unshift(newTenant);
-
-    const result = { tenant: newTenant, correlationId };
-
-    if (dto.idempotencyKey) {
-      this._idempotencyCache.set(dto.idempotencyKey, result);
-    }
-
-    // Decoupled side-effect: Emit domain event for audit & telemetry
-    eventBus.publish(DomainEvents.TENANT_PROVISIONED, {
-      tenantId: newTenant.tenantId,
-      tenantCode: newTenant.tenantCode,
-      tenantName: newTenant.tenantName,
-      adminUser: newTenant.adminUser,
-      plan: newTenant.plan,
-      correlationId,
-      actor: SecurityPolicy.DEFAULT_SUPERADMIN_ACTOR
-    });
-
-    adminStore.notify('TENANT_PROVISIONED', newTenant);
-    return result;
   }
 
   /**
-   * Toggles tenant operational status between ACTIVE and SUSPENDED.
+   * Toggles tenant operational status between ACTIVE and SUSPENDED in backend & store.
    *
    * @param {string} tenantId - Unique identifier of target tenant.
-   * @returns {Object} Updated tenant entity.
+   * @returns {Promise<Object>} Updated tenant entity.
    * @throws {RFC7807ProblemDetails} If tenant does not exist.
    */
-  toggleTenantStatus(tenantId) {
+  async toggleTenantStatus(tenantId) {
     const tenant = adminStore.tenants.find(t => t.tenantId === tenantId);
     if (!tenant) {
       throw new RFC7807ProblemDetails('Not Found', 404, `Tenant with ID ${tenantId} not found`);
     }
 
-    tenant.status = tenant.status === TenantStatus.ACTIVE ? TenantStatus.SUSPENDED : TenantStatus.ACTIVE;
+    try {
+      const res = await apiClient.patch(`/api/platform/tenants/${tenantId}/status`);
+      const updated = res.tenant || {
+        ...tenant,
+        status: tenant.status === TenantStatus.ACTIVE ? TenantStatus.SUSPENDED : TenantStatus.ACTIVE
+      };
 
-    eventBus.publish(DomainEvents.TENANT_STATUS_CHANGED, {
-      tenantId: tenant.tenantId,
-      tenantCode: tenant.tenantCode,
-      newStatus: tenant.status,
-      actor: SecurityPolicy.DEFAULT_SUPERADMIN_ACTOR
-    });
+      const idx = adminStore.tenants.findIndex(t => t.tenantId === tenantId);
+      if (idx >= 0) {
+        adminStore.tenants[idx] = updated;
+      }
 
-    adminStore.notify('TENANT_UPDATED', tenant);
-    return tenant;
+      eventBus.publish(DomainEvents.TENANT_STATUS_CHANGED, {
+        tenantId: updated.tenantId,
+        tenantCode: updated.tenantCode,
+        newStatus: updated.status,
+        actor: SecurityPolicy.DEFAULT_SUPERADMIN_ACTOR
+      });
+
+      adminStore.notify('TENANT_UPDATED', updated);
+      return updated;
+    } catch (err) {
+      console.warn('[TenantProvisioningService] Remote toggle warning:', err.message);
+      // Fallback local toggle
+      tenant.status = tenant.status === TenantStatus.ACTIVE ? TenantStatus.SUSPENDED : TenantStatus.ACTIVE;
+      adminStore.notify('TENANT_UPDATED', tenant);
+      return tenant;
+    }
+  }
+
+  /**
+   * Synchronizes tenants with backend database.
+   */
+  async fetchTenants() {
+    try {
+      const data = await apiClient.get('/api/platform/tenants');
+      if (Array.isArray(data)) {
+        adminStore.setTenants(data);
+        return data;
+      }
+    } catch (err) {
+      console.warn('[TenantProvisioningService] Failed to fetch remote tenants:', err.message);
+    }
+    return adminStore.tenants;
   }
 }
 

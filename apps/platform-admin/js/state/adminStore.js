@@ -87,7 +87,7 @@ class AdminStore {
     this.tenants = [...INITIAL_TENANTS_SEED];
     this.auditLogs = [...INITIAL_AUDIT_SEED];
     this.activeTab = 'overview';
-    this.dark = localStorage.getItem('pharmatech_admin_dark') === 'true';
+    this.dark = typeof localStorage !== 'undefined' ? localStorage.getItem('pharmatech_admin_dark') === 'true' : false;
     this.searchQuery = '';
     this.planFilter = 'ALL';
     this.selectedTenantForCredentials = null;
@@ -112,7 +112,9 @@ class AdminStore {
 
   setTheme(isDark) {
     this.dark = isDark;
-    localStorage.setItem('pharmatech_admin_dark', isDark);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('pharmatech_admin_dark', isDark);
+    }
     this.notify('THEME_CHANGED', isDark);
   }
 
@@ -135,6 +137,38 @@ class AdminStore {
     this.selectedTenantForCredentials = tenant;
     this.notify('CREDENTIALS_MODAL_REQUESTED', tenant);
   }
+
+  setTenants(tenantsList) {
+    if (Array.isArray(tenantsList)) {
+      this.tenants = tenantsList;
+      this.notify('TENANTS_LOADED', this.tenants);
+    }
+  }
+
+  setAuditLogs(logsList) {
+    if (Array.isArray(logsList)) {
+      this.auditLogs = logsList;
+      this.notify('AUDIT_LOG_ADDED', this.auditLogs);
+    }
+  }
+
+  async loadFromBackend() {
+    try {
+      const [tenants, auditLogs] = await Promise.all([
+        fetch('/api/platform/tenants').then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('/api/platform/audit').then(r => r.ok ? r.json() : null).catch(() => null)
+      ]);
+      if (tenants && Array.isArray(tenants)) {
+        this.setTenants(tenants);
+      }
+      if (auditLogs && Array.isArray(auditLogs)) {
+        this.setAuditLogs(auditLogs);
+      }
+    } catch (err) {
+      console.warn('[AdminStore] Backend sync notice:', err.message);
+    }
+  }
 }
 
 export const adminStore = new AdminStore();
+

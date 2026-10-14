@@ -1,7 +1,11 @@
-/**
- * PharmaTech Core Backend — Product & FEFO Batch Catalog Repository
- * Conforms strictly to CatalogProduct & CatalogBatch schemas in src/presentation/pos-view-model.ts
- */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DATA_DIR = path.resolve(__dirname, "../data");
+const MEDICINES_FILE = path.join(DATA_DIR, "medicines.json");
 
 const INITIAL_CATALOG = [
   {
@@ -179,7 +183,35 @@ const INITIAL_CATALOG = [
 
 class CatalogRepository {
   constructor() {
-    this.products = JSON.parse(JSON.stringify(INITIAL_CATALOG));
+    this.products = this.loadProducts();
+  }
+
+  loadProducts() {
+    try {
+      if (fs.existsSync(MEDICINES_FILE)) {
+        const raw = fs.readFileSync(MEDICINES_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.warn("[CatalogRepository] Failed to read medicines from disk:", err.message);
+    }
+    const initial = JSON.parse(JSON.stringify(INITIAL_CATALOG));
+    this.persistProducts(initial);
+    return initial;
+  }
+
+  persistProducts(productsList = this.products) {
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(MEDICINES_FILE, JSON.stringify(productsList, null, 2), "utf-8");
+    } catch (err) {
+      console.warn("[CatalogRepository] Failed to write medicines to disk:", err.message);
+    }
   }
 
   getAll() {
@@ -242,6 +274,7 @@ class CatalogRepository {
     }
 
     batch.availableQuantity -= quantity;
+    this.persistProducts();
     return { product, batch, remainingQuantity: batch.availableQuantity };
   }
 
@@ -254,7 +287,85 @@ class CatalogRepository {
     const batch = product.batches.find(b => b.batchNumber === batchNumber);
     if (batch) {
       batch.availableQuantity += quantity;
+      this.persistProducts();
     }
+  }
+
+  /**
+   * Adjusts batch stock (Physical Inventory Audit, Damage, Waste, Correction).
+   */
+  adjustBatchStock(productId, batchNumber, newQuantity, reason = "PHYSICAL_AUDIT") {
+    const product = this.getById(productId);
+    if (!product) throw new Error(`PRODUCT_NOT_FOUND: Product ${productId} not found`);
+
+    const batch = product.batches.find(b => b.batchNumber === batchNumber);
+    if (!batch) throw new Error(`BATCH_NOT_FOUND: Batch ${batchNumber} not found for product ${product.name}`);
+
+    const qty = Number(newQuantity);
+    if (isNaN(qty) || qty < 0) {
+      throw new Error("INVALID_QUANTITY: Stock quantity cannot be negative");
+    }
+
+    const previousQuantity = batch.availableQuantity;
+    batch.availableQuantity = qty;
+    this.persistProducts();
+
+    return {
+      productId: product.id,
+      productName: product.name,
+      nameAr: product.nameAr,
+      batchNumber: batch.batchNumber,
+      previousQuantity,
+      newQuantity: qty,
+      difference: qty - previousQuantity,
+      reason,
+      adjustedAt: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Replenishes an existing batch or registers a new FEFO batch (used during Goods Receipt).
+   */
+  addOrReplenishBatch(productId, batchNumber, expiryDate, quantity) {
+    const product = this.getById(productId);
+    if (!product) throw new Error(`PRODUCT_NOT_FOUND: Product ${productId} not found`);
+
+    const qty = Number(quantity);
+    if (isNaN(qty) || qty <= 0) {
+      throw new Error("INVALID_QUANTITY: Replenishment quantity must be greater than zero");
+    }
+
+    if (!batchNumber || typeof batchNumber !== "string") {
+      throw new Error("INVALID_BATCH_NUMBER: Batch number is required");
+    }
+
+    if (!expiryDate || typeof expiryDate !== "string") {
+      throw new Error("INVALID_EXPIRY_DATE: Expiry date is required");
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+    if (expiryDate < today) {
+      throw new Error(`BATCH_EXPIRED: Cannot receive expired batch (${expiryDate})`);
+    }
+
+    let batch = product.batches.find(b => b.batchNumber === batchNumber);
+    if (batch) {
+      batch.availableQuantity += qty;
+      batch.expiryDate = expiryDate; // sync expiry date if updated
+    } else {
+      batch = {
+        batchNumber: batchNumber.trim(),
+        expiryDate: expiryDate.trim(),
+        availableQuantity: qty
+      };
+      product.batches.push(batch);
+    }
+
+    // Sort batches by expiry date for FEFO consistency
+    product.batches.sort((a, b) => a.expiryDate.localeCompare(b.expiryDate));
+    this.persistProducts();
+
+    return { product, batch, addedQuantity: qty };
   }
 
   /**
@@ -287,7 +398,16 @@ class CatalogRepository {
     };
 
     this.products.unshift(newProduct);
+    this.persistProducts();
     return newProduct;
+  }
+
+  deleteProduct(id) {
+    const index = this.products.findIndex(p => p.id === id || p.barcode === id || p.sku === id);
+    if (index === -1) return false;
+    this.products.splice(index, 1);
+    this.persistProducts();
+    return true;
   }
 }
 

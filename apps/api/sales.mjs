@@ -3,18 +3,54 @@
  * Adheres strictly to CompleteSaleRequestDto & CompleteSaleResponseDto in src/api/types.ts
  */
 
-const randomUUID = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `018f${Math.random().toString(16).slice(2, 10)}-0000-7000-8000-000000000000`);
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { catalogRepository } from "./catalog.mjs";
 import { sessionRepository } from "./session.mjs";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DATA_DIR = path.resolve(__dirname, "../data");
+const SALES_FILE = path.join(DATA_DIR, "sales.json");
+
+const randomUUID = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `018f${Math.random().toString(16).slice(2, 10)}-0000-7000-8000-000000000000`);
+
 class SalesRepository {
   constructor() {
-    this.salesLedger = [];
     this.idempotencyStore = new Map();
-    this.seedInitialHistory();
+    this.salesLedger = this.loadSales();
   }
 
-  seedInitialHistory() {
+  loadSales() {
+    try {
+      if (fs.existsSync(SALES_FILE)) {
+        const raw = fs.readFileSync(SALES_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.warn("[SalesRepository] Failed to read sales from disk:", err.message);
+    }
+    const initial = this.getInitialHistory();
+    this.persistSales(initial);
+    return initial;
+  }
+
+  persistSales(salesList = this.salesLedger) {
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(SALES_FILE, JSON.stringify(salesList, null, 2), "utf-8");
+    } catch (err) {
+      console.warn("[SalesRepository] Failed to write sales to disk:", err.message);
+    }
+  }
+
+  getInitialHistory() {
     // Seed authentic previous completed sales for history view
     const initialSale1 = {
       sale_id: "sale-018f-a110-7000-8000-000000000101",
@@ -119,7 +155,69 @@ class SalesRepository {
       correlation_id: "corr-seed-02"
     };
 
-    this.salesLedger.push(initialSale1, initialSale2);
+    const initialSale3 = {
+      sale_id: "sale-018f-a110-7000-8000-000000000103",
+      invoice_number: "INV-2026-0839",
+      status: "COMPLETED",
+      created_at: "2026-10-13T07:30:00.000Z",
+      cashier_id: "usr-001",
+      cashier_name: "د. أحمد الطاهر",
+      customer_id: "CUST-088",
+      customer_name: "عثمان الفاضل كباشي",
+      items: [
+        {
+          productId: "MED-004",
+          name: "Glucophage 500mg Metformin",
+          nameAr: "جلوكوفاج 500 مجم",
+          batchNumber: "BATCH-GLU-12",
+          expiryDate: "2026-11-05",
+          quantity: 2,
+          unitPrice: 8400,
+          lineTotal: 16800
+        },
+        {
+          productId: "MED-001",
+          name: "Panadol Extra 500mg/65mg",
+          nameAr: "بنادول إكسترا",
+          batchNumber: "BATCH-2026-A2",
+          expiryDate: "2026-11-30",
+          quantity: 2,
+          unitPrice: 4500,
+          lineTotal: 9000
+        }
+      ],
+      totals: {
+        subtotal: "25800.00",
+        tax: "0.00",
+        total: "25800.00",
+        currency: "SDG"
+      },
+      payments: [
+        {
+          method: "CASH",
+          amount: { value: "10000.00", currency: "SDG" },
+          verification_mode: "MANUAL_CONFIRMATION"
+        },
+        {
+          method: "BANK_TRANSFER",
+          amount: { value: "15800.00", currency: "SDG" },
+          verification_mode: "EVIDENCE_REVIEW",
+          evidence_reference: "TXN-BOK-33918274"
+        }
+      ],
+      payment_summary: {
+        paid_amount: "25800.00",
+        change_amount: "0.00"
+      },
+      inventory_effect: {
+        transaction_id: "tx-018f-a110-7000-8000-000000000103",
+        consumed_allocations: ["pos-dev-01"]
+      },
+      sync_status: "SYNCED",
+      correlation_id: "corr-seed-03"
+    };
+
+    return [initialSale1, initialSale2, initialSale3];
   }
 
   getAllSales() {
@@ -254,6 +352,7 @@ class SalesRepository {
 
     // 7. Persist to ledger and idempotency store
     this.salesLedger.unshift(completeSaleRecord);
+    this.persistSales();
 
     const responseDto = {
       sale_id: completeSaleRecord.sale_id,
@@ -276,20 +375,30 @@ class SalesRepository {
   }
 
   /**
-   * Reverses a completed sale and restores inventory.
+   * Reverses a completed sale and restores inventory to the exact FEFO batches.
    */
-  reverseSale(saleId) {
+  reverseSale(saleId, reason = "RETURN_WITHIN_24H", note = "") {
     const sale = this.getSaleById(saleId);
     if (!sale) throw new Error("SALE_NOT_FOUND");
     if (sale.status === "REVERSED") throw new Error("SALE_ALREADY_REVERSED");
 
-    // Restore batch stocks
-    for (const item of sale.items) {
+    // Restore batch stocks and calculate total restored units
+    let totalUnits = 0;
+    for (const item of (sale.items || [])) {
       catalogRepository.restoreBatchStock(item.productId, item.batchNumber, item.quantity);
+      totalUnits += Number(item.quantity) || 0;
+    }
+
+    // Restore consumed allocation quota back to device
+    if (totalUnits > 0) {
+      sessionRepository.restoreAllocation(totalUnits);
     }
 
     sale.status = "REVERSED";
     sale.reversed_at = new Date().toISOString();
+    sale.reversal_reason = reason;
+    sale.reversal_note = note;
+    this.persistSales();
     return sale;
   }
 }

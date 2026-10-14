@@ -104,15 +104,40 @@ export const MedicineService = {
       appStore.medicines.unshift(newMed);
       appStore.notify('MEDICINE_ADDED', newMed);
     }
+    window.dispatchEvent(new CustomEvent('CATALOG_UPDATED'));
   },
 
-  delete(id) {
+  async delete(id) {
     const med = this.getById(id);
     if (!med) return false;
 
-    appStore.medicines = appStore.medicines.filter(m => m.id !== id);
-    appStore.notify('MEDICINE_DELETED', med);
+    try {
+      await apiClient.delete(`/api/products/${id}`);
+      await this.fetchFromBackend();
+    } catch (err) {
+      console.warn('[MedicineService] Backend delete fallback:', err.message);
+      this.rawProducts = this.rawProducts.filter(m => m.id !== id);
+      appStore.medicines = appStore.medicines.filter(m => m.id !== id);
+      appStore.notify('MEDICINE_DELETED', med);
+    }
+
+    window.dispatchEvent(new CustomEvent('CATALOG_UPDATED'));
     return true;
+  },
+
+  async adjustStock(productId, batchNumber, newQuantity, reason = 'PHYSICAL_AUDIT') {
+    const payload = {
+      productId,
+      batchNumber,
+      newQuantity: Number(newQuantity),
+      reason
+    };
+
+    const res = await apiClient.post('/api/products/adjust', payload);
+    await this.fetchFromBackend();
+    window.dispatchEvent(new CustomEvent('CATALOG_UPDATED'));
+    window.dispatchEvent(new CustomEvent('STATS_UPDATED'));
+    return res;
   },
 
   exportCSV() {

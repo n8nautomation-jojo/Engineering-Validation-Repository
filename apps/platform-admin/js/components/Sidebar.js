@@ -12,6 +12,7 @@ export class Sidebar {
     this.mobileToggleBtn = document.getElementById('admin-mobile-toggle-btn');
     this.closeBtn = document.getElementById('admin-sidebar-close-btn');
     this.backdrop = document.getElementById('admin-backdrop');
+    this.navButtons = document.querySelectorAll('.sidebar-nav .nav-item');
 
     this.init();
   }
@@ -45,6 +46,9 @@ export class Sidebar {
         this.closeMobileDrawer();
       }
     });
+
+    // Initial UI state synchronization
+    this.updateUI(adminStore.activeTab);
   }
 
   openMobileDrawer() {

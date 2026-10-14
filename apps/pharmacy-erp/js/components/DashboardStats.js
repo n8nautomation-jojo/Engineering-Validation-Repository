@@ -23,6 +23,10 @@ export class DashboardStats {
 
     this.alertRowLowStock = document.getElementById('alert-row-lowstock');
     this.alertRowExpiry = document.getElementById('alert-row-expiry');
+    this.alertRowShipment = document.getElementById('alert-row-shipment');
+    this.alertShipmentDesc = document.getElementById('alert-shipment-desc');
+
+    this.pendingOrdersCount = 0;
 
     this.init();
   }
@@ -43,21 +47,29 @@ export class DashboardStats {
     // 2. Global Event Listeners
     window.addEventListener('SALES_UPDATED', () => this.syncFromBackend());
     window.addEventListener('SESSION_UPDATED', () => this.syncFromBackend());
+    window.addEventListener('PURCHASING_UPDATED', () => this.syncFromBackend());
 
     // 3. Interactive Alert Row Links
     if (this.alertRowLowStock) {
       this.alertRowLowStock.addEventListener('click', () => {
-        appStore.setStatusFilter('low');
         const invBtn = document.querySelector('.nav-button[data-view="inventory"]');
         if (invBtn) invBtn.click();
+        setTimeout(() => appStore.setStatusFilter('low'), 10);
       });
     }
 
     if (this.alertRowExpiry) {
       this.alertRowExpiry.addEventListener('click', () => {
-        appStore.setStatusFilter('expiring');
         const invBtn = document.querySelector('.nav-button[data-view="inventory"]');
         if (invBtn) invBtn.click();
+        setTimeout(() => appStore.setStatusFilter('expiring'), 10);
+      });
+    }
+
+    if (this.alertRowShipment) {
+      this.alertRowShipment.addEventListener('click', () => {
+        const purchBtn = document.querySelector('.nav-button[data-view="purchasing"]');
+        if (purchBtn) purchBtn.click();
       });
     }
 
@@ -67,13 +79,17 @@ export class DashboardStats {
 
   async syncFromBackend() {
     try {
-      const [sales, session] = await Promise.all([
+      const [sales, session, orders] = await Promise.all([
         apiClient.get('/api/sales').catch(() => []),
-        apiClient.get('/api/sessions/current').catch(() => null)
+        apiClient.get('/api/sessions/current').catch(() => null),
+        apiClient.get('/api/purchasing/orders').catch(() => [])
       ]);
 
       appStore.sales = Array.isArray(sales) ? sales : [];
       appStore.currentSession = session;
+
+      const orderList = Array.isArray(orders) ? orders : [];
+      this.pendingOrdersCount = orderList.filter((o) => o.status === 'PENDING_RECEIPT').length;
 
       this.render();
     } catch (err) {
@@ -113,7 +129,7 @@ export class DashboardStats {
       return exp > 0 && exp - now < sixtyDaysMs;
     });
 
-    const totalAlerts = lowStockItems.length + expiringItems.length;
+    const totalAlerts = lowStockItems.length + expiringItems.length + this.pendingOrdersCount;
 
     // 3. Update DOM Elements
     if (this.salesNumEl) {
@@ -140,12 +156,61 @@ export class DashboardStats {
       this.alertTotalChip.textContent = `${totalAlerts} عاجلة`;
     }
 
+    // Dynamic sidebar inventory counter
+    const navInvCount = document.getElementById('nav-inventory-count');
+    if (navInvCount) {
+      navInvCount.textContent = totalItems;
+    }
+
+    // Dynamic topbar notification counter
+    const notifBadge = document.getElementById('notifications-badge-count');
+    if (notifBadge) {
+      notifBadge.textContent = totalAlerts;
+    }
+
+    // Populate appStore.notifications with real clinical & operational alerts
+    const notifications = [];
+    if (lowStockItems.length > 0) {
+      notifications.push({
+        type: 'warning',
+        title: 'نواقص في المخزون الصيدلاني',
+        desc: `${lowStockItems.length} أدوية وصلت إلى حد الأمان أو نفدت (${lowStockItems.slice(0, 2).map(m => m.name).join('، ')}${lowStockItems.length > 2 ? '...' : ''})`,
+        time: 'مباشر',
+        action: 'LOW_STOCK'
+      });
+    }
+    if (expiringItems.length > 0) {
+      notifications.push({
+        type: 'danger',
+        title: 'تنبيه أسبقية الصلاحية (FEFO)',
+        desc: `${expiringItems.length} أدوية تقترب من تاريخ الانتهاء خلال 60 يوماً`,
+        time: 'مباشر',
+        action: 'EXPIRING'
+      });
+    }
+    if (this.pendingOrdersCount > 0) {
+      notifications.push({
+        type: 'info',
+        title: 'شحنات توريد بانتظار الاستلام',
+        desc: `يوجد ${this.pendingOrdersCount} طلبيات توريد مؤكدة بانتظار فحص التشغيلات وتوريد المخزون`,
+        time: 'مباشر',
+        action: 'SHIPMENTS'
+      });
+    }
+    appStore.notifications = notifications;
+
     if (this.alertLowStockDesc) {
       this.alertLowStockDesc.textContent = `${lowStockItems.length} صنفاً تحت حد الأمان في المخزون`;
     }
 
     if (this.alertExpiryDesc) {
       this.alertExpiryDesc.textContent = `${expiringItems.length} تشغيلات تنتهي صلاحيتها خلال 60 يوماً`;
+    }
+
+    if (this.alertShipmentDesc) {
+      this.alertShipmentDesc.textContent = this.pendingOrdersCount > 0
+        ? `${this.pendingOrdersCount} طلبيات توريد بانتظار فحص واستلام الشحنة`
+        : 'جميع طلبيات التوريد مستلمة ومطابقة';
     }
 
     if (this.chartSummaryAmount) {

@@ -5,6 +5,7 @@
 
 import { appStore } from '../state/store.js';
 import { MedicineService } from '../services/medicineService.js';
+import { MedicineBatchesList } from './inventory/MedicineBatchesList.js';
 import { showToast } from './Toast.js';
 
 export class MedicineDetailDialog {
@@ -13,6 +14,7 @@ export class MedicineDetailDialog {
     this.closeBtn = document.getElementById('btn-close-detail-dialog');
     this.deleteBtn = document.getElementById('btn-delete-medicine');
     this.reorderBtn = document.getElementById('btn-reorder-medicine');
+    this.batchesList = new MedicineBatchesList('detail-medicine-batches-list');
 
     this.init();
   }
@@ -20,19 +22,37 @@ export class MedicineDetailDialog {
   init() {
     this.closeBtn?.addEventListener('click', () => this.close());
 
-    this.deleteBtn?.addEventListener('click', () => {
+    this.deleteBtn?.addEventListener('click', async () => {
       if (!appStore.selectedMedicine) return;
       const med = appStore.selectedMedicine;
-      MedicineService.delete(med.id);
-      this.close();
-      showToast('تم حذف الصنف', med.name, 'danger');
+
+      const confirmed = window.confirm(`هل أنت متأكد من حذف الصنف "${med.name}" نهائياً من سجل الكتالوج وقاعدة البيانات؟`);
+      if (!confirmed) return;
+
+      try {
+        await MedicineService.delete(med.id);
+        this.close();
+        showToast('تم حذف الصنف', `تم حذف ${med.name} من الكتالوج بنجاح`, 'danger');
+      } catch (err) {
+        showToast('فشل حذف الصنف', err.message, 'danger');
+      }
     });
 
     this.reorderBtn?.addEventListener('click', () => {
       if (!appStore.selectedMedicine) return;
       const med = appStore.selectedMedicine;
       this.close();
-      showToast('تم إنشاء طلب توريد', `${med.name} من شركة التوريد المعتمدة`, 'success');
+
+      // Switch to purchasing view and trigger new order dialog pre-populated with this medicine
+      const purchasingNavBtn = document.querySelector('.nav-button[data-view="purchasing"]');
+      if (purchasingNavBtn) {
+        purchasingNavBtn.click();
+      }
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('OPEN_NEW_PURCHASE_ORDER', { detail: { productId: med.id } }));
+      }, 50);
+
+      showToast('طلب توريد للصنف', `تم فتح مسودة أمر الشراء للدواء ${med.name}`, 'info');
     });
 
     // Make global trigger available for row clicks
@@ -45,12 +65,22 @@ export class MedicineDetailDialog {
 
     appStore.setSelectedMedicine(med);
 
-    document.getElementById('detail-medicine-name').textContent = med.name;
-    document.getElementById('detail-medicine-generic').textContent = med.generic;
-    document.getElementById('detail-medicine-category').textContent = med.category;
-    document.getElementById('detail-medicine-stock').textContent = `${med.stock} عبوة`;
-    document.getElementById('detail-medicine-price').textContent = `${Number(med.price).toLocaleString()} ج.س`;
-    document.getElementById('detail-medicine-expiry').textContent = med.expiry;
+    const nameEl = document.getElementById('detail-medicine-name');
+    const genericEl = document.getElementById('detail-medicine-generic');
+    const categoryEl = document.getElementById('detail-medicine-category');
+    const stockEl = document.getElementById('detail-medicine-stock');
+    const priceEl = document.getElementById('detail-medicine-price');
+    const expiryEl = document.getElementById('detail-medicine-expiry');
+
+    if (nameEl) nameEl.textContent = med.name;
+    if (genericEl) genericEl.textContent = med.generic || '';
+    if (categoryEl) categoryEl.textContent = med.category || 'عام';
+    if (stockEl) stockEl.textContent = `${med.stock} عبوة`;
+    if (priceEl) priceEl.textContent = `${Number(med.price).toLocaleString()} ج.س`;
+    if (expiryEl) expiryEl.textContent = med.expiry;
+
+    // Render clinical FEFO batch breakdown
+    this.batchesList.render(med);
 
     this.dialog?.classList.remove('hidden');
   }

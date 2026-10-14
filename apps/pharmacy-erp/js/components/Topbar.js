@@ -41,6 +41,14 @@ export class Topbar {
       });
     }
 
+    // User Profile Pill Trigger
+    const profileBtn = document.getElementById('user-profile-btn');
+    if (profileBtn) {
+      profileBtn.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('OPEN_USER_MENU_DIALOG'));
+      });
+    }
+
     // Shortcuts
     document.addEventListener('keydown', (e) => {
       // Ctrl/Cmd + K: Focus Search
@@ -50,10 +58,18 @@ export class Topbar {
         this.searchInput?.select();
       }
 
-      // F2: Fast POS
+      // F2: Fast POS Switch & Barcode Focus
       if (e.key === 'F2') {
         e.preventDefault();
-        window.dispatchEvent(new CustomEvent('OPEN_RECEIPT_MODAL', { detail: 'INV-2026-0842' }));
+        const posNavBtn = document.querySelector('.nav-button[data-view="pos"]');
+        if (posNavBtn) posNavBtn.click();
+        setTimeout(() => {
+          const barcodeInput = document.getElementById('product-search-input');
+          if (barcodeInput) {
+            barcodeInput.focus();
+            barcodeInput.select();
+          }
+        }, 50);
       }
 
       // ESC: Close all dialogs
@@ -74,6 +90,23 @@ export class Topbar {
   applyTheme(isDark) {
     document.documentElement.classList.toggle('dark', isDark);
     document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
+    const logoLight = document.getElementById('main-logo-img');
+    const logoDark = document.getElementById('main-logo-dark-img');
+    if (logoLight) {
+      logoLight.style.display = isDark ? 'none' : 'block';
+    }
+    if (logoDark) {
+      logoDark.style.display = isDark ? 'block' : 'none';
+    }
+
+    // Also update any standalone logo images
+    document.querySelectorAll('.login-brand-logo-container .logo-light').forEach(el => {
+      el.style.display = isDark ? 'none' : 'block';
+    });
+    document.querySelectorAll('.login-brand-logo-container .logo-dark').forEach(el => {
+      el.style.display = isDark ? 'block' : 'none';
+    });
 
     if (this.moonIcon) {
       if (isDark) {

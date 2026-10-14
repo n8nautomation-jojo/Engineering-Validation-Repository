@@ -1,0 +1,236 @@
+[
+  {
+    "sale_id": "sale-c5d6bbde-e3b9-48d9-b2ff-db3e2c8a78dc",
+    "invoice_number": "INV-2026-0846",
+    "status": "REVERSED",
+    "created_at": "2026-10-14T14:03:25.529Z",
+    "cashier_id": "usr-001",
+    "cashier_name": "د. أحمد الطاهر",
+    "customer_id": "CUST-WALK-IN",
+    "customer_name": "عميل رقم CUST-WALK-IN",
+    "items": [
+      {
+        "productId": "MED-002",
+        "name": "Augmentin 1g Tablets",
+        "nameAr": "أوجمنتين 1 جم",
+        "batchNumber": "BATCH-AUG-99",
+        "expiryDate": "2026-11-10",
+        "quantity": 3,
+        "unitPrice": 18500,
+        "lineTotal": 55500
+      }
+    ],
+    "totals": {
+      "subtotal": "55500.00",
+      "tax": "0.00",
+      "total": "55500.00",
+      "currency": "SDG"
+    },
+    "payments": [
+      {
+        "method": "CASH",
+        "amount": {
+          "value": "55500.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "MANUAL_CONFIRMATION",
+        "evidence_reference": null
+      }
+    ],
+    "payment_summary": {
+      "paid_amount": "55500.00",
+      "change_amount": "0.00"
+    },
+    "inventory_effect": {
+      "transaction_id": "tx-b47e992e-5442-46ca-a0b4-b3a1baa53810",
+      "consumed_allocations": [
+        "pos-dev-01"
+      ]
+    },
+    "sync_status": "SYNCED",
+    "correlation_id": "corr-test-1791986605526",
+    "reversed_at": "2026-10-14T14:03:25.533Z",
+    "reversal_reason": "PATIENT_CHANGED_MIND",
+    "reversal_note": "استرجاع دوائي فوري مع الحفاظ على الصلاحية"
+  },
+  {
+    "sale_id": "sale-018f-a110-7000-8000-000000000101",
+    "invoice_number": "INV-2026-0841",
+    "status": "COMPLETED",
+    "created_at": "2026-10-13T09:15:30.000Z",
+    "cashier_id": "usr-001",
+    "cashier_name": "د. أحمد الطاهر",
+    "customer_id": "CUST-049",
+    "customer_name": "مواطن — صرف نقدي",
+    "items": [
+      {
+        "productId": "MED-001",
+        "name": "Panadol Extra 500mg/65mg",
+        "nameAr": "بنادول إكسترا",
+        "batchNumber": "BATCH-2026-A2",
+        "expiryDate": "2026-11-30",
+        "quantity": 2,
+        "unitPrice": 4500,
+        "lineTotal": 9000
+      },
+      {
+        "productId": "MED-003",
+        "name": "Vitamin C 1000mg Effervescent",
+        "nameAr": "فيتامين سي 1000 مجم فوار",
+        "batchNumber": "BATCH-VTC-44",
+        "expiryDate": "2027-11-10",
+        "quantity": 1,
+        "unitPrice": 6800,
+        "lineTotal": 6800
+      }
+    ],
+    "totals": {
+      "subtotal": "15800.00",
+      "tax": "0.00",
+      "total": "15800.00",
+      "currency": "SDG"
+    },
+    "payments": [
+      {
+        "method": "CASH",
+        "amount": {
+          "value": "15800.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "MANUAL_CONFIRMATION"
+      }
+    ],
+    "payment_summary": {
+      "paid_amount": "15800.00",
+      "change_amount": "0.00"
+    },
+    "inventory_effect": {
+      "transaction_id": "tx-018f-a110-7000-8000-000000000101",
+      "consumed_allocations": [
+        "pos-dev-01"
+      ]
+    },
+    "sync_status": "SYNCED",
+    "correlation_id": "corr-seed-01"
+  },
+  {
+    "sale_id": "sale-018f-a110-7000-8000-000000000102",
+    "invoice_number": "INV-2026-0840",
+    "status": "COMPLETED",
+    "created_at": "2026-10-13T08:45:12.000Z",
+    "cashier_id": "usr-001",
+    "cashier_name": "د. أحمد الطاهر",
+    "customer_id": "CUST-012",
+    "customer_name": "محمد عبد الرحمن علي",
+    "items": [
+      {
+        "productId": "MED-002",
+        "name": "Augmentin 1g Tablets",
+        "nameAr": "أوجمنتين 1 جم",
+        "batchNumber": "BATCH-AUG-99",
+        "expiryDate": "2026-11-10",
+        "quantity": 1,
+        "unitPrice": 18500,
+        "lineTotal": 18500
+      }
+    ],
+    "totals": {
+      "subtotal": "18500.00",
+      "tax": "0.00",
+      "total": "18500.00",
+      "currency": "SDG"
+    },
+    "payments": [
+      {
+        "method": "BANK_TRANSFER",
+        "amount": {
+          "value": "18500.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "EVIDENCE_REVIEW",
+        "evidence_reference": "TXN-BOK-94821038"
+      }
+    ],
+    "payment_summary": {
+      "paid_amount": "18500.00",
+      "change_amount": "0.00"
+    },
+    "inventory_effect": {
+      "transaction_id": "tx-018f-a110-7000-8000-000000000102",
+      "consumed_allocations": [
+        "pos-dev-01"
+      ]
+    },
+    "sync_status": "SYNCED",
+    "correlation_id": "corr-seed-02"
+  },
+  {
+    "sale_id": "sale-018f-a110-7000-8000-000000000103",
+    "invoice_number": "INV-2026-0839",
+    "status": "COMPLETED",
+    "created_at": "2026-10-13T07:30:00.000Z",
+    "cashier_id": "usr-001",
+    "cashier_name": "د. أحمد الطاهر",
+    "customer_id": "CUST-088",
+    "customer_name": "عثمان الفاضل كباشي",
+    "items": [
+      {
+        "productId": "MED-004",
+        "name": "Glucophage 500mg Metformin",
+        "nameAr": "جلوكوفاج 500 مجم",
+        "batchNumber": "BATCH-GLU-12",
+        "expiryDate": "2026-11-05",
+        "quantity": 2,
+        "unitPrice": 8400,
+        "lineTotal": 16800
+      },
+      {
+        "productId": "MED-001",
+        "name": "Panadol Extra 500mg/65mg",
+        "nameAr": "بنادول إكسترا",
+        "batchNumber": "BATCH-2026-A2",
+        "expiryDate": "2026-11-30",
+        "quantity": 2,
+        "unitPrice": 4500,
+        "lineTotal": 9000
+      }
+    ],
+    "totals": {
+      "subtotal": "25800.00",
+      "tax": "0.00",
+      "total": "25800.00",
+      "currency": "SDG"
+    },
+    "payments": [
+      {
+        "method": "CASH",
+        "amount": {
+          "value": "10000.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "MANUAL_CONFIRMATION"
+      },
+      {
+        "method": "BANK_TRANSFER",
+        "amount": {
+          "value": "15800.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "EVIDENCE_REVIEW",
+        "evidence_reference": "TXN-BOK-33918274"
+      }
+    ],
+    "payment_summary": {
+      "paid_amount": "25800.00",
+      "change_amount": "0.00"
+    },
+    "inventory_effect": {
+      "transaction_id": "tx-018f-a110-7000-8000-000000000103",
+      "consumed_allocations": [
+        "pos-dev-01"
+      ]
+    },
+    "sync_status": "SYNCED",
+    "correlation_id": "corr-seed-03"
+  }
+]

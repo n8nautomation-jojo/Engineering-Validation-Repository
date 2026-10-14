@@ -5,6 +5,7 @@
 
 import { apiClient } from './apiClient.js';
 import { MedicineService } from './medicineService.js';
+import { AuthService } from './authService.js';
 
 class PosService {
   constructor() {
@@ -13,14 +14,29 @@ class PosService {
     this.activePaymentMethod = 'BANKAK'; // Default in Sudan
     this.bankakReference = '';
     this.isOffline = false;
+    this.isSplitMode = false;
+    this.splitCashAmount = 0;
+    this.splitBankakAmount = 0;
+    this.splitBankakRef = '';
 
+    const activeUser = typeof AuthService !== 'undefined' ? AuthService.getCurrentUser() : null;
     this.session = {
       cashRegisterId: '018f0000-0000-7000-8000-000000000001',
       cashSessionId: '018f0000-0000-7000-8000-000000000002',
-      cashierId: 'usr-001',
-      cashierName: 'د. أحمد الطاهر',
+      cashierId: activeUser?.id || 'usr-001',
+      cashierName: activeUser?.fullName || 'د. سارة الكباشي',
       branchId: 'brn-khartoum-01'
     };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('AUTH_STATE_CHANGED', (e) => {
+        const user = e.detail?.user;
+        if (user) {
+          this.session.cashierId = user.id;
+          this.session.cashierName = user.fullName;
+        }
+      });
+    }
 
     this.allocation = {
       deviceId: 'pos-dev-01',
@@ -39,11 +55,12 @@ class PosService {
       ]);
 
       if (sessionData) {
+        const activeUser = typeof AuthService !== 'undefined' ? AuthService.getCurrentUser() : null;
         this.session = {
           cashRegisterId: sessionData.cashRegisterId,
           cashSessionId: sessionData.cashSessionId,
-          cashierId: sessionData.cashierId,
-          cashierName: sessionData.cashierName,
+          cashierId: activeUser?.id || sessionData.cashierId,
+          cashierName: activeUser?.fullName || sessionData.cashierName,
           branchId: sessionData.branchId
         };
       }
@@ -183,6 +200,34 @@ class PosService {
     this.cart = [];
     this.payments = [];
     this.bankakReference = '';
+    this.splitCashAmount = 0;
+    this.splitBankakAmount = 0;
+    this.splitBankakRef = '';
+  }
+
+  setSplitMode(active) {
+    this.isSplitMode = Boolean(active);
+    if (this.isSplitMode) {
+      this.splitHalfAndHalf();
+    }
+  }
+
+  splitHalfAndHalf() {
+    const total = this.grandTotal;
+    const half = Math.round(total / 2);
+    this.splitCashAmount = half;
+    this.splitBankakAmount = Math.max(0, total - half);
+  }
+
+  setSplitAmounts(cash, bankak, ref) {
+    this.splitCashAmount = Number(cash || 0);
+    this.splitBankakAmount = Number(bankak || 0);
+    if (ref !== undefined) this.splitBankakRef = ref;
+  }
+
+  toggleOfflineMode(forceState = null) {
+    this.isOffline = forceState !== null ? forceState : !this.isOffline;
+    return this.isOffline;
   }
 
   addPayment(method, amount, reference = '', verificationMode = 'EVIDENCE_REVIEW') {
@@ -206,6 +251,17 @@ class PosService {
     if (this.cart.length === 0) {
       return { valid: false, reason: 'السلة فارغة. يرجى إضافة أدوية أولاً.' };
     }
+
+    if (this.isSplitMode) {
+      const totalPaid = Number((this.splitCashAmount + this.splitBankakAmount).toFixed(2));
+      if (Math.abs(totalPaid - this.grandTotal) > 0.01) {
+        return {
+          valid: false,
+          reason: `مجموع السداد المجزأ (${totalPaid.toLocaleString()} ج.س) لا يطابق إجمالي الفاتورة (${this.grandTotal.toLocaleString()} ج.س)`
+        };
+      }
+    }
+
     return { valid: true };
   }
 
@@ -215,18 +271,40 @@ class PosService {
       throw new Error(validation.reason);
     }
 
-    // Auto-create single payment matching total if not split
-    let paymentInputs = [...this.payments];
-    if (paymentInputs.length === 0) {
-      const isBankak = this.activePaymentMethod === 'BANKAK';
-      paymentInputs = [
-        {
-          method: isBankak ? 'BANK_TRANSFER' : this.activePaymentMethod,
-          amount: this.grandTotal,
-          reference: isBankak ? (this.bankakReference || `TXN-BOK-${Math.floor(10000000 + Math.random() * 90000000)}`) : undefined,
-          verificationMode: isBankak ? 'EVIDENCE_REVIEW' : 'MANUAL_CONFIRMATION'
-        }
-      ];
+    let paymentInputs = [];
+    if (this.isSplitMode) {
+      const cashVal = Number(this.splitCashAmount || 0);
+      const bankakVal = Number(this.splitBankakAmount || 0);
+
+      if (cashVal > 0) {
+        paymentInputs.push({
+          method: 'CASH',
+          amount: cashVal,
+          verificationMode: 'MANUAL_CONFIRMATION'
+        });
+      }
+      if (bankakVal > 0) {
+        paymentInputs.push({
+          method: 'BANK_TRANSFER',
+          amount: bankakVal,
+          reference: this.splitBankakRef || `TXN-BOK-${Math.floor(10000000 + Math.random() * 90000000)}`,
+          verificationMode: 'EVIDENCE_REVIEW'
+        });
+      }
+    } else {
+      let activeInputs = [...this.payments];
+      if (activeInputs.length === 0) {
+        const isBankak = this.activePaymentMethod === 'BANKAK';
+        activeInputs = [
+          {
+            method: isBankak ? 'BANK_TRANSFER' : this.activePaymentMethod,
+            amount: this.grandTotal,
+            reference: isBankak ? (this.bankakReference || `TXN-BOK-${Math.floor(10000000 + Math.random() * 90000000)}`) : undefined,
+            verificationMode: isBankak ? 'EVIDENCE_REVIEW' : 'MANUAL_CONFIRMATION'
+          }
+        ];
+      }
+      paymentInputs = activeInputs;
     }
 
     const lines = this.cart.map(item => ({
@@ -259,7 +337,49 @@ class PosService {
   async completeSale(customerId) {
     const dto = this.toCompleteSaleRequestDto(customerId);
 
-    // POST /api/sales with Idempotency Key
+    // If in simulated or actual offline mode
+    if (this.isOffline) {
+      const totalUnits = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+      this.allocation.consumedCapacity = Math.min(this.allocation.totalCapacity, this.allocation.consumedCapacity + totalUnits);
+      this.updateAllocationMeterUI();
+
+      const invNo = `INV-OFFL-${Date.now().toString().slice(-6)}`;
+      const responseDto = {
+        sale_id: `offline-${Date.now()}`,
+        invoice_number: invNo,
+        created_at: new Date().toISOString(),
+        cashier_name: this.session.cashierName,
+        totals: {
+          subtotal: this.subtotal.toFixed(2),
+          total: this.grandTotal.toFixed(2),
+          currency: 'SDG'
+        },
+        items: this.cart.map(i => ({
+          name: i.name,
+          nameAr: i.nameAr,
+          batchNumber: i.batchNumber,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+          lineTotal: i.lineTotal
+        })),
+        lines: this.cart.map(i => ({ ...i, quantity: { value: i.quantity.toString() } })),
+        payments: dto.payments,
+        offline_sync: 'PENDING_RECONNECT'
+      };
+
+      // Deduct from local cache
+      for (const item of this.cart) {
+        const med = MedicineService.getById(item.productId);
+        if (med) {
+          med.stock = Math.max(0, med.stock - item.quantity);
+        }
+      }
+
+      this.clearCart();
+      return responseDto;
+    }
+
+    // Standard Online Mode via Backend API with Idempotency Key
     const responseDto = await apiClient.post('/api/sales', dto);
 
     // Synchronize local inventory from backend to update all views & badges

@@ -3,10 +3,25 @@
    Specification Version 1.0 — Clinical Enterprise (Arabic-First RTL)
    ========================================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Zain:ital,wght@0,200;0,300;0,400;0,700;0,800;0,900;1,300;1,400&family=Cairo:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+
+/* Global Local @font-face definition for Zain Font (Offline-Ready) */
+@font-face {
+  font-family: 'Zain';
+  src: local('Zain Black'),
+       local('Zain-Black'),
+       local('Zain'),
+       url('./assets/fonts/Zain-Black.ttf') format('truetype'),
+       url('./assets/fonts/Zain.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  /* Fonts */
-  --font-ar: 'Cairo', system-ui, -apple-system, sans-serif;
-  --font-en: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  /* Fonts — Unified System-Wide Font: Zain */
+  --font-ar: 'Zain', 'Cairo', system-ui, -apple-system, sans-serif;
+  --font-en: 'Zain', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 
   /* Application Surfaces (Default Light Clinical) */
   --app-bg: #F4F6F8;
@@ -116,6 +131,10 @@ html[data-theme="dark"] {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+body, button, input, select, textarea, table, th, td, h1, h2, h3, h4, h5, h6, nav, aside, main, header, footer, section, p, span, a, label {
+  font-family: var(--font-ar);
 }
 
 body {

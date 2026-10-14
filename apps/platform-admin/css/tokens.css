@@ -8,13 +8,26 @@
  * Includes day clinical mode and executive night mode.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zain:ital,wght@0,200;0,300;0,400;0,700;0,800;0,900;1,300;1,400&family=Alexandria:wght@500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* Global Local @font-face definition for Zain Font (Offline-Ready) */
+@font-face {
+  font-family: 'Zain';
+  src: local('Zain Black'),
+       local('Zain-Black'),
+       local('Zain'),
+       url('../assets/fonts/Zain-Black.ttf') format('truetype'),
+       url('../assets/fonts/Zain.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
-  /* Typography Tokens */
-  --font-sans: 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
-  --font-display: 'Alexandria', 'IBM Plex Sans Arabic', system-ui, sans-serif;
-  --font-latin: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  /* Typography Tokens — Unified System-Wide Font: Zain */
+  --font-sans: 'Zain', 'IBM Plex Sans Arabic', system-ui, -apple-system, sans-serif;
+  --font-display: 'Zain', 'Alexandria', 'IBM Plex Sans Arabic', system-ui, sans-serif;
+  --font-latin: 'Zain', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 
   /* Official Brand Palette Tokens */

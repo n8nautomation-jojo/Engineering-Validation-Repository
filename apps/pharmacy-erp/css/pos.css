@@ -5,25 +5,31 @@
 
 .pos-terminal-view {
   display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  gap: 16px;
   align-items: start;
   animation: fade-up 0.2s ease-out;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* POS Terminal Top Bar */
 .pos-top-banner {
-  grid-column: span 2;
+  grid-column: 1 / -1;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 14px 20px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   box-shadow: var(--shadow-soft);
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pos-session-info {
@@ -97,8 +103,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
-  max-width: 440px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .barcode-input-wrap {
@@ -134,8 +140,12 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: 16px;
   box-shadow: var(--shadow-soft);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .pos-category-tabs {
@@ -143,9 +153,11 @@
   align-items: center;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 12px;
-  margin-bottom: 16px;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
   border-bottom: 1px solid var(--border);
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pos-tab-btn {
@@ -174,11 +186,14 @@
 
 .pos-catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
   max-height: calc(100vh - 280px);
   overflow-y: auto;
-  padding-right: 2px;
+  padding: 2px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .pos-med-card {
@@ -472,6 +487,17 @@ html[dir="ltr"] .cart-row-total {
 
 .pos-cart-close-mobile {
   display: none;
+}
+
+@media (max-width: 1100px) {
+  .pos-terminal-view {
+    grid-template-columns: minmax(0, 1fr) 310px;
+    gap: 12px;
+  }
+  .pos-catalog-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
 }
 
 @media (max-width: 900px) {

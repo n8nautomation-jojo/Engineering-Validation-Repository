@@ -7,6 +7,11 @@
 class ApiClient {
   constructor(baseUrl = '') {
     this.baseUrl = baseUrl;
+    this.token = null;
+  }
+
+  setToken(token) {
+    this.token = token;
   }
 
   generateCorrelationId() {
@@ -24,6 +29,10 @@ class ApiClient {
       'X-Correlation-Id': options.correlationId || this.generateCorrelationId(),
       ...(options.headers || {})
     };
+
+    if (this.token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
 
     if (options.idempotencyKey) {
       headers['Idempotency-Key'] = options.idempotencyKey;
@@ -66,6 +75,19 @@ class ApiClient {
       body,
       idempotencyKey: options.idempotencyKey || this.generateIdempotencyKey()
     });
+  }
+
+  put(endpoint, body, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: 'PUT',
+      body,
+      idempotencyKey: options.idempotencyKey || this.generateIdempotencyKey()
+    });
+  }
+
+  delete(endpoint, options = {}) {
+    return this.request(endpoint, { ...options, method: 'DELETE' });
   }
 }
 

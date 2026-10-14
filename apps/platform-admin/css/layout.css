@@ -20,6 +20,10 @@ html {
   height: 100%;
 }
 
+body, button, input, select, textarea, table, th, td, h1, h2, h3, h4, h5, h6, nav, aside, main, header, footer, section, p, span, a, label {
+  font-family: var(--font-sans);
+}
+
 body {
   font-family: var(--font-sans);
   background: var(--bg-canvas);
@@ -110,6 +114,24 @@ html[dir="ltr"] .admin-sidebar {
 
 .brand-logo-img:hover {
   transform: scale(1.02);
+}
+
+.brand-logo-img.logo-dark {
+  display: none !important;
+}
+
+.brand-logo-img.logo-light {
+  display: block !important;
+}
+
+.dark .brand-logo-img.logo-dark,
+[data-theme="dark"] .brand-logo-img.logo-dark {
+  display: block !important;
+}
+
+.dark .brand-logo-img.logo-light,
+[data-theme="dark"] .brand-logo-img.logo-light {
+  display: none !important;
 }
 
 .console-pill {

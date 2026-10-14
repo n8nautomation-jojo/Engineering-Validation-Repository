@@ -32,7 +32,7 @@ export class TenantsView {
     }
 
     adminStore.subscribe((event) => {
-      if (['FILTER_CHANGED', 'TENANT_PROVISIONED', 'TENANT_UPDATED'].includes(event)) {
+      if (['FILTER_CHANGED', 'TENANT_PROVISIONED', 'TENANT_UPDATED', 'TENANTS_LOADED', 'TENANT_STATUS_CHANGED'].includes(event)) {
         this.render();
       }
     });
@@ -127,9 +127,9 @@ export class TenantsView {
       if (tenant) adminStore.setSelectedTenantForCredentials(tenant);
     };
 
-    window.toggleTenantStatus = (tenantId) => {
+    window.toggleTenantStatus = async (tenantId) => {
       try {
-        const updated = tenantProvisioningService.toggleTenantStatus(tenantId);
+        const updated = await tenantProvisioningService.toggleTenantStatus(tenantId);
         showToast(
           updated.status === 'ACTIVE' ? 'تم تفعيل المستأجر' : 'تم تعليق المستأجر',
           `${updated.tenantName} (${updated.tenantCode})`,

@@ -1,0 +1,80 @@
+[
+  {
+    "tenantId": "tnt-006",
+    "tenantCode": "PHARMA-E2E8351",
+    "tenantName": "مجمع صيدليات بحري E2E8351",
+    "orgName": "مجموعة بحري الطبية المتحدة",
+    "branchName": "فرع المحطة الوسطى",
+    "adminUser": "admin_e2e8351",
+    "adminStatus": "PASSWORD_CHANGE_REQUIRED",
+    "tempPassword": "Temp-dcdc!43g!2026",
+    "plan": "ENTERPRISE",
+    "status": "ACTIVE",
+    "createdAt": "2026-10-14 13:48"
+  },
+  {
+    "tenantId": "tnt-005",
+    "tenantCode": "PHARMA-E2E5657",
+    "tenantName": "مجمع صيدليات بحري E2E5657",
+    "orgName": "مجموعة بحري الطبية المتحدة",
+    "branchName": "فرع المحطة الوسطى",
+    "adminUser": "admin_e2e5657",
+    "adminStatus": "PASSWORD_CHANGE_REQUIRED",
+    "tempPassword": "Temp-Gma3MvVr!2026",
+    "plan": "ENTERPRISE",
+    "status": "SUSPENDED",
+    "createdAt": "2026-10-14 13:47"
+  },
+  {
+    "tenantId": "tnt-001",
+    "tenantCode": "PHARMA-NILEIN",
+    "tenantName": "مجموعة صيدليات النيلين النموذجية",
+    "orgName": "شركة النيلين للخدمات الطبية",
+    "branchName": "الخرطوم — تقاطع القصر",
+    "adminUser": "ahmed_pharma",
+    "adminStatus": "ACTIVE",
+    "tempPassword": "N/A",
+    "plan": "ENTERPRISE",
+    "status": "ACTIVE",
+    "createdAt": "2026-09-01 10:00"
+  },
+  {
+    "tenantId": "tnt-002",
+    "tenantCode": "PHARMA-MEDICO",
+    "tenantName": "سلسلة صيدليات ميديكو الخرطوم",
+    "orgName": "ميديكو كير المحدودة",
+    "branchName": "الرياض — شارع المشتل",
+    "adminUser": "medico_admin",
+    "adminStatus": "ACTIVE",
+    "tempPassword": "N/A",
+    "plan": "STANDARD",
+    "status": "ACTIVE",
+    "createdAt": "2026-09-15 14:30"
+  },
+  {
+    "tenantId": "tnt-003",
+    "tenantCode": "PHARMA-OMDURMAN",
+    "tenantName": "صيدلية أم درمان المركزية",
+    "orgName": "مؤسسة أم درمان الصيدلانية",
+    "branchName": "سوق أم درمان الكبير",
+    "adminUser": "omdurman_admin",
+    "adminStatus": "ACTIVE",
+    "tempPassword": "N/A",
+    "plan": "COMMUNITY",
+    "status": "ACTIVE",
+    "createdAt": "2026-10-01 09:15"
+  },
+  {
+    "tenantId": "tnt-004",
+    "tenantCode": "PHARMA-BLUENILE",
+    "tenantName": "صيدليات النيل الأزرق",
+    "orgName": "شركة النيل الأزرق المحدودة",
+    "branchName": "بحري المحطة الوسطى",
+    "adminUser": "bluenile_admin",
+    "adminStatus": "PASSWORD_CHANGE_REQUIRED",
+    "tempPassword": "Temp-9K22!2026",
+    "plan": "STANDARD",
+    "status": "ACTIVE",
+    "createdAt": "2026-10-10 11:20"
+  }
+]

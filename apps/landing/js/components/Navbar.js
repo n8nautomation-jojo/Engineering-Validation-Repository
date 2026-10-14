@@ -14,7 +14,8 @@ export function renderNavbar() {
       <div class="container navbar-container">
         <!-- 100% NATURAL BRAND LOGO (NO BOXES, NO WHITE PILLS, NO BORDERS) -->
         <a href="/" class="brand-link" title="PharmaTech OS">
-          <img src="/pharmatech-logo.png" alt="PharmaTech OS" class="brand-logo-img">
+          <img src="/pharmatech-logo.png" alt="PharmaTech OS" class="brand-logo-img logo-light">
+          <img src="/pharmatech-logo-dark.png" alt="PharmaTech OS" class="brand-logo-img logo-dark">
         </a>
 
         <!-- NAV LINKS -->

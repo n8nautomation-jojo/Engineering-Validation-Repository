@@ -7,6 +7,9 @@
 import { catalogRepository } from "./api/catalog.mjs";
 import { sessionRepository } from "./api/session.mjs";
 import { salesRepository } from "./api/sales.mjs";
+import { purchasingRepository } from "./api/purchasing.mjs";
+import { reportsRepository } from "./api/reports.mjs";
+import { settingsRepository } from "./api/settings.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -127,6 +130,15 @@ export default {
           return jsonResponse(newProduct, 201);
         }
 
+        if (method === "DELETE" && pathname.startsWith("/api/products/")) {
+          const id = pathname.replace("/api/products/", "");
+          const deleted = catalogRepository.deleteProduct(id);
+          if (!deleted) {
+            return jsonResponse({ error: { code: "PRODUCT_NOT_FOUND", message: `Product ${id} not found` } }, 404);
+          }
+          return jsonResponse({ success: true, deletedId: id });
+        }
+
         // Sales & Invoices
         if (method === "GET" && pathname === "/api/sales") {
           return jsonResponse(salesRepository.getAllSales());
@@ -150,6 +162,71 @@ export default {
         if (method === "POST" && pathname === "/api/sales") {
           const result = await salesRepository.processSale(body, headersObj);
           return jsonResponse(result, 201, { "X-Correlation-Id": correlationId });
+        }
+
+        // =========================================================================
+        // PURCHASING & SUPPLY CHAIN
+        // =========================================================================
+        if (method === "GET" && pathname === "/api/purchasing/suppliers") {
+          return jsonResponse(purchasingRepository.getAllSuppliers());
+        }
+
+        if (method === "POST" && pathname === "/api/purchasing/suppliers") {
+          const newSupplier = purchasingRepository.addSupplier(body);
+          return jsonResponse(newSupplier, 201);
+        }
+
+        if (method === "GET" && pathname === "/api/purchasing/orders") {
+          return jsonResponse(purchasingRepository.getAllOrders());
+        }
+
+        if (method === "POST" && pathname === "/api/purchasing/orders") {
+          const newOrder = purchasingRepository.createPurchaseOrder(body);
+          return jsonResponse(newOrder, 201);
+        }
+
+        if (method === "POST" && pathname.startsWith("/api/purchasing/orders/") && pathname.endsWith("/receive")) {
+          const parts = pathname.split("/");
+          const orderId = parts[4];
+          const result = purchasingRepository.receiveGoodsReceipt(orderId, body);
+          return jsonResponse(result, 200);
+        }
+
+        // =========================================================================
+        // REPORTS & ANALYTICS
+        // =========================================================================
+        if (method === "GET" && (pathname === "/api/reports" || pathname === "/api/reports/summary")) {
+          const startDate = url.searchParams.get("startDate");
+          const endDate = url.searchParams.get("endDate");
+          return jsonResponse(reportsRepository.getFinancialSummary(startDate, endDate));
+        }
+
+        if (method === "GET" && pathname === "/api/reports/categories") {
+          const startDate = url.searchParams.get("startDate");
+          const endDate = url.searchParams.get("endDate");
+          return jsonResponse(reportsRepository.getCategoryAnalytics(startDate, endDate));
+        }
+
+        if (method === "GET" && pathname === "/api/reports/inventory") {
+          return jsonResponse(reportsRepository.getInventoryHealth());
+        }
+
+        if (method === "GET" && pathname === "/api/reports/top-products") {
+          const startDate = url.searchParams.get("startDate");
+          const endDate = url.searchParams.get("endDate");
+          return jsonResponse(reportsRepository.getTopSellingProducts(startDate, endDate));
+        }
+
+        // =========================================================================
+        // SETTINGS
+        // =========================================================================
+        if (method === "GET" && pathname === "/api/settings") {
+          return jsonResponse(settingsRepository.getSettings());
+        }
+
+        if ((method === "POST" || method === "PUT") && pathname === "/api/settings") {
+          const updated = settingsRepository.updateSettings(body);
+          return jsonResponse(updated, 200);
         }
 
         return errorResponse(404, "NOT_FOUND", `Endpoint '${method} ${pathname}' not found.`, correlationId);

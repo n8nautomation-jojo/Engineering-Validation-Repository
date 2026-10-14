@@ -1,0 +1,107 @@
+[
+  {
+    "id": "usr-mv860tvi",
+    "username": "admin_e2e8351",
+    "fullName": "د. مشرف — مجمع صيدليات بحري E2E8351",
+    "role": "PHARMACY_MANAGER",
+    "roleNameAr": "صيدلي مسؤول / مدير الصيدلية",
+    "tenantCode": "PHARMA-E2E8351",
+    "branchId": "brn-mv860tvi",
+    "branchName": "فرع المحطة الوسطى",
+    "salt": "f88cbe3c352f8ff4d3aed9f7c20abcb0",
+    "passwordHash": "c15089531ddc23dcb32443fdd5144d18826d17fa6c8af4d64ada3455d66b98c6e0c26db4cdad73bd0921e688b0cc63367d1535903c9ece5748fc6dbcdb42f3ae",
+    "status": "PASSWORD_CHANGE_REQUIRED",
+    "capabilities": [
+      "sales.create",
+      "sales.read",
+      "sales.reverse",
+      "inventory.manage",
+      "reports.view",
+      "settings.manage"
+    ],
+    "createdAt": "2026-10-14T13:48:28.386Z"
+  },
+  {
+    "id": "usr-mv85zhi7",
+    "username": "admin_e2e5657",
+    "fullName": "د. مشرف — مجمع صيدليات بحري E2E5657",
+    "role": "PHARMACY_MANAGER",
+    "roleNameAr": "صيدلي مسؤول / مدير الصيدلية",
+    "tenantCode": "PHARMA-E2E5657",
+    "branchId": "brn-mv85zhi7",
+    "branchName": "فرع المحطة الوسطى",
+    "salt": "c3d61d5fdeb82e7d30e7b110e560b5ba",
+    "passwordHash": "90ef3b2dad1c2540c9ef609cb6cea593fcffaa4fa00b8340aa3b18bd63cda818b9a2f21b822997dd7cc8f932817b291af9670ab2049716f888507de1f63e885e",
+    "status": "PASSWORD_CHANGE_REQUIRED",
+    "capabilities": [
+      "sales.create",
+      "sales.read",
+      "sales.reverse",
+      "inventory.manage",
+      "reports.view",
+      "settings.manage"
+    ],
+    "createdAt": "2026-10-14T13:47:25.703Z"
+  },
+  {
+    "id": "usr-001",
+    "username": "ahmed_pharma",
+    "fullName": "د. أحمد الطاهر",
+    "role": "PHARMACY_MANAGER",
+    "roleNameAr": "صيدلي مسؤول / مدير الصيدلية",
+    "tenantCode": "PHARMA-NILEIN",
+    "branchId": "brn-khartoum-01",
+    "branchName": "فرع الخرطوم الرئيسي",
+    "salt": "e4f8a19c3b52d7e01479f6a8b2c5e3d1",
+    "passwordHash": "8a6ceeff3eab632c4c420cae9773bea1909b6cc68d503a02765d9e68ef59e3794d664279750371091bcd7611ded4ac6b400c094dd0370ff2ea7448c9d219c097",
+    "status": "ACTIVE",
+    "capabilities": [
+      "sales.create",
+      "sales.read",
+      "sales.reverse",
+      "inventory.manage",
+      "reports.view",
+      "settings.manage"
+    ],
+    "createdAt": "2026-09-01T10:00:00Z"
+  },
+  {
+    "id": "usr-002",
+    "username": "sara_cashier",
+    "fullName": "د. سارة الكباشي",
+    "role": "CASHIER",
+    "roleNameAr": "صيدلي كاشير / بيع سريع",
+    "tenantCode": "PHARMA-NILEIN",
+    "branchId": "brn-khartoum-01",
+    "branchName": "فرع الخرطوم الرئيسي",
+    "salt": "a1c2e3f4b5d6a7b8c9d0e1f2a3b4c5d6",
+    "passwordHash": "19fb639ca50c4e2f8b723f5c169c195e9d1ef099f1d56e69135e629833f7c1252759c13af7d7dfb94f866d853f9550a0175f8b12d31084207882f46ae0c49d57",
+    "status": "ACTIVE",
+    "capabilities": [
+      "sales.create",
+      "sales.read",
+      "cash.shift"
+    ],
+    "createdAt": "2026-09-15T14:30:00Z"
+  },
+  {
+    "id": "usr-003",
+    "username": "bluenile_admin",
+    "fullName": "د. محمد علي — النيل الأزرق",
+    "role": "PHARMACY_MANAGER",
+    "roleNameAr": "مدير صيدلية (حساب جديد)",
+    "tenantCode": "PHARMA-BLUENILE",
+    "branchId": "brn-bahri-01",
+    "branchName": "فرع بحري المحطة الوسطى",
+    "salt": "9f8e7d6c5b4a3a2b1c0d1e2f3a4b5c6d",
+    "passwordHash": "686ab801e6f05fdeb1ede1dff60a35b517d6b1ce26e960ecf4d8bb1c018e01648af29406f04b6f41f0601559a148554cc51a9028173449ecabd837415920d046",
+    "status": "PASSWORD_CHANGE_REQUIRED",
+    "capabilities": [
+      "sales.create",
+      "sales.read",
+      "inventory.manage",
+      "reports.view"
+    ],
+    "createdAt": "2026-10-10T11:20:00Z"
+  }
+]

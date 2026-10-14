@@ -1,0 +1,133 @@
+[
+  {
+    "id": "PO-2026-0043",
+    "poNumber": "PO-2026-0043",
+    "supplierId": "SUP-001",
+    "supplierName": "شركة الحكمة للصناعات الدوائية",
+    "status": "DELIVERED",
+    "issueDate": "2026-10-14",
+    "expectedDeliveryDate": "2026-10-18",
+    "deliveredAt": "2026-10-14T14:03:25.520Z",
+    "notes": "طلب توريد سريع لدعم مخزون الأوجمنتين",
+    "items": [
+      {
+        "productId": "MED-002",
+        "productName": "Augmentin 1g Tablets",
+        "orderedQuantity": 40,
+        "receivedQuantity": 40,
+        "unitCost": 14000,
+        "lineTotal": 560000
+      }
+    ],
+    "totals": {
+      "totalCost": 560000,
+      "currency": "SDG"
+    },
+    "goodsReceipts": [
+      {
+        "grnNumber": "GRN-2026-5509",
+        "supplierInvoiceNumber": "INV-HIKMA-99218",
+        "receivedAt": "2026-10-14T14:03:25.520Z",
+        "receivedBy": "د. طارق المشرف",
+        "notes": "استلام معتمد ومطابق للمعايير الصيدلانية",
+        "items": [
+          {
+            "productId": "MED-002",
+            "productName": "Augmentin 1g Tablets",
+            "batchNumber": "BATCH-AUG-FEFO-5508",
+            "expiryDate": "2027-01-15",
+            "quantity": 40
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "PO-2026-0041",
+    "poNumber": "PO-2026-0041",
+    "supplierId": "SUP-001",
+    "supplierName": "شركة الحكمة للصناعات الدوائية",
+    "status": "DELIVERED",
+    "issueDate": "2026-10-10",
+    "expectedDeliveryDate": "2026-10-12",
+    "deliveredAt": "2026-10-12T11:30:00.000Z",
+    "notes": "شحنة توريد روتينية للفرع الرئيسي",
+    "items": [
+      {
+        "productId": "MED-001",
+        "productName": "Panadol Extra 500mg/65mg",
+        "orderedQuantity": 100,
+        "receivedQuantity": 100,
+        "unitCost": 3200,
+        "lineTotal": 320000
+      },
+      {
+        "productId": "MED-006",
+        "productName": "Brufen 400mg Ibuprofen",
+        "orderedQuantity": 50,
+        "receivedQuantity": 50,
+        "unitCost": 3800,
+        "lineTotal": 190000
+      }
+    ],
+    "totals": {
+      "totalCost": 510000,
+      "currency": "SDG"
+    },
+    "goodsReceipts": [
+      {
+        "grnNumber": "GRN-2026-0081",
+        "receivedAt": "2026-10-12T11:30:00.000Z",
+        "receivedBy": "د. أحمد الطاهر",
+        "items": [
+          {
+            "productId": "MED-001",
+            "batchNumber": "BATCH-2027-A1",
+            "expiryDate": "2027-08-15",
+            "quantity": 100
+          },
+          {
+            "productId": "MED-006",
+            "batchNumber": "BATCH-BRU-19",
+            "expiryDate": "2027-06-12",
+            "quantity": 50
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "PO-2026-0042",
+    "poNumber": "PO-2026-0042",
+    "supplierId": "SUP-002",
+    "supplierName": "شركة النيل الأزرق للمستلزمات الطبية",
+    "status": "PENDING_RECEIPT",
+    "issueDate": "2026-10-13",
+    "expectedDeliveryDate": "2026-10-15",
+    "deliveredAt": null,
+    "notes": "طلب عاجل لتعزيز رصيد المضادات الحيوية وأدوية السكري",
+    "items": [
+      {
+        "productId": "MED-002",
+        "productName": "Augmentin 1g Tablets",
+        "orderedQuantity": 60,
+        "receivedQuantity": 0,
+        "unitCost": 14500,
+        "lineTotal": 870000
+      },
+      {
+        "productId": "MED-004",
+        "productName": "Glucophage 500mg Metformin",
+        "orderedQuantity": 80,
+        "receivedQuantity": 0,
+        "unitCost": 6200,
+        "lineTotal": 496000
+      }
+    ],
+    "totals": {
+      "totalCost": 1366000,
+      "currency": "SDG"
+    },
+    "goodsReceipts": []
+  }
+]

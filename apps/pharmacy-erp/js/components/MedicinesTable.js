@@ -1,57 +1,56 @@
 /**
- * PharmaTech — Inventory Table & FEFO Grid Component
- * Clinical data visualization with FEFO indicators, status filters & reactive pagination
+ * PharmaTech — Inventory & Medicines Manager Coordinator
+ * Enterprise Component-Based Modular Architecture coordinating:
+ * - InventoryFilterBar: Search, Category Pills, Status Segmentation & Quick Actions
+ * - InventoryTableGrid: FEFO Priority Badges, Stock Levels, and Row Actions
+ * - InventoryPagination: Range Breakdown and Page Controls
+ * - StockAdjustmentModal: Physical Audits, Damage, and Stock Corrections
+ * - BarcodeLabelModal: 50x30mm Shelf Price Tag & Barcode Preview
  */
 
 import { appStore } from '../state/store.js';
 import { MedicineService } from '../services/medicineService.js';
+import { InventoryFilterBar } from './inventory/InventoryFilterBar.js';
+import { InventoryTableGrid } from './inventory/InventoryTableGrid.js';
+import { InventoryPagination } from './inventory/InventoryPagination.js';
+import { StockAdjustmentModal } from './inventory/StockAdjustmentModal.js';
+import { BarcodeLabelModal } from './inventory/BarcodeLabelModal.js';
+import { showToast } from './Toast.js';
 
 export class MedicinesTable {
   constructor() {
-    this.tbody = document.getElementById('medicines-table-tbody');
-    this.tableSearch = document.getElementById('table-filter-search');
-    this.segmentedButtons = document.querySelectorAll('#filter-status-segmented button');
-    this.prevBtn = document.getElementById('pagination-prev-btn');
-    this.nextBtn = document.getElementById('pagination-next-btn');
-    this.countChip = document.getElementById('table-count-chip');
-    this.paginationInfo = document.getElementById('table-pagination-info');
-    this.pagesContainer = document.getElementById('pagination-pages-container');
+    this.container = document.getElementById('medicines-table-panel');
+    this.selectedCategory = 'ALL';
+
+    // Sub-components
+    this.filterBar = new InventoryFilterBar('inventory-filter-bar-container', {
+      onSearch: (q) => this.handleSearch(q),
+      onCategoryChange: (cat) => this.handleCategoryChange(cat),
+      onStatusChange: (status) => this.handleStatusChange(status),
+      onAddNew: () => this.handleAddNew(),
+      onExportCSV: () => this.handleExportCSV()
+    });
+
+    this.tableGrid = new InventoryTableGrid('inventory-table-container', {
+      onSelectMedicine: (med) => this.handleSelectMedicine(med),
+      onAdjustStock: (med) => this.handleAdjustStock(med),
+      onPrintBarcode: (med) => this.handlePrintBarcode(med)
+    });
+
+    this.pagination = new InventoryPagination('inventory-pagination-container', {
+      onPageChange: (page) => this.handlePageChange(page)
+    });
+
+    this.stockAdjustmentModal = new StockAdjustmentModal('dialog-stock-adjustment');
+    this.barcodeLabelModal = new BarcodeLabelModal('dialog-barcode-label');
 
     this.init();
   }
 
   init() {
-    // Segmented Status Filters
-    this.segmentedButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const st = btn.dataset.status;
-        appStore.setStatusFilter(st);
-        this.updateSegmentedUI(st);
-      });
-    });
+    if (!this.container) return;
 
-    // Table Local Search
-    if (this.tableSearch) {
-      this.tableSearch.addEventListener('input', (e) => {
-        appStore.setSearchQuery(e.target.value);
-      });
-    }
-
-    // Pagination
-    this.prevBtn?.addEventListener('click', () => {
-      if (appStore.page > 1) {
-        appStore.setPage(appStore.page - 1);
-      }
-    });
-
-    this.nextBtn?.addEventListener('click', () => {
-      const totalPages = Math.ceil(MedicineService.getFiltered().length / appStore.perPage) || 1;
-      if (appStore.page < totalPages) {
-        appStore.setPage(appStore.page + 1);
-      }
-    });
-
-    // Subscribe to store updates
+    // React to store and global catalog updates
     appStore.subscribe((event) => {
       if ([
         'MEDICINES_LOADED',
@@ -65,134 +64,97 @@ export class MedicinesTable {
       }
     });
 
+    window.addEventListener('CATALOG_UPDATED', () => this.render());
+
     // Initial render
     this.render();
   }
 
-  updateSegmentedUI(activeStatus) {
-    this.segmentedButtons.forEach(b => {
-      b.dataset.active = b.dataset.status === activeStatus ? 'true' : 'false';
+  getFilteredList() {
+    const q = (appStore.query || '').trim().toLowerCase();
+    const status = appStore.statusFilter || 'all';
+    const cat = this.selectedCategory || 'ALL';
+
+    return appStore.medicines.filter(m => {
+      const matchQuery = !q ||
+        (m.name && m.name.toLowerCase().includes(q)) ||
+        (m.generic && m.generic.toLowerCase().includes(q)) ||
+        (m.category && m.category.toLowerCase().includes(q)) ||
+        (m.batch && m.batch.toLowerCase().includes(q)) ||
+        (m.barcode && m.barcode.includes(q));
+
+      const matchCat = cat === 'ALL' || m.category === cat;
+
+      let matchStatus = true;
+      if (status === 'available') matchStatus = m.stock > 0 && m.status !== 'expired';
+      else if (status === 'low') matchStatus = m.stock > 0 && m.stock <= 20;
+      else if (status === 'expiring') matchStatus = m.status === 'expiring' || m.status === 'expired';
+
+      return matchQuery && matchCat && matchStatus;
     });
   }
 
   render() {
-    if (!this.tbody) return;
+    if (!this.container) return;
 
-    this.updateSegmentedUI(appStore.statusFilter);
-
-    const filtered = MedicineService.getFiltered();
+    const filtered = this.getFilteredList();
     const total = filtered.length;
-    const pages = Math.max(1, Math.ceil(total / appStore.perPage));
-    appStore.page = Math.min(appStore.page, pages);
+    const perPage = appStore.perPage || 10;
+    const pages = Math.max(1, Math.ceil(total / perPage));
+    appStore.page = Math.min(appStore.page || 1, pages);
 
-    const start = (appStore.page - 1) * appStore.perPage;
-    const rows = filtered.slice(start, start + appStore.perPage);
+    const start = (appStore.page - 1) * perPage;
+    const pagedRows = filtered.slice(start, start + perPage);
 
-    if (this.countChip) this.countChip.textContent = total;
-    if (this.paginationInfo) {
-      this.paginationInfo.textContent = total > 0
-        ? `${start + 1}–${Math.min(start + appStore.perPage, total)} / ${total} صنفاً`
-        : '0 / 0';
-    }
-
-    this.renderPaginationButtons(pages);
-
-    if (rows.length === 0) {
-      this.tbody.innerHTML = `
-        <tr>
-          <td colspan="8" style="text-align:center; padding: 40px; color:var(--muted-foreground);">
-            <div style="display:grid; place-items:center; gap:8px;">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-              <span>لم يتم العثور على أي أدوية مطابقة</span>
-            </div>
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    this.tbody.innerHTML = rows.map(m => {
-      const pct = Math.min(100, Math.round((m.stock / m.maxStock) * 100));
-
-      let statusLabel = 'متوفر';
-      let statusClass = 'available';
-      if (m.status === 'low') {
-        statusLabel = 'منخفض';
-        statusClass = 'low';
-      } else if (m.status === 'expiring') {
-        statusLabel = 'ينتهي قريباً';
-        statusClass = 'expiring';
-      } else if (m.status === 'expired') {
-        statusLabel = 'محظور (منتهي)';
-        statusClass = 'expired';
-      }
-
-      return `
-        <tr onclick="window.openMedicineDetail('${m.id}')">
-          <td data-label="الصنف">
-            <div class="medicine-name">
-              <div class="medicine-icon ${statusClass}">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
-              </div>
-              <div>
-                <strong>${m.name}</strong>
-                <small dir="ltr">${m.generic}</small>
-              </div>
-            </div>
-          </td>
-          <td data-label="التصنيف">
-            <span class="tag">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/></svg>
-              ${m.category}
-            </span>
-          </td>
-          <td data-label="المخزون">
-            <div class="stock">
-              <span class="num">${m.stock}</span>
-              <div class="meter">
-                <i class="${statusClass}" style="width: ${pct}%"></i>
-              </div>
-            </div>
-          </td>
-          <td data-label="السعر">
-            <strong class="num" dir="ltr">${Number(m.price).toLocaleString()} ج.س</strong>
-          </td>
-          <td data-label="الصلاحية">
-            <span class="date num" dir="ltr">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-              ${m.expiry}
-            </span>
-          </td>
-          <td data-label="التشغيلة">
-            <span class="num" style="font-size:11.5px; font-weight:700; background:var(--muted); padding:3px 7px; border-radius:6px; border:1px solid var(--border);" dir="ltr">
-              ${m.batch}
-            </span>
-          </td>
-          <td data-label="الحالة">
-            <span class="status ${statusClass}">
-              ${statusLabel}
-            </span>
-          </td>
-          <td data-label="الإجراءات">
-            <button class="icon-btn" title="تفاصيل الصنف" onclick="event.stopPropagation(); window.openMedicineDetail('${m.id}')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </td>
-        </tr>
-      `;
-    }).join('');
+    // Render Sub-components
+    this.filterBar.render(appStore.query || '', appStore.statusFilter || 'all', appStore.medicines.length);
+    this.tableGrid.render(pagedRows);
+    this.pagination.render(appStore.page, total, perPage);
   }
 
-  renderPaginationButtons(totalPages) {
-    if (!this.pagesContainer) return;
+  handleSearch(query) {
+    appStore.setSearchQuery(query);
+    appStore.page = 1;
+    this.render();
+  }
 
-    this.pagesContainer.innerHTML = Array.from({ length: totalPages }, (_, i) => {
-      const pageNum = i + 1;
-      return `
-        <button class="page-btn" data-active="${appStore.page === pageNum}" onclick="window.setPage(${pageNum})">
-          ${pageNum}
-        </button>
-      `;
-    }).join('');
+  handleCategoryChange(category) {
+    this.selectedCategory = category;
+    appStore.page = 1;
+    this.render();
+  }
+
+  handleStatusChange(status) {
+    appStore.setStatusFilter(status);
+    appStore.page = 1;
+    this.render();
+  }
+
+  handleAddNew() {
+    document.getElementById('dialog-add-medicine')?.classList.remove('hidden');
+  }
+
+  handleExportCSV() {
+    const count = MedicineService.exportCSV();
+    showToast('تم تصدير المخزون', `تم تصدير ${count} صنفاً في ملف CSV معتمد`, 'success');
+  }
+
+  handleSelectMedicine(med) {
+    if (typeof window.openMedicineDetail === 'function') {
+      window.openMedicineDetail(med.id);
+    }
+  }
+
+  handleAdjustStock(med) {
+    this.stockAdjustmentModal.open(med);
+  }
+
+  handlePrintBarcode(med) {
+    this.barcodeLabelModal.open(med);
+  }
+
+  handlePageChange(page) {
+    appStore.setPage(page);
+    this.render();
   }
 }

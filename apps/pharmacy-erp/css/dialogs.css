@@ -185,6 +185,7 @@ html[dir="ltr"] .danger-btn {
   border-radius: var(--radius-md);
   padding: 20px;
   font-size: 12.5px;
+  font-family: var(--font-sans);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
@@ -335,3 +336,71 @@ html[dir="ltr"] .danger-btn {
     opacity: 1;
   }
 }
+
+/* Goods Receipt & PO Custom Dialog Styles */
+.receive-item-card {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.receive-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.receive-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1.3fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .receive-fields-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.receive-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receive-field span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.receive-field input {
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12.5px;
+}
+
+.po-item-product,
+.po-item-qty,
+.po-item-cost {
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12px;
+}
+
+.po-item-product {
+  width: 100%;
+  max-width: 240px;
+}
+

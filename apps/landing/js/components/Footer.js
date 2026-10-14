@@ -11,7 +11,8 @@ export function renderFooter() {
           <!-- Natural Logo and brand tagline -->
           <div style="display:flex; align-items:center; gap:var(--space-3);">
             <a href="/" title="PharmaTech OS">
-              <img src="/pharmatech-logo.png" alt="PharmaTech OS" class="brand-logo-img" style="height:42px;">
+              <img src="/pharmatech-logo.png" alt="PharmaTech OS" class="brand-logo-img logo-light" style="height:42px;">
+              <img src="/pharmatech-logo-dark.png" alt="PharmaTech OS" class="brand-logo-img logo-dark" style="height:42px;">
             </a>
             <div>
               <div style="font-size:0.95rem; font-weight:800; color:var(--footer-heading);">PharmaTech OS</div>

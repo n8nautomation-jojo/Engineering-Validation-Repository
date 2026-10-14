@@ -18,6 +18,7 @@ import { ProvisioningView } from './js/components/ProvisioningView.js';
 import { AuditView } from './js/components/AuditView.js';
 import { CredentialModal } from './js/components/CredentialModal.js';
 import { showToast } from './js/components/Toast.js';
+import { adminStore } from './js/state/adminStore.js';
 
 class PlatformAdminApplication {
   constructor() {
@@ -36,10 +37,11 @@ class PlatformAdminApplication {
     this.components.audit = new AuditView();
     this.components.credentialModal = new CredentialModal();
 
-    // Initial operational feedback
-    setTimeout(() => {
-      showToast('منصة فارماتك السحابية متصلة', '4 صيدليات نشطة · بيئة التشغيل السحابي آمنة 100%', 'info');
-    }, 1000);
+    // Live database hydration
+    adminStore.loadFromBackend().then(() => {
+      const activeCount = adminStore.tenants.filter(t => t.status === 'ACTIVE').length;
+      showToast('منصة فارماتك السحابية متصلة', `${activeCount} صيدليات نشطة · قاعدة البيانات متصلة ومزامنة 100%`, 'info');
+    });
 
     console.log('⚡ PharmaTech Platform Console (Enterprise Modular) initialized.');
   }

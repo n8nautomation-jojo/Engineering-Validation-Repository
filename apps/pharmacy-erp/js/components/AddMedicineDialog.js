@@ -5,6 +5,7 @@
 
 import { MedicineService } from '../services/medicineService.js';
 import { showToast } from './Toast.js';
+import { AuthService } from '../services/authService.js';
 
 export class AddMedicineDialog {
   constructor() {
@@ -48,6 +49,10 @@ export class AddMedicineDialog {
   }
 
   open() {
+    if (!AuthService.isManager()) {
+      showToast('وصول مقيد (RBAC)', 'إضافة أصناف جديدة للدليل الدوائي مخصصة لمدير الصيدلية ومسؤول المخزون فقط', 'warning');
+      return;
+    }
     this.dialog?.classList.remove('hidden');
   }
 

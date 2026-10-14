@@ -1,34 +1,62 @@
 /**
  * PharmaTech — Point of Sale (POS) View Component
- * Provides instant medication dispensing with FEFO batch priority,
- * Bankak split payment verification, and official CompleteSale backend processing.
+ * Modular Orchestrator coordinating sub-components:
+ * - PosHeaderBanner: Session & Cashier Info, Offline Safety Quota Meter & Simulation
+ * - PosSearchBar: Fast Barcode Scanner (F2, Enter-to-add) & Category Pills
+ * - PosCatalogGrid: Responsive Medication Cards with FEFO Priority & SDG Pricing
+ * - PosCartPanel: Touch Quantity Steppers, Line Totals & Empty State
+ * - PosPaymentSelector: Single & Split Payment (Cash + Bankak) with live balance validation
  */
 
 import { posService } from '../services/posService.js';
 import { appStore } from '../state/store.js';
 import { showToast } from './Toast.js';
+import { PosHeaderBanner } from './pos/PosHeaderBanner.js';
+import { PosSearchBar } from './pos/PosSearchBar.js';
+import { PosCatalogGrid } from './pos/PosCatalogGrid.js';
+import { PosCartPanel } from './pos/PosCartPanel.js';
+import { PosPaymentSelector } from './pos/PosPaymentSelector.js';
 
 export class PosView {
   constructor() {
     this.container = document.getElementById('pos-terminal-view');
-    this.catalogGrid = document.getElementById('pos-catalog-grid');
-    this.cartList = document.getElementById('pos-cart-items-list');
-    this.subtotalEl = document.getElementById('pos-subtotal-val');
-    this.grandTotalEl = document.getElementById('pos-grandtotal-val');
-    this.barcodeInput = document.getElementById('product-search-input');
-    this.clearBtn = document.getElementById('btn-pos-clear-cart');
-    this.checkoutBtn = document.getElementById('btn-pos-checkout');
-    this.allocationMeterBar = document.getElementById('allocation-meter-bar-fill');
-    this.allocationValEl = document.getElementById('allocation-meter-val');
-    this.categoryTabs = document.querySelectorAll('.pos-tab-btn');
+    this.searchQuery = '';
     this.selectedCategory = 'ALL';
 
-    // Mobile Sheet Elements
+    // Mobile Sheet & Bar Elements
     this.cartPanel = document.getElementById('pos-cart-panel');
     this.openCartSheetBtn = document.getElementById('btn-open-cart-sheet');
     this.closeCartSheetBtn = document.getElementById('btn-close-cart-sheet');
     this.mobileCartBadge = document.getElementById('mobile-cart-badge');
     this.mobileCartTotal = document.getElementById('mobile-cart-total');
+
+    // Instantiate Decomposed Sub-components
+    this.headerBanner = new PosHeaderBanner('pos-header-banner-container', {
+      onToggleOffline: () => this.handleToggleOffline()
+    });
+
+    this.searchBar = new PosSearchBar('pos-search-bar-container', {
+      onSearch: (query) => this.handleSearch(query),
+      onCategorySelect: (cat) => this.handleCategorySelect(cat),
+      onBarcodeEnter: (barcode) => this.handleBarcodeEnter(barcode)
+    });
+
+    this.catalogGrid = new PosCatalogGrid('pos-catalog-grid-container', {
+      onSelectProduct: (med) => this.handleSelectProduct(med)
+    });
+
+    this.cartPanelComponent = new PosCartPanel('pos-cart-panel-container', {
+      onUpdateQty: (idx, q) => this.handleUpdateQty(idx, q),
+      onRemoveItem: (idx) => this.handleRemoveItem(idx),
+      onClearCart: () => this.handleClearCart(),
+      onCloseMobileSheet: () => this.closeMobileSheet()
+    });
+
+    this.paymentSelector = new PosPaymentSelector('pos-payment-selector-container', {
+      onMethodChange: (method) => this.handlePaymentMethodChange(method),
+      onSplitChange: () => this.handleSplitChange(),
+      onCheckout: () => this.handleCheckout()
+    });
 
     this.init();
   }
@@ -36,71 +64,24 @@ export class PosView {
   init() {
     if (!this.container) return;
 
-    // Mobile Bottom Sheet Trigger
-    this.openCartSheetBtn?.addEventListener('click', () => {
-      this.cartPanel?.classList.add('mobile-sheet-open');
-    });
+    // Mobile Bottom Sheet Listeners
+    this.openCartSheetBtn?.addEventListener('click', () => this.openMobileSheet());
+    this.closeCartSheetBtn?.addEventListener('click', () => this.closeMobileSheet());
 
-    this.closeCartSheetBtn?.addEventListener('click', () => {
-      this.cartPanel?.classList.remove('mobile-sheet-open');
-    });
-
-    // React to store updates (e.g. after backend sync)
+    // React to store updates (e.g. backend catalog refresh or batch additions)
     appStore.subscribe((event) => {
       if (event === 'MEDICINES_LOADED' || event === 'MEDICINE_ADDED' || event === 'MEDICINE_DELETED') {
         this.renderCatalog();
       }
     });
 
-    // Barcode Search Filter
-    if (this.barcodeInput) {
-      this.barcodeInput.addEventListener('input', () => this.renderCatalog());
-    }
-
-    // Category Tabs
-    this.categoryTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        this.selectedCategory = tab.dataset.category || 'ALL';
-        this.categoryTabs.forEach(t => t.classList.toggle('active', t === tab));
-        this.renderCatalog();
-      });
-    });
-
-    // Clear Cart Button
-    this.clearBtn?.addEventListener('click', () => {
-      posService.clearCart();
-      this.renderCart();
-      showToast('تم إفراغ السلة', 'جاهز لعملية بيع جديدة', 'info');
-    });
-
-    // Checkout Button
-    this.checkoutBtn?.addEventListener('click', () => this.handleCheckout());
-
-    // Payment Method Selection
-    document.querySelectorAll('.pay-method-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.pay-method-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        posService.activePaymentMethod = btn.dataset.method;
-        this.updatePaymentUI();
-      });
-    });
-
-    // Bankak Reference Input
-    if (this.bankakRefInput) {
-      this.bankakRefInput.addEventListener('input', (e) => {
-        posService.bankakReference = e.target.value.trim();
-      });
-    }
-
-    // Hotkeys
+    // Keyboard Shortcuts (F2: Barcode focus, F4: Checkout)
     document.addEventListener('keydown', (e) => {
       if (appStore.activeView !== 'pos') return;
 
       if (e.key === 'F2') {
         e.preventDefault();
-        this.barcodeInput?.focus();
-        this.barcodeInput?.select();
+        this.searchBar.focus();
       }
 
       if (e.key === 'F4') {
@@ -109,179 +90,215 @@ export class PosView {
       }
     });
 
-    // Initial Render
+    // Global bridges for card/action compatibility
+    window.posAddToCart = (id) => {
+      const med = appStore.medicines.find(m => m.id === id);
+      if (med) this.handleSelectProduct(med);
+    };
+
+    window.posUpdateQty = (idx, q) => this.handleUpdateQty(idx, q);
+    window.posRemoveItem = (idx) => this.handleRemoveItem(idx);
+
+    // React to auth state changes to keep cashier name in sync
+    window.addEventListener('AUTH_STATE_CHANGED', () => {
+      this.renderHeader();
+    });
+
+    // Initial Full Render
     this.render();
   }
 
-  updatePaymentUI() {
-    const isBankak = posService.activePaymentMethod === 'BANKAK';
-    const wrap = document.getElementById('pos-bankak-ref-wrap');
-    if (wrap) {
-      wrap.style.display = isBankak ? 'block' : 'none';
-    }
+  openMobileSheet() {
+    this.cartPanel?.classList.add('mobile-sheet-open');
+  }
+
+  closeMobileSheet() {
+    this.cartPanel?.classList.remove('mobile-sheet-open');
   }
 
   render() {
+    this.renderHeader();
+    this.searchBar.render(this.searchQuery);
     this.renderCatalog();
     this.renderCart();
-    this.renderAllocationMeter();
-    this.updatePaymentUI();
+    this.renderPayment();
   }
 
-  renderAllocationMeter() {
-    const remaining = posService.allocationRemaining;
-    const total = posService.allocation.totalCapacity;
-    const pct = Math.round((remaining / total) * 100);
-
-    if (this.allocationValEl) this.allocationValEl.textContent = `${remaining} / ${total} وحدة`;
-    if (this.allocationMeterBar) this.allocationMeterBar.style.width = `${pct}%`;
+  renderHeader() {
+    this.headerBanner.render(posService);
   }
 
   renderCatalog() {
-    if (!this.catalogGrid) return;
-
-    const query = this.barcodeInput?.value.trim().toLowerCase() || '';
+    const query = this.searchQuery.trim().toLowerCase();
     const medicines = appStore.medicines.filter(m => {
       const matchQuery = !query ||
-        m.name.toLowerCase().includes(query) ||
+        (m.name && m.name.toLowerCase().includes(query)) ||
+        (m.nameAr && m.nameAr.toLowerCase().includes(query)) ||
         (m.generic && m.generic.toLowerCase().includes(query)) ||
         (m.batch && m.batch.toLowerCase().includes(query)) ||
-        (m.barcode && m.barcode.includes(query));
+        (m.barcode && m.barcode.toLowerCase().includes(query));
 
       const matchCat = this.selectedCategory === 'ALL' || m.category === this.selectedCategory;
       return matchQuery && matchCat;
     });
 
-    if (medicines.length === 0) {
-      this.catalogGrid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--muted-foreground);">
-          لم يتم العثور على أدوية مطابقة للبحث
-        </div>
-      `;
-      return;
-    }
-
-    this.catalogGrid.innerHTML = medicines.map(m => {
-      const isExpired = m.status === 'expired';
-      const isOutOfStock = m.stock <= 0;
-
-      return `
-        <div class="pos-med-card ${isExpired || isOutOfStock ? 'expired-card' : ''}" onclick="window.posAddToCart('${m.id}')">
-          <div class="pos-card-head">
-            <div>
-              <h4>${m.name}</h4>
-              <small dir="ltr">${m.generic || m.name}</small>
-            </div>
-            <span class="fefo-badge" title="تشغيلة الأولوية FEFO">${m.batch || 'BATCH-01'}</span>
-          </div>
-
-          <div class="pos-card-footer">
-            <div class="pos-card-price" dir="ltr">${Number(m.price).toLocaleString()} ج.س</div>
-            <div class="pos-card-stock" style="${isOutOfStock ? 'color:var(--destructive); font-weight:700;' : ''}">
-              ${isExpired ? 'محظور (منتهي)' : isOutOfStock ? 'نفد المخزون' : `المتوفر: ${m.stock}`}
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // Global bridge for card click
-    window.posAddToCart = (id) => {
-      const med = appStore.medicines.find(m => m.id === id);
-      if (!med) return;
-
-      try {
-        posService.addItem(med, null, 1);
-        this.renderCart();
-        showToast('تمت الإضافة للسلة', `${med.name} · أولوية FEFO تشغيلة ${med.batch || 'معتمدة'}`, 'success');
-      } catch (err) {
-        showToast('تنبيه السلامة الدوائية', err.message, 'danger');
-      }
-    };
+    this.catalogGrid.render(medicines);
   }
 
   renderCart() {
-    if (!this.cartList) return;
+    this.cartPanelComponent.render(posService.cart, posService.grandTotal);
+    this.updateMobileCartBar();
+  }
 
-    const cart = posService.cart;
+  renderPayment() {
+    this.paymentSelector.render(posService);
+  }
 
-    if (cart.length === 0) {
-      this.cartList.innerHTML = `
-        <div class="cart-empty-message">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin-bottom:8px; opacity:0.5;"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-          <p>السلة فارغة حالياً</p>
-          <small>اختر دواء من القائمة أو امسح الباركود (F2)</small>
-        </div>
-      `;
-      if (this.checkoutBtn) this.checkoutBtn.disabled = true;
-    } else {
-      this.cartList.innerHTML = cart.map((item, idx) => `
-        <div class="cart-row">
-          <div class="cart-row-title">
-            <strong>${item.name}</strong>
-            <small dir="ltr">${item.batchNumber} · ${Number(item.unitPrice).toLocaleString()} ج.س</small>
-          </div>
-
-          <div class="cart-qty-ctrl">
-            <button class="cart-qty-btn" onclick="window.posUpdateQty(${idx}, ${item.quantity - 1})">-</button>
-            <span class="cart-qty-num">${item.quantity}</span>
-            <button class="cart-qty-btn" onclick="window.posUpdateQty(${idx}, ${item.quantity + 1})">+</button>
-          </div>
-
-          <div class="cart-row-total" dir="ltr">
-            ${Number(item.lineTotal).toLocaleString()}
-          </div>
-
-          <button class="cart-qty-btn" style="color:var(--destructive);" onclick="window.posRemoveItem(${idx})" title="حذف">✕</button>
-        </div>
-      `).join('');
-
-      if (this.checkoutBtn) this.checkoutBtn.disabled = false;
-    }
-
+  updateMobileCartBar() {
+    const totalQty = posService.cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     const grand = posService.grandTotal;
-    const totalQty = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    if (this.subtotalEl) this.subtotalEl.textContent = `${Number(grand).toLocaleString()} ج.س`;
-    if (this.grandTotalEl) this.grandTotalEl.textContent = `${Number(grand).toLocaleString()} ج.س`;
-    if (this.mobileCartBadge) this.mobileCartBadge.textContent = totalQty;
-    if (this.mobileCartTotal) this.mobileCartTotal.textContent = `${Number(grand).toLocaleString()} ج.س`;
 
-    // Global bridges
-    window.posUpdateQty = (idx, q) => {
-      posService.updateQuantity(idx, q);
-      this.renderCart();
-    };
+    const mobileBadge = document.getElementById('mobile-cart-badge');
+    const mobileTotal = document.getElementById('mobile-cart-total');
 
-    window.posRemoveItem = (idx) => {
-      posService.removeItem(idx);
+    if (mobileBadge) mobileBadge.textContent = totalQty;
+    if (mobileTotal) mobileTotal.textContent = `${Number(grand).toLocaleString()} ج.س`;
+  }
+
+  handleSearch(query) {
+    this.searchQuery = query;
+    this.renderCatalog();
+  }
+
+  handleCategorySelect(category) {
+    this.selectedCategory = category;
+    this.renderCatalog();
+  }
+
+  handleBarcodeEnter(barcode) {
+    const cleaned = barcode.trim().toLowerCase();
+    if (!cleaned) return;
+
+    // Search by exact barcode, batch, id, or exact name
+    const foundMed = appStore.medicines.find(m => 
+      (m.barcode && m.barcode.toLowerCase() === cleaned) ||
+      (m.batch && m.batch.toLowerCase() === cleaned) ||
+      m.id.toLowerCase() === cleaned ||
+      m.name.toLowerCase() === cleaned ||
+      (m.generic && m.generic.toLowerCase() === cleaned)
+    );
+
+    if (foundMed) {
+      try {
+        posService.addItem(foundMed, null, 1);
+        showToast(
+          'تمت الإضافة عبر الباركود',
+          `${foundMed.name} · أولوية FEFO تشغيلة ${foundMed.batch || 'معتمدة'}`,
+          'success'
+        );
+        this.searchQuery = '';
+        this.searchBar.clear();
+        this.renderCatalog();
+        this.renderCart();
+        this.renderPayment();
+      } catch (err) {
+        showToast('تنبيه السلامة الدوائية', err.message, 'danger');
+      }
+    } else {
+      showToast('الرمز غير مسجل', `لم يتم العثور على دواء بالرمز: ${barcode}`, 'warning');
+    }
+  }
+
+  handleSelectProduct(med) {
+    try {
+      posService.addItem(med, null, 1);
+      showToast(
+        'تمت الإضافة للسلة',
+        `${med.name} · أولوية FEFO تشغيلة ${med.batch || 'معتمدة'}`,
+        'success'
+      );
       this.renderCart();
-    };
+      this.renderPayment();
+    } catch (err) {
+      showToast('تنبيه السلامة الدوائية', err.message, 'danger');
+    }
+  }
+
+  handleUpdateQty(index, newQty) {
+    posService.updateQuantity(index, newQty);
+    this.renderCart();
+    this.renderPayment();
+  }
+
+  handleRemoveItem(index) {
+    posService.removeItem(index);
+    this.renderCart();
+    this.renderPayment();
+  }
+
+  handleClearCart() {
+    posService.clearCart();
+    this.renderCart();
+    this.renderPayment();
+    showToast('تم إفراغ السلة', 'جاهز لعملية بيع جديدة', 'info');
+  }
+
+  handlePaymentMethodChange(method) {
+    posService.activePaymentMethod = method;
+    this.renderPayment();
+  }
+
+  handleSplitChange() {
+    this.renderPayment();
+  }
+
+  handleToggleOffline() {
+    const isNowOffline = posService.toggleOfflineMode();
+    if (isNowOffline) {
+      showToast(
+        'وضع الأوفلاين نشط (محاكاة)',
+        'يتم الاعتماد على الحصة المحجوزة (Offline Quota) لتأمين الصرف ومنع تجاوز الرصيد',
+        'warning'
+      );
+    } else {
+      showToast(
+        'تمت استعادة الاتصال بالسحابة',
+        'النظام متزامن كلياً مع قاعدة البيانات السحابية',
+        'success'
+      );
+    }
+    this.renderHeader();
   }
 
   async handleCheckout() {
-    if (posService.cart.length === 0) {
-      showToast('تنبيه', 'يرجى إضافة أدوية للسلة أولاً', 'warning');
+    const validation = posService.validateForCompletion();
+    if (!validation.valid) {
+      showToast('تنبيه السداد', validation.reason, 'warning');
       return;
     }
 
-    const btn = this.checkoutBtn;
-    const originalText = btn ? btn.innerHTML : '';
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = `<span class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite; margin-left:6px;"></span> جاري معالجة الفاتورة مع الباك إند...`;
+    const checkoutBtn = document.getElementById('btn-pos-checkout');
+    const originalText = checkoutBtn ? checkoutBtn.innerHTML : '';
+
+    if (checkoutBtn) {
+      checkoutBtn.disabled = true;
+      checkoutBtn.innerHTML = `
+        <span class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite; margin-left:6px;"></span>
+        جاري معالجة الفاتورة مع الباك إند...
+      `;
     }
 
     try {
-      // Execute official CompleteSale via Core Backend API
+      // Execute official CompleteSale via Core Backend API or Offline Quota Engine
       const responseDto = await posService.completeSale();
 
       // Close mobile sheet if open
-      this.cartPanel?.classList.remove('mobile-sheet-open');
+      this.closeMobileSheet();
 
       // Trigger 80mm thermal receipt modal with real sale data
       window.dispatchEvent(new CustomEvent('OPEN_RECEIPT_MODAL', { detail: responseDto }));
 
-      // Notify Sales history view
+      // Notify Sales history view to refresh
       window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
 
       showToast(
@@ -290,16 +307,14 @@ export class PosView {
         'success'
       );
 
-      this.renderCart();
-      this.renderCatalog();
-      this.renderAllocationMeter();
+      this.render();
     } catch (err) {
       console.error('[POS Checkout Error]:', err);
       showToast('خطأ في إتمام الفاتورة', err.message || 'فشلت معالجة الفاتورة مع الباك إند', 'danger');
     } finally {
-      if (btn) {
-        btn.disabled = posService.cart.length === 0;
-        btn.innerHTML = originalText;
+      if (checkoutBtn) {
+        checkoutBtn.disabled = posService.cart.length === 0;
+        checkoutBtn.innerHTML = originalText;
       }
     }
   }

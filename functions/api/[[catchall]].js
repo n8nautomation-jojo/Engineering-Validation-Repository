@@ -7,6 +7,9 @@
 import { catalogRepository } from "../../apps/api/catalog.mjs";
 import { sessionRepository } from "../../apps/api/session.mjs";
 import { salesRepository } from "../../apps/api/sales.mjs";
+import { purchasingRepository } from "../../apps/api/purchasing.mjs";
+import { reportsRepository } from "../../apps/api/reports.mjs";
+import { settingsRepository } from "../../apps/api/settings.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -127,6 +130,15 @@ export async function onRequest(context) {
       return jsonResponse(newProduct, 201);
     }
 
+    if (method === "DELETE" && pathname.startsWith("/api/products/")) {
+      const id = pathname.replace("/api/products/", "");
+      const deleted = catalogRepository.deleteProduct(id);
+      if (!deleted) {
+        return jsonResponse({ error: { code: "PRODUCT_NOT_FOUND", message: `Product ${id} not found` } }, 404);
+      }
+      return jsonResponse({ success: true, deletedId: id });
+    }
+
     // 6. Sales & Invoices Ledger
     if (method === "GET" && pathname === "/api/sales") {
       return jsonResponse(salesRepository.getAllSales());
@@ -152,7 +164,66 @@ export async function onRequest(context) {
       return jsonResponse(result, 201, { "X-Correlation-Id": correlationId });
     }
 
-    // 7. Route Not Found
+    // 7. Purchasing & Supply Chain
+    if (method === "GET" && pathname === "/api/purchasing/suppliers") {
+      return jsonResponse(purchasingRepository.getAllSuppliers());
+    }
+
+    if (method === "POST" && pathname === "/api/purchasing/suppliers") {
+      const newSupplier = purchasingRepository.addSupplier(body);
+      return jsonResponse(newSupplier, 201);
+    }
+
+    if (method === "GET" && pathname === "/api/purchasing/orders") {
+      return jsonResponse(purchasingRepository.getAllOrders());
+    }
+
+    if (method === "POST" && pathname === "/api/purchasing/orders") {
+      const newOrder = purchasingRepository.createPurchaseOrder(body);
+      return jsonResponse(newOrder, 201);
+    }
+
+    if (method === "POST" && pathname.startsWith("/api/purchasing/orders/") && pathname.endsWith("/receive")) {
+      const parts = pathname.split("/");
+      const orderId = parts[4];
+      const result = purchasingRepository.receiveGoodsReceipt(orderId, body);
+      return jsonResponse(result, 200);
+    }
+
+    // 8. Reports & Analytics
+    if (method === "GET" && (pathname === "/api/reports" || pathname === "/api/reports/summary")) {
+      const startDate = url.searchParams.get("startDate");
+      const endDate = url.searchParams.get("endDate");
+      return jsonResponse(reportsRepository.getFinancialSummary(startDate, endDate));
+    }
+
+    if (method === "GET" && pathname === "/api/reports/categories") {
+      const startDate = url.searchParams.get("startDate");
+      const endDate = url.searchParams.get("endDate");
+      return jsonResponse(reportsRepository.getCategoryAnalytics(startDate, endDate));
+    }
+
+    if (method === "GET" && pathname === "/api/reports/inventory") {
+      return jsonResponse(reportsRepository.getInventoryHealth());
+    }
+
+    if (method === "GET" && pathname === "/api/reports/top-products") {
+      const startDate = url.searchParams.get("startDate");
+      const endDate = url.searchParams.get("endDate");
+      return jsonResponse(reportsRepository.getTopSellingProducts(startDate, endDate));
+    }
+
+    // 9. Settings
+    if (method === "GET" && pathname === "/api/settings") {
+      return jsonResponse(settingsRepository.getSettings());
+    }
+
+    if ((method === "POST" || method === "PUT") && pathname === "/api/settings") {
+      const updated = settingsRepository.updateSettings(body);
+      return jsonResponse(updated, 200);
+    }
+
+    // 10. Route Not Found
     return errorResponse(404, "NOT_FOUND", `Endpoint '${method} ${pathname}' not found.`, correlationId);
   } catch (apiErr) {
     console.error(`[Edge API Error] ${method} ${pathname}:`, apiErr);
