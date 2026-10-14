@@ -1,12 +1,16 @@
 /**
  * PharmaTech — POS Header Banner Component
- * Displays Cashier & Register Session, Online/Offline sync status with toggle, and Offline Allocation Capacity
+ * Displays Cashier & Register Session, Online/Offline sync status with toggle,
+ * Offline Outbox pending count badge, Quick Sync trigger, and Offline Allocation Meter (ADR-011).
  */
 
+import { offlineSyncService } from '../../services/offlineSyncService.js';
+
 export class PosHeaderBanner {
-  constructor(containerId = 'pos-header-banner-container', { onToggleOffline }) {
+  constructor(containerId = 'pos-header-banner-container', { onToggleOffline, onOpenQueue }) {
     this.containerId = containerId;
     this.onToggleOffline = onToggleOffline;
+    this.onOpenQueue = onOpenQueue;
   }
 
   render(posService) {
@@ -19,30 +23,55 @@ export class PosHeaderBanner {
     const pct = Math.max(0, Math.min(100, Math.round((remaining / total) * 100)));
     const isLowAllocation = remaining <= 20;
 
+    const pendingCount = offlineSyncService.getPendingCount();
+    const isSyncing = offlineSyncService.isSyncing;
+
     el.innerHTML = `
       <div class="pos-top-banner">
         <!-- Cashier Session & Cloud Status -->
-        <div class="pos-session-info" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div class="pos-session-info" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           <span class="session-badge">
             <span class="session-dot"></span>
             <span>خزينة: REG-01 · الكاشير: ${posService.session.cashierName || 'الكاشير'}</span>
           </span>
 
+          <!-- Cloud Connection State Badge -->
           <span class="chip ${isOffline ? 'chip-warning' : 'chip-success'}" style="font-family:var(--font-latin); display:inline-flex; align-items:center; gap:6px;">
             <i class="dot" style="background:${isOffline ? 'var(--warning)' : '#00B37E'};"></i>
-            ${isOffline ? 'OFFLINE وضع أوفلاين آمن' : 'ONLINE متصل بالسحابة'}
+            ${isOffline ? 'OFFLINE أوفلاين آمن' : 'ONLINE سحابي'}
           </span>
 
+          <!-- Outbox Queue Badge (Clickable to open inspector) -->
+          <button type="button" class="chip ${pendingCount > 0 ? 'chip-warning' : 'chip-info'}" id="btn-open-offline-queue" style="cursor:pointer; border:none; font-family:var(--font-latin); display:inline-flex; align-items:center; gap:6px; font-weight:700;" title="عرض وإدارة طابور مزامنة المبيعات المحفوظة محلياً">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+            </svg>
+            <span>${pendingCount > 0 ? `${pendingCount} معلقة للمزامنة` : 'المزامنة 100% ☁️'}</span>
+          </button>
+
+          <!-- Quick Sync Trigger Button (visible when pending items exist) -->
+          ${pendingCount > 0 ? `
+            <button type="button" class="btn btn-primary btn-sm" id="btn-quick-sync-header" ${isSyncing ? 'disabled' : ''} style="font-size:11px; padding:3px 10px; border-radius:6px; display:inline-flex; align-items:center; gap:5px; font-weight:700;" title="مزامنة فورية مع السحابة المركزية">
+              ${isSyncing ? `
+                <span class="spinner" style="width:10px; height:10px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite;"></span>
+                <span>جاري المزامنة...</span>
+              ` : `
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
+                <span>مزامنة الآن</span>
+              `}
+            </button>
+          ` : ''}
+
           <!-- Offline Simulation Toggle Button -->
-          <button type="button" class="btn-table-action" id="btn-toggle-pos-offline" style="font-size:11px; padding:4px 10px; border-radius:6px; border:1px solid var(--border);" title="تبديل وضع الاتصال لفحص أمان الأوفلاين">
-            ${isOffline ? '🔄 إعادة الاتصال بالسحابة' : '🔌 محاكاة انقطاع الإنترنت'}
+          <button type="button" class="btn-table-action" id="btn-toggle-pos-offline" style="font-size:11px; padding:4px 10px; border-radius:6px; border:1px solid var(--border);" title="تبديل وضع الاتصال لفحص أمان الصرف بالأوفلاين">
+            ${isOffline ? '🔄 استعادة الاتصال' : '🔌 محاكاة انقطاع النت'}
           </button>
         </div>
 
         <!-- Offline Safety Allocation Capacity Meter -->
-        <div class="allocation-meter-widget" id="allocation-meter" title="الحصة المحجوزة للمزامنة الآمنة في وضع عدم الاتصال لمنع تجاوز الرصيد">
+        <div class="allocation-meter-widget" id="allocation-meter" title="الحصة المحجوزة للمزامنة الآمنة في وضع عدم الاتصال لمنع تجاوز الرصيد (ADR-011)">
           <span class="allocation-meter-label">حصة الأوفلاين (Quota):</span>
-          <div class="allocation-meter-bar" style="width:110px; height:8px; background:var(--border); border-radius:99px; overflow:hidden;">
+          <div class="allocation-meter-bar" style="width:100px; height:8px; background:var(--border); border-radius:99px; overflow:hidden;">
             <div id="allocation-meter-bar-fill" style="height:100%; width:${pct}%; background:${isLowAllocation ? 'var(--destructive)' : 'var(--gradient-primary)'}; transition:width 0.3s ease;"></div>
           </div>
           <span class="allocation-meter-value" id="allocation-meter-val" style="color:${isLowAllocation ? 'var(--destructive)' : 'inherit'}; font-weight:700;">
@@ -55,6 +84,18 @@ export class PosHeaderBanner {
 
     document.getElementById('btn-toggle-pos-offline')?.addEventListener('click', () => {
       if (this.onToggleOffline) this.onToggleOffline();
+    });
+
+    document.getElementById('btn-open-offline-queue')?.addEventListener('click', () => {
+      if (this.onOpenQueue) {
+        this.onOpenQueue();
+      } else {
+        window.dispatchEvent(new CustomEvent('OPEN_OFFLINE_QUEUE_MODAL'));
+      }
+    });
+
+    document.getElementById('btn-quick-sync-header')?.addEventListener('click', async () => {
+      await offlineSyncService.syncQueue({ silent: false });
     });
   }
 }

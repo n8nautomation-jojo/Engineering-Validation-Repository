@@ -16,6 +16,7 @@ import { PosSearchBar } from './pos/PosSearchBar.js';
 import { PosCatalogGrid } from './pos/PosCatalogGrid.js';
 import { PosCartPanel } from './pos/PosCartPanel.js';
 import { PosPaymentSelector } from './pos/PosPaymentSelector.js';
+import { OfflineQueueModal } from './pos/OfflineQueueModal.js';
 
 export class PosView {
   constructor() {
@@ -30,9 +31,13 @@ export class PosView {
     this.mobileCartBadge = document.getElementById('mobile-cart-badge');
     this.mobileCartTotal = document.getElementById('mobile-cart-total');
 
+    // Offline Outbox Inspection Modal
+    this.queueModal = new OfflineQueueModal();
+
     // Instantiate Decomposed Sub-components
     this.headerBanner = new PosHeaderBanner('pos-header-banner-container', {
-      onToggleOffline: () => this.handleToggleOffline()
+      onToggleOffline: () => this.handleToggleOffline(),
+      onOpenQueue: () => this.queueModal.open()
     });
 
     this.searchBar = new PosSearchBar('pos-search-bar-container', {
@@ -103,6 +108,17 @@ export class PosView {
     window.addEventListener('AUTH_STATE_CHANGED', () => {
       this.renderHeader();
     });
+
+    // React to offline queue updates to keep header sync badge live
+    window.addEventListener('OFFLINE_QUEUE_UPDATED', () => {
+      this.renderHeader();
+    });
+
+    // Allow opening offline queue modal from anywhere
+    window.addEventListener('OPEN_OFFLINE_QUEUE_MODAL', () => {
+      this.queueModal.open();
+    });
+    window.openOfflineQueue = () => this.queueModal.open();
 
     // Initial Full Render
     this.render();

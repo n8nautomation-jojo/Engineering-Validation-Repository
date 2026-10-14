@@ -29,6 +29,7 @@ import { SettingsService } from './js/services/settingsService.js';
 import { AuthService } from './js/services/authService.js';
 import { LoginModal } from './js/components/auth/LoginModal.js';
 import { UserMenuModal } from './js/components/auth/UserMenuModal.js';
+import { offlineSyncService } from './js/services/offlineSyncService.js';
 
 class PharmaTechApp {
   constructor() {
@@ -207,6 +208,18 @@ class PharmaTechApp {
     // Initial operational feedback
     setTimeout(() => {
       showToast('المنظومة متصلة بالباك إند رسمياً', 'حسابات FEFO والخصم المخزني الآلي والتحقق نشط', 'success');
+      
+      // Auto-check pending offline outbox
+      const pendingCount = offlineSyncService.getPendingCount();
+      if (pendingCount > 0) {
+        setTimeout(() => {
+          showToast(
+            'توجد فواتير أوفلاين معلقة',
+            `لديك ${pendingCount} فواتير مخزنة محلياً بانتظار المزامنة مع السحابة`,
+            'warning'
+          );
+        }, 1200);
+      }
     }, 1000);
 
     console.log('⚡ PharmaTech Modular ERP Initialized & Connected to Official Backend API.');

@@ -6,6 +6,7 @@
 import { apiClient } from './apiClient.js';
 import { MedicineService } from './medicineService.js';
 import { AuthService } from './authService.js';
+import { offlineSyncService } from './offlineSyncService.js';
 
 class PosService {
   constructor() {
@@ -364,8 +365,15 @@ class PosService {
         })),
         lines: this.cart.map(i => ({ ...i, quantity: { value: i.quantity.toString() } })),
         payments: dto.payments,
-        offline_sync: 'PENDING_RECONNECT'
+        offline_sync: 'QUEUED'
       };
+
+      // Enqueue to durable outbox for guaranteed synchronization
+      offlineSyncService.enqueueOfflineSale({
+        dto,
+        responseDto,
+        session: this.session
+      });
 
       // Deduct from local cache
       for (const item of this.cart) {
@@ -379,23 +387,81 @@ class PosService {
       return responseDto;
     }
 
-    // Standard Online Mode via Backend API with Idempotency Key
-    const responseDto = await apiClient.post('/api/sales', dto);
+    try {
+      // Standard Online Mode via Backend API with Idempotency Key
+      const responseDto = await apiClient.post('/api/sales', dto);
 
-    // Synchronize local inventory from backend to update all views & badges
-    await MedicineService.fetchFromBackend();
+      // Synchronize local inventory from backend to update all views & badges
+      await MedicineService.fetchFromBackend();
 
-    // Refresh allocation
-    await this.loadBackendContext();
+      // Refresh allocation
+      await this.loadBackendContext();
 
-    // Notify all interconnected components (Dashboard, Sales, Sessions)
-    window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
-    window.dispatchEvent(new CustomEvent('SESSION_UPDATED'));
+      // Notify all interconnected components (Dashboard, Sales, Sessions)
+      window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
+      window.dispatchEvent(new CustomEvent('SESSION_UPDATED'));
 
-    // Clear cart after successful transaction
-    this.clearCart();
+      // Clear cart after successful transaction
+      this.clearCart();
 
-    return responseDto;
+      return responseDto;
+    } catch (err) {
+      // If network failure / connection lost unexpectedly during sale, fall back gracefully to offline outbox!
+      const isNetworkError = (typeof navigator !== 'undefined' && !navigator.onLine) ||
+                             err.message?.includes('NetworkError') ||
+                             err.message?.includes('Failed to fetch') ||
+                             err.message?.includes('Load failed');
+
+      if (isNetworkError) {
+        console.warn('[PosService] Network failure during online checkout. Falling back to offline outbox...');
+        this.isOffline = true;
+        const totalUnits = this.cart.reduce((sum, item) => sum + item.quantity, 0);
+        this.allocation.consumedCapacity = Math.min(this.allocation.totalCapacity, this.allocation.consumedCapacity + totalUnits);
+        this.updateAllocationMeterUI();
+
+        const invNo = `INV-OFFL-${Date.now().toString().slice(-6)}`;
+        const fallbackResponse = {
+          sale_id: `offline-${Date.now()}`,
+          invoice_number: invNo,
+          created_at: new Date().toISOString(),
+          cashier_name: this.session.cashierName,
+          totals: {
+            subtotal: this.subtotal.toFixed(2),
+            total: this.grandTotal.toFixed(2),
+            currency: 'SDG'
+          },
+          items: this.cart.map(i => ({
+            name: i.name,
+            nameAr: i.nameAr,
+            batchNumber: i.batchNumber,
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            lineTotal: i.lineTotal
+          })),
+          lines: this.cart.map(i => ({ ...i, quantity: { value: i.quantity.toString() } })),
+          payments: dto.payments,
+          offline_sync: 'QUEUED'
+        };
+
+        offlineSyncService.enqueueOfflineSale({
+          dto,
+          responseDto: fallbackResponse,
+          session: this.session
+        });
+
+        for (const item of this.cart) {
+          const med = MedicineService.getById(item.productId);
+          if (med) {
+            med.stock = Math.max(0, med.stock - item.quantity);
+          }
+        }
+
+        this.clearCart();
+        return fallbackResponse;
+      }
+
+      throw err;
+    }
   }
 
   updateAllocationMeterUI() {
