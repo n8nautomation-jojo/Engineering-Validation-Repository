@@ -1,0 +1,169 @@
+/* ==========================================================================
+   PharmaTech — Dedicated Print Engine CSS Module
+   Supports:
+   1. Standard A4 Executive Financial Reports
+   2. 80mm & 58mm Thermal POS Receipts & Shift Z-Reports
+   3. 50x30mm Clinical Shelf Price Barcode Labels
+   ========================================================================== */
+
+@media print {
+  /* Hide interactive browser UI, sidebars, navigation, headers, footers */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    font-family: var(--font-sans, system-ui) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Universal hide for non-printable app shell elements */
+  .app-sidebar,
+  .app-header,
+  .app-footer,
+  .pos-container,
+  .panel,
+  .toast-container,
+  .dialog-close,
+  .form-actions,
+  button,
+  .segmented,
+  #offline-queue-modal,
+  .dialog-backdrop:not(.is-printing) {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Reset dialog backdrop and dialog container when printing */
+  .dialog-backdrop.is-printing {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .dialog-backdrop.is-printing .dialog {
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
+  }
+
+  .dialog-backdrop.is-printing .dialog-head,
+  .dialog-backdrop.is-printing .dialog-header,
+  .dialog-backdrop.is-printing .form-actions {
+    display: none !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     1. Thermal POS Receipt (80mm Width) & Z-Report
+     -------------------------------------------------------------------------- */
+  body.printing-receipt {
+    width: 80mm !important;
+    margin: 0 auto !important;
+  }
+
+  @page {
+    margin: 0;
+  }
+
+  body.printing-receipt .receipt-paper {
+    width: 76mm !important;
+    max-width: 76mm !important;
+    margin: 0 auto !important;
+    padding: 2mm 3mm !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  body.printing-receipt .receipt-table th,
+  body.printing-receipt .receipt-table td {
+    padding: 3px 0 !important;
+    color: #000000 !important;
+    border-color: #000000 !important;
+  }
+
+  body.printing-receipt .receipt-qr-code,
+  body.printing-receipt svg {
+    filter: contrast(200%) !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     2. Executive Financial Report (A4 Document Format)
+     -------------------------------------------------------------------------- */
+  body.printing-executive-report {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+  }
+
+  body.printing-executive-report #executive-report-modal-content {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-executive-report .printable-doc {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  body.printing-executive-report table {
+    page-break-inside: auto !important;
+    width: 100% !important;
+  }
+
+  body.printing-executive-report tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     3. Shelf Price Barcode Label (50mm x 30mm)
+     -------------------------------------------------------------------------- */
+  body.printing-shelf-label {
+    width: 50mm !important;
+    height: 30mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-shelf-label #dialog-barcode-label {
+    display: block !important;
+  }
+
+  body.printing-shelf-label .shelf-label-card {
+    width: 48mm !important;
+    height: 28mm !important;
+    max-width: 48mm !important;
+    margin: 0 auto !important;
+    padding: 2mm !important;
+    border: none !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    overflow: hidden !important;
+  }
+}

@@ -23,8 +23,14 @@ export class BarcodeLabelModal {
     });
 
     this.dialog.querySelector('#btn-print-shelf-label')?.addEventListener('click', () => {
-      showToast('طباعة ملصق الرف', 'تم إرسال ملصق الباركود إلى طابعة الملصقات الحرارية', 'success');
-      this.close();
+      document.body.classList.add('printing-shelf-label');
+      this.dialog?.classList.add('is-printing');
+      window.print();
+    });
+
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('printing-shelf-label');
+      this.dialog?.classList.remove('is-printing');
     });
   }
 
@@ -72,48 +78,9 @@ export class BarcodeLabelModal {
           <span>الصلاحية: <strong dir="ltr" style="font-family:var(--font-mono);">${expiry}</strong></span>
         </div>
 
-        <!-- Realistic Vector Barcode Graphic -->
+        <!-- Realistic Dynamic Vector Barcode Graphic -->
         <div style="text-align:center; padding-top:6px; border-top:1px dashed #CBD5E1;">
-          <svg width="220" height="46" viewBox="0 0 220 46" style="margin:0 auto; display:block;">
-            <rect x="0" y="0" width="3" height="38" fill="#0F172A" />
-            <rect x="5" y="0" width="1.5" height="38" fill="#0F172A" />
-            <rect x="9" y="0" width="4" height="38" fill="#0F172A" />
-            <rect x="16" y="0" width="2" height="38" fill="#0F172A" />
-            <rect x="21" y="0" width="5" height="38" fill="#0F172A" />
-            <rect x="29" y="0" width="1.5" height="38" fill="#0F172A" />
-            <rect x="33" y="0" width="3.5" height="38" fill="#0F172A" />
-            <rect x="39" y="0" width="2" height="38" fill="#0F172A" />
-            <rect x="44" y="0" width="4" height="38" fill="#0F172A" />
-            <rect x="51" y="0" width="1.5" height="38" fill="#0F172A" />
-            <rect x="56" y="0" width="3" height="38" fill="#0F172A" />
-            <rect x="62" y="0" width="5" height="38" fill="#0F172A" />
-            <rect x="70" y="0" width="2" height="38" fill="#0F172A" />
-            <rect x="75" y="0" width="4" height="38" fill="#0F172A" />
-            <rect x="82" y="0" width="1.5" height="38" fill="#0F172A" />
-            <rect x="86" y="0" width="3" height="38" fill="#0F172A" />
-            <rect x="92" y="0" width="5" height="38" fill="#0F172A" />
-            <rect x="100" y="0" width="2" height="38" fill="#0F172A" />
-            <rect x="105" y="0" width="3.5" height="38" fill="#0F172A" />
-            <rect x="111" y="0" width="1.5" height="38" fill="#0F172A" />
-            <rect x="115" y="0" width="4" height="38" fill="#0F172A" />
-            <rect x="122" y="0" width="2" height="38" fill="#0F172A" />
-            <rect x="127" y="0" width="4.5" height="38" fill="#0F172A" />
-            <rect x="134" y="0" width="1.5" height="38" fill="#0F172A" />
-            <rect x="138" y="0" width="3" height="38" fill="#0F172A" />
-            <rect x="144" y="0" width="5" height="38" fill="#0F172A" />
-            <rect x="152" y="0" width="2" height="38" fill="#0F172A" />
-            <rect x="157" y="0" width="4" height="38" fill="#0F172A" />
-            <rect x="164" y="0" width="1.5" height="38" fill="#0F172A" />
-            <rect x="168" y="0" width="3.5" height="38" fill="#0F172A" />
-            <rect x="174" y="0" width="2" height="38" fill="#0F172A" />
-            <rect x="179" y="0" width="4" height="38" fill="#0F172A" />
-            <rect x="186" y="0" width="1.5" height="38" fill="#0F172A" />
-            <rect x="190" y="0" width="3" height="38" fill="#0F172A" />
-            <rect x="196" y="0" width="5" height="38" fill="#0F172A" />
-            <rect x="204" y="0" width="2" height="38" fill="#0F172A" />
-            <rect x="209" y="0" width="4" height="38" fill="#0F172A" />
-            <rect x="216" y="0" width="2" height="38" fill="#0F172A" />
-          </svg>
+          ${this.generateBarcodeSVG(barcode)}
           <div dir="ltr" style="font-family:var(--font-mono); font-size:12px; font-weight:700; letter-spacing:2px; color:#0F172A; margin-top:3px;">
             ${barcode}
           </div>
@@ -123,6 +90,37 @@ export class BarcodeLabelModal {
     `;
 
     this.dialog.classList.remove('hidden');
+  }
+
+  generateBarcodeSVG(code) {
+    const str = String(code || '628100100101');
+    let x = 6;
+    const height = 36;
+    const rects = [];
+    
+    // Start guard bars
+    rects.push(`<rect x="${x}" y="0" width="2" height="${height}" fill="#0F172A" />`);
+    x += 3;
+    rects.push(`<rect x="${x}" y="0" width="1.5" height="${height}" fill="#0F172A" />`);
+    x += 3;
+
+    for (let i = 0; i < str.length; i++) {
+      const codeVal = str.charCodeAt(i);
+      const w1 = ((codeVal * 3) % 4) + 1;
+      const w2 = ((codeVal * 7) % 3) + 1;
+      rects.push(`<rect x="${x}" y="0" width="${w1}" height="${height}" fill="#0F172A" />`);
+      x += w1 + 1.5;
+      rects.push(`<rect x="${x}" y="0" width="${w2}" height="${height}" fill="#0F172A" />`);
+      x += w2 + 2;
+    }
+
+    // Stop guard bars
+    rects.push(`<rect x="${x}" y="0" width="2" height="${height}" fill="#0F172A" />`);
+    x += 3;
+    rects.push(`<rect x="${x}" y="0" width="2.5" height="${height}" fill="#0F172A" />`);
+    x += 5;
+
+    return `<svg width="220" height="42" viewBox="0 0 ${Math.max(220, x)} 42" style="margin:0 auto; display:block;">${rects.join('')}</svg>`;
   }
 
   close() {

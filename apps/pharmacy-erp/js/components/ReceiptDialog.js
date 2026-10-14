@@ -21,8 +21,14 @@ export class ReceiptDialog {
     this.closeBtn?.addEventListener('click', () => this.close());
 
     this.printBtn?.addEventListener('click', () => {
-      showToast('جاري الطباعة', 'تم إرسال الإيصال إلى طابعة الفواتير الحرارية 80mm', 'success');
-      this.close();
+      document.body.classList.add('printing-receipt');
+      this.dialog?.classList.add('is-printing');
+      window.print();
+    });
+
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('printing-receipt');
+      this.dialog?.classList.remove('is-printing');
     });
 
     // Listen for custom event or direct call

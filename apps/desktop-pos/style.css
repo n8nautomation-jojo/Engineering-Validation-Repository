@@ -1662,3 +1662,48 @@ html[data-theme="dark"] .receipt-paper {
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   Thermal POS Receipt Print Engine (80mm Width)
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 80mm !important;
+  }
+
+  .topbar,
+  .catalog-pane,
+  .cart-pane,
+  .cart-footer,
+  .btn,
+  .modal:not(.is-printing-modal),
+  .toast-container {
+    display: none !important;
+  }
+
+  .modal.is-printing-modal {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .modal.is-printing-modal .modal-content {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 2mm 3mm !important;
+    width: 76mm !important;
+    max-width: 76mm !important;
+    margin: 0 auto !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+  }
+}

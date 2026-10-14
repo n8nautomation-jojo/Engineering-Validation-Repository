@@ -24,7 +24,14 @@ export class PrintableExecutiveReport {
     });
 
     this.printBtn?.addEventListener('click', () => {
+      document.body.classList.add('printing-executive-report');
+      this.dialog?.classList.add('is-printing');
       window.print();
+    });
+
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('printing-executive-report');
+      this.dialog?.classList.remove('is-printing');
     });
   }
 
