@@ -106,7 +106,7 @@ export class PurchasingOrdersTable {
                     <td class="num" style="font-weight:700; color:var(--foreground);">${totalCost.toLocaleString('en-US')} ج.س</td>
                     <td>
                       ${isPending ? '<span class="chip chip-warning">⏳ قيد الشحن / بانتظار الفحص</span>' : ''}
-                      ${isDelivered ? '<span class="chip chip-success">✓ تم الاستلام وتوريد FEFO</span>' : ''}
+                      ${isDelivered ? '<span class="chip chip-success">✓ تم الاستلام وتوريد المخزون</span>' : ''}
                     </td>
                     <td>
                       <div style="display:flex; gap:6px; align-items:center;">

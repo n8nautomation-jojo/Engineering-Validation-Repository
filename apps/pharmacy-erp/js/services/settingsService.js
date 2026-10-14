@@ -85,7 +85,7 @@ export class SettingsService {
       if (settingsData && typeof settingsData === 'object') {
         this._cachedSettings = { ...this._cachedSettings, ...settingsData };
         writeLocalSettings(this._cachedSettings);
-        showToast('تم الحفظ محلياً (وضع الأوفلاين)', 'تعذر الاتصال بالخادم، تم حفظ الإعدادات على متصفحك بنجاح', 'warning');
+        showToast('تم الحفظ محلياً', 'تم حفظ الإعدادات على جهازك بنجاح، وستُرسل عند توفر الاتصال', 'warning');
         window.dispatchEvent(new CustomEvent('SETTINGS_UPDATED', { detail: this._cachedSettings }));
         return this._cachedSettings;
       }

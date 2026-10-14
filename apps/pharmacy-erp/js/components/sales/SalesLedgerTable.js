@@ -136,7 +136,7 @@ export class SalesLedgerTable {
                         إرجاع
                       </button>
                     ` : `
-                      <span class="chip" style="background:var(--muted); color:var(--muted-foreground); font-size:10.5px; font-weight:600; padding:2px 6px;" title="إرجاع الفاتورة يتطلب صلاحية مدير الصيدلية (ADR-013 / SoD)">
+                      <span class="chip" style="background:var(--muted); color:var(--muted-foreground); font-size:10.5px; font-weight:600; padding:2px 6px;" title="إرجاع الفاتورة يتطلب موافقة مدير الصيدلية">
                         🔒 بإذن المدير
                       </span>
                     `

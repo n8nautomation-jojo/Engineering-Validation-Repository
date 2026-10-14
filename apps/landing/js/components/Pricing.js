@@ -64,13 +64,13 @@ export function renderPricing() {
                   <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>تتبع الصلاحيات الآلي FEFO</span>
+                  <span>حماية تواريخ الصلاحية آلياً</span>
                 </div>
                 <div class="pricing-feature-row">
                   <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>العمل دون اتصال (Offline R1-A1)</span>
+                  <span>العمل المستمر بدون إنترنت</span>
                 </div>
                 <div class="pricing-feature-row">
                   <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">

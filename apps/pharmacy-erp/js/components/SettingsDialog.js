@@ -55,7 +55,7 @@ export class SettingsDialog {
 
   async open() {
     if (!AuthService.isManager()) {
-      showToast('وصول مقيد (RBAC)', 'إعدادات المنظومة وبيانات الفرع مخصصة لمدير الصيدلية فقط', 'warning');
+      showToast('صلاحية غير متوفرة', 'إعدادات المنظومة وبيانات الفرع مخصصة لمدير الصيدلية فقط', 'warning');
       return;
     }
 

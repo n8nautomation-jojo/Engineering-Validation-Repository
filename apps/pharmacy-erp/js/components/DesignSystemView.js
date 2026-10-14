@@ -99,7 +99,7 @@ export class DesignSystemView {
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
           <span class="chip chip-success">✓ مكتمل / معتمد</span>
           <span class="chip chip-info">ℹ معلومة / قيد المزامنة</span>
-          <span class="chip chip-warning">⏳ تنبيه صلاحية FEFO</span>
+          <span class="chip chip-warning">⏳ تنبيه اقتراب الصلاحية</span>
           <span class="chip chip-danger">✕ ملغي / حرج</span>
           <span class="chip">افتراضي</span>
         </div>
@@ -110,9 +110,9 @@ export class DesignSystemView {
         <h3 style="font-size:14px; margin-bottom:12px;">4. مقاييس الخطوط والطباعة (Typography Scale)</h3>
         <div style="display:flex; flex-direction:column; gap:8px;">
           <h1 style="margin:0; font-size:24px;">عنوان H1 — صيدلية النيلين النموذجية (24px)</h1>
-          <h2 style="margin:0; font-size:18px;">عنوان H2 — تقارير أداء الصيدلية السريرية (18px)</h2>
-          <h3 style="margin:0; font-size:15px;">عنوان H3 — بيانات الدواء وتشغيلة FEFO (15px)</h3>
-          <p style="margin:0; font-size:13px; color:var(--muted-foreground);">نص عادي Body Text — جميع العمليات الصيدلانية مشفرة ومؤمنة بحصص الأوفلاين (13px)</p>
+          <h2 style="margin:0; font-size:18px;">عنوان H2 — تقارير أداء الصيدلية والتحليلات (18px)</h2>
+          <h3 style="margin:0; font-size:15px;">عنوان H3 — بيانات الدواء وتاريخ الصلاحية (15px)</h3>
+          <p style="margin:0; font-size:13px; color:var(--muted-foreground);">نص عادي Body Text — جميع العمليات الصيدلانية مشفرة ومؤمنة بنظام البيع الاحتياطي (13px)</p>
           <small style="font-family:var(--font-mono); font-size:11.5px; color:var(--muted-foreground);">أرقام ورموز Monospace: TXN-BOK-94821038 · SDG 15,800.00 (11.5px)</small>
         </div>
       </section>

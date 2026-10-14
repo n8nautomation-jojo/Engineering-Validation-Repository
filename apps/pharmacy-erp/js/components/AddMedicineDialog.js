@@ -50,7 +50,7 @@ export class AddMedicineDialog {
 
   open() {
     if (!AuthService.isManager()) {
-      showToast('وصول مقيد (RBAC)', 'إضافة أصناف جديدة للدليل الدوائي مخصصة لمدير الصيدلية ومسؤول المخزون فقط', 'warning');
+      showToast('صلاحية غير متوفرة', 'إضافة أصناف جديدة للدليل الدوائي مخصصة لمدير الصيدلية ومسؤول المخزون فقط', 'warning');
       return;
     }
     this.dialog?.classList.remove('hidden');

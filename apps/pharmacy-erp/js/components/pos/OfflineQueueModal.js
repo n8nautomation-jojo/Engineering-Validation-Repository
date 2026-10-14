@@ -83,13 +83,13 @@ export class OfflineQueueModal {
             </div>
             <div>
               <h3 style="margin:0; font-size:17px; font-weight:800; display:flex; align-items:center; gap:8px;">
-                <span>طابور مزامنة مبيعات الأوفلاين (Durable Outbox)</span>
+                <span>الفواتير المحفوظة بدون إنترنت</span>
                 <span class="chip ${pendingCount > 0 ? 'chip-warning' : 'chip-success'}" style="font-size:11px; padding:2px 8px;">
-                  ${pendingCount > 0 ? `${pendingCount} معلقة` : 'متزامن بالكامل ☁️'}
+                  ${pendingCount > 0 ? `${pendingCount} بانتظار الإرسال` : 'جميع الفواتير مرسلة ☁️'}
                 </span>
               </h3>
               <p style="margin:2px 0 0; font-size:12px; color:var(--text-secondary);">
-                الفواتير المسجلة محلياً أثناء انقطاع الشبكة والمحفوظة للتوريد الآمن مع السحابة
+                فواتير تم إصدارها أثناء انقطاع شبكة الإنترنت، ومحفوظة بأمان لإرسالها وتحديث المخزون
               </p>
             </div>
           </div>
@@ -103,11 +103,11 @@ export class OfflineQueueModal {
         <div style="background:var(--bg-secondary); padding:12px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
           <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
             <div>
-              <span style="font-size:11px; color:var(--text-secondary); display:block;">إجمالي العمليات المعلقة</span>
+              <span style="font-size:11px; color:var(--text-secondary); display:block;">عدد الفواتير غير المرسلة</span>
               <strong style="font-size:15px; color:var(--text-primary); font-family:var(--font-latin);">${pendingCount} فواتير</strong>
             </div>
             <div style="border-right:1px solid var(--border); padding-right:20px;">
-              <span style="font-size:11px; color:var(--text-secondary); display:block;">إجمالي القيمة المالية النقدية</span>
+              <span style="font-size:11px; color:var(--text-secondary); display:block;">إجمالي قيمة المبيعات</span>
               <strong style="font-size:15px; color:var(--primary); font-family:var(--font-latin);">${totalQueuedAmount.toLocaleString()} ج.س</strong>
             </div>
           </div>
@@ -116,10 +116,10 @@ export class OfflineQueueModal {
             <button type="button" class="btn btn-primary btn-sm" id="btn-sync-all-offline" ${isSyncing || pendingCount === 0 ? 'disabled' : ''} style="display:inline-flex; align-items:center; gap:6px; font-weight:700;">
               ${isSyncing ? `
                 <span class="spinner" style="width:12px; height:12px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite;"></span>
-                <span>جاري المزامنة مع السحابة...</span>
+                <span>جاري إرسال الفواتير...</span>
               ` : `
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
-                <span>مزامنة جميع الفواتير الآن</span>
+                <span>إرسال جميع الفواتير الآن</span>
               `}
             </button>
           </div>
@@ -132,9 +132,9 @@ export class OfflineQueueModal {
               <div style="width:56px; height:56px; margin:0 auto 14px; border-radius:50%; background:rgba(0, 179, 126, 0.1); color:#00B37E; display:flex; align-items:center; justify-content:center;">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-              <h4 style="margin:0 0 6px; font-size:16px; font-weight:800; color:var(--text-primary);">طابور المزامنة خالٍ تماماً ☁️</h4>
+              <h4 style="margin:0 0 6px; font-size:16px; font-weight:800; color:var(--text-primary);">لا توجد فواتير معلقة ☁️</h4>
               <p style="margin:0; font-size:13px; max-width:440px; margin:0 auto; line-height:1.6;">
-                جميع المبيعات وحركات المخزون متزامنة ومسجلة في السحابة المركزية بنسبة 100%. عند انقطاع الإنترنت، ستظهر الفواتير هنا تلقائياً.
+                جميع المبيعات تم حفظها وتحديث أرصدة المخزون بالكامل في النظام. عند انقطاع الإنترنت، سيتم حفظ أي فاتورة هنا تلقائياً دون توقف البيع.
               </p>
             </div>
           ` : `
@@ -158,7 +158,7 @@ export class OfflineQueueModal {
                         <div style="display:flex; align-items:center; gap:8px;">
                           <strong style="font-family:var(--font-latin); font-size:14px; color:var(--text-primary);">${item.offlineInvoiceNumber}</strong>
                           <span class="chip ${isConflict ? 'chip-danger' : (isItemSyncing ? 'chip-info' : 'chip-warning')}" style="font-size:10px; padding:1px 6px;">
-                            ${isItemSyncing ? 'جاري المزامنة...' : (isConflict ? 'تعارض صيدلاني' : 'بانتظار الرفع')}
+                            ${isItemSyncing ? 'جاري الإرسال...' : (isConflict ? 'تنبيه للمراجعة' : 'بانتظار الإرسال')}
                           </span>
                         </div>
                         <span style="font-size:11px; color:var(--text-secondary); display:block; margin-top:2px;">
@@ -174,7 +174,7 @@ export class OfflineQueueModal {
                         ${(item.itemsSummary || []).length > 2 ? ` (+${(item.itemsSummary || []).length - 2} أخرى)` : ''}
                       </div>
                       <div style="font-size:11px; color:var(--text-secondary); margin-top:2px; display:flex; gap:10px;">
-                        <span>عدد الوحدات: <strong>${itemsCount}</strong></span>
+                        <span>عدد العلب: <strong>${itemsCount}</strong></span>
                         <span>·</span>
                         <span>المبلغ: <strong style="color:var(--primary); font-family:var(--font-latin);">${Number(item.totals?.total || 0).toLocaleString()} ج.س</strong></span>
                       </div>
@@ -188,11 +188,11 @@ export class OfflineQueueModal {
                     <!-- Right: Actions -->
                     <div style="display:flex; align-items:center; gap:8px;">
                       <button type="button" class="btn btn-secondary btn-sm btn-sync-single" data-id="${item.id}" ${isSyncing || isItemSyncing ? 'disabled' : ''} style="font-size:11px; padding:4px 10px;">
-                        ${isItemSyncing ? 'جاري...' : 'مزامنة الآن'}
+                        ${isItemSyncing ? 'جاري...' : 'إرسال الفاتورة'}
                       </button>
 
                       ${isManager || isConflict ? `
-                        <button type="button" class="btn-table-action btn-discard-single" data-id="${item.id}" title="حذف الفاتورة من الطابور (إلغاء)" style="color:var(--destructive); font-size:11px; padding:4px 8px;">
+                        <button type="button" class="btn-table-action btn-discard-single" data-id="${item.id}" title="حذف الفاتورة من القائمة" style="color:var(--destructive); font-size:11px; padding:4px 8px;">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                       ` : ''}
@@ -209,7 +209,7 @@ export class OfflineQueueModal {
         <div class="modal-footer" style="border-top:1px solid var(--border); padding:12px 20px; display:flex; justify-content:space-between; align-items:center; background:var(--bg-secondary);">
           <div style="font-size:11px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <span>المزامنة تستخدم مفاتيح تطابق (Idempotency) مشفرة تمنع تكرار القيد نهائياً عند ضعف الشبكة.</span>
+            <span>النظام يحمي تلقائياً من تكرار تسجيل الفواتير أو المبالغ عند بطء أو انقطاع شبكة الإنترنت.</span>
           </div>
 
           <button type="button" class="btn btn-secondary btn-sm" id="btn-close-offline-queue-bottom">

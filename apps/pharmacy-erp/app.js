@@ -198,7 +198,7 @@ class PharmaTechApp {
         const targetNavBtn = document.querySelector(`.nav-button[data-view="${viewParam}"]`);
         if (targetNavBtn) targetNavBtn.click();
       } else {
-        showToast('محاولة وصول مقيدة (RBAC)', `لا تملك صلاحية الوصول إلى شاشة (${viewParam}) بحسابك الحالي`, 'warning');
+        showToast('غير مصرح لك بالوصول', `لا تملك صلاحية الوصول إلى شاشة (${viewParam}) بحسابك الحالي`, 'warning');
         const defaultView = AuthService.getDefaultView();
         const fallbackBtn = document.querySelector(`.nav-button[data-view="${defaultView}"]`);
         if (fallbackBtn) fallbackBtn.click();
@@ -207,15 +207,15 @@ class PharmaTechApp {
 
     // Initial operational feedback
     setTimeout(() => {
-      showToast('المنظومة متصلة بالباك إند رسمياً', 'حسابات FEFO والخصم المخزني الآلي والتحقق نشط', 'success');
+      showToast('أهلاً بك في فارماتك', 'النظام متصل وقاعدة البيانات جاهزة للعمل', 'success');
       
       // Auto-check pending offline outbox
       const pendingCount = offlineSyncService.getPendingCount();
       if (pendingCount > 0) {
         setTimeout(() => {
           showToast(
-            'توجد فواتير أوفلاين معلقة',
-            `لديك ${pendingCount} فواتير مخزنة محلياً بانتظار المزامنة مع السحابة`,
+            'فواتير محفوظة بدون إنترنت',
+            `توجد ${pendingCount} فواتير محفوظة على جهازك بانتظار الإرسال للسحابة`,
             'warning'
           );
         }, 1200);

@@ -469,8 +469,8 @@
                   </svg>
                 </span>
                 <span class="alert-text">
-                  <strong>صلاحية قريبة (FEFO)</strong>
-                  <small id="alert-expiry-desc">فحص تشغيلات FEFO...</small>
+                  <strong>أدوية تقترب من الصلاحية</strong>
+                  <small id="alert-expiry-desc">فحص تواريخ الصلاحية...</small>
                 </span>
                 <svg class="alert-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6" />
@@ -574,7 +574,7 @@
         <!-- Footer -->
         <footer class="app-footer">
           <span>© 2026 PharmaTech — Smarter Pharmacy Operations</span>
-          <span class="live"><i></i>المنظومة متصلة بالسحابة ومحمية بنظام السلامة الدوائية FEFO</span>
+          <span class="live"><i></i>المنظومة متصلة بالسحابة ومحمية بنظام أسبقية الصلاحيات</span>
         </footer>
 
       </main>
@@ -695,7 +695,7 @@
       <div style="margin-top:16px;">
         <h4 style="font-size:12.5px; font-weight:700; margin:0 0 8px; display:flex; align-items:center; gap:6px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          تشغيلات الدواء في المخزون وأولوية الصرف (FEFO Batches):
+          تشغيلات الدواء في المخزون وأولوية الصرف (الأقرب انتهاءً):
         </h4>
         <div id="detail-medicine-batches-list" style="display:flex; flex-direction:column; gap:6px; max-height:160px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:6px;">
           <!-- Populated by JS -->
@@ -918,7 +918,7 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
         </span>
         <div>
-          <h3 class="dialog-title">إذن استلام وتوريد شحنة (FEFO Goods Receipt)</h3>
+          <h3 class="dialog-title">إذن استلام وتوريد شحنة للمخزون</h3>
           <p class="dialog-desc">فحص وتوريد التشغيلات وتواريخ الصلاحية آلياً إلى سجل المخزون الرسمي</p>
         </div>
       </div>
@@ -1147,7 +1147,7 @@
         </span>
         <div>
           <h3 class="dialog-title">إعدادات الصيدلية والمنظومة (Settings)</h3>
-          <p class="dialog-desc">تخصيص الهوية الرسمية، بيانات الفاتورة، وحصص الأوفلاين</p>
+          <p class="dialog-desc">تخصيص الهوية الرسمية، بيانات الفاتورة، وسياسات البيع</p>
         </div>
       </div>
 
@@ -1161,7 +1161,7 @@
             🧾 الفاتورة الحرارية 80mm
           </button>
           <button type="button" class="settings-tab-btn" data-tab="offline" data-active="false">
-            ⚡ سياسات الأوفلاين وFEFO
+            ⚡ سياسات البيع بدون إنترنت والصلاحيات
           </button>
         </div>
 
@@ -1234,9 +1234,9 @@
 
         <div style="background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px; line-height:1.6;">
           <strong style="display:block; margin-bottom:4px;">🛡️ قواعد السلامة والتشغيل الدوائي:</strong>
-          <div>• <strong>قاعدة FEFO:</strong> المنظومة تختار وتصرف التشغيلة الأقرب انتهاءً آلياً لمنع ركود وتلف الأدوية.</div>
-          <div>• <strong>مبيعات أوفلاين:</strong> عند انقطاع الإنترنت، يتم تفعيل حصة أوفلاين مؤقتة لضمان استمرار خدمة المرضى، ومزامنتها فور عودة الاتصال.</div>
-          <div>• <strong>تسوية بنكك:</strong> يتم توثيق رقم الإشعار (TXN Ref) لكل معاملة لضمان مطابقة الكشف البنكي مع مبيعات اليوم.</div>
+          <div>• <strong>حماية تواريخ الصلاحية:</strong> المنظومة تختار وتصرف التشغيلة الأقرب انتهاءً آلياً لمنع ركود وتلف الأدوية.</div>
+          <div>• <strong>البيع بدون إنترنت:</strong> عند انقطاع الشبكة، يمكنك مواصلة بيع الأدوية بسلاسة، ويقوم النظام بإرسال الفواتير تلقائياً فور عودة الإنترنت.</div>
+          <div>• <strong>تسوية بنكك:</strong> يتم توثيق رقم العملية المرجعي لكل معاملة لضمان مطابقة الكشف البنكي مع مبيعات اليوم.</div>
         </div>
       </div>
 

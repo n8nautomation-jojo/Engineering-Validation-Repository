@@ -32,7 +32,7 @@ export class InventoryRiskPanel {
               <line x1="12" x2="12" y1="9" y2="13"/>
               <line x1="12" x2="12.01" y1="17" y2="17"/>
             </svg>
-            سلامة المخزون ومخاطر الصلاحيات (FEFO)
+            متابعة صلاحيات الأدوية وحماية المخزون
           </h3>
           <span class="chip ${summary.expiringCount > 0 ? 'chip-warning' : 'chip-success'}" style="font-size:11px;">
             ${summary.expiringCount} تشغيلات تحت المراقبة

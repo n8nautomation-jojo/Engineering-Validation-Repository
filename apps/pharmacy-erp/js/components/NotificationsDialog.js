@@ -37,7 +37,7 @@ export class NotificationsDialog {
 
     document.getElementById('alert-row-expiry')?.addEventListener('click', () => {
       appStore.setStatusFilter('expiring');
-      showToast('أولوية FEFO', 'تمت تصفية الجدول لعرض الأدوية التي تقترب من الصلاحية أولاً', 'danger');
+      showToast('الأدوية الأقرب انتهاءً', 'تم ترتيب الجدول لعرض الأدوية الأقرب لانتهاء الصلاحية أولاً', 'danger');
     });
 
     document.getElementById('alert-row-shipment')?.addEventListener('click', () => {

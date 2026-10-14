@@ -31,7 +31,7 @@ export class SalesView {
       },
       onRefresh: () => {
         this.loadSales();
-        showToast('تم التحديث', 'تم جلب أحدث الفواتير من الباك إند', 'info');
+        showToast('تم التحديث', 'تم تحديث قائمة الفواتير بنجاح', 'info');
       }
     });
 

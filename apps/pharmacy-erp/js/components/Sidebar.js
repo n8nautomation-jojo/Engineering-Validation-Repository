@@ -76,7 +76,7 @@ export class Sidebar {
     if (this.settingsBtn) {
       this.settingsBtn.addEventListener('click', () => {
         if (!AuthService.isManager()) {
-          showToast('وصول مقيد (RBAC)', 'إعدادات المنظومة وبيانات الفرع والضرائب مخصصة لمدير الصيدلية فقط', 'warning');
+          showToast('صلاحية مخصصة', 'تعديل بيانات الصيدلية والإعدادات متاح لمدير الصيدلية فقط', 'warning');
           return;
         }
         this.closeMobile();
@@ -151,9 +151,9 @@ export class Sidebar {
   switchView(view, btnEl) {
     this.closeMobile();
 
-    // Enforce Role-Based Access Control (RBAC Guard)
+    // Enforce Role-Based Access Control
     if (!AuthService.canAccessView(view)) {
-      showToast('صلاحية مقيدة (RBAC)', `قسم (${view}) مخصص لإدارة الصيدلية فقط وفقاً لسياسة الأمان والتحكم بالصلاحيات`, 'warning');
+      showToast('خاصية مخصصة للإدارة', 'هذا القسم متاح لمدير الصيدلية فقط وفقاً لصلاحيات الحساب', 'warning');
       const defaultView = AuthService.getDefaultView();
       const defaultBtn = document.querySelector(`.nav-button[data-view="${defaultView}"]`);
       if (defaultView !== view) {
@@ -207,43 +207,43 @@ export class Sidebar {
       if (featuredStat) featuredStat.style.display = 'block';
       if (tablePanel) tablePanel.style.display = 'block';
     } else if (view === 'inventory') {
-      if (pageTitle) pageTitle.textContent = 'المخزون والتشغيلات (FEFO)';
+      if (pageTitle) pageTitle.textContent = 'المخزون والتشغيلات الدوائية';
       if (statsGrid) statsGrid.style.display = 'grid';
       if (featuredStat) featuredStat.style.display = 'block';
       if (tablePanel) tablePanel.style.display = 'block';
       appStore.setStatusFilter('all');
     } else if (view === 'pos') {
-      if (pageTitle) pageTitle.textContent = 'نقطة البيع السريعة (POS) · الصرف الفوري';
+      if (pageTitle) pageTitle.textContent = 'شاشة البيع السريع (الكاشير)';
       if (posView) posView.style.display = 'grid';
 
-      showToast('نقطة البيع السريعة (POS)', 'امسح الباركود أو اختر الدواء لصرف فوري بأسبقية FEFO', 'success');
+      showToast('شاشة البيع الفوري', 'امسح الباركود أو اختر الصنف لصرف الدواء ومحاسبة العميل', 'success');
       setTimeout(() => {
         document.getElementById('product-search-input')?.focus();
       }, 100);
     } else if (view === 'sales') {
-      if (pageTitle) pageTitle.textContent = 'سجل المبيعات والفواتير المعتمدة';
+      if (pageTitle) pageTitle.textContent = 'سجل الفواتير والمبيعات اليومية';
       if (salesView) salesView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
-      showToast('سجل الفواتير والمبيعات', 'تم جلب الفواتير المعتمدة من الباك إند', 'info');
+      showToast('سجل الفواتير والمبيعات', 'تم تحديث قائمة الفواتير بنجاح', 'info');
     } else if (view === 'sessions') {
-      if (pageTitle) pageTitle.textContent = 'جلسات الخزينة وإدارة الورديات (Cash Sessions)';
+      if (pageTitle) pageTitle.textContent = 'الورديات وحركات الخزينة';
       if (sessionsView) sessionsView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('SESSION_UPDATED'));
-      showToast('جلسات الخزينة', 'تم مزامنة حالة الدرج وحركات النقدية مع الباك إند', 'info');
+      showToast('الورديات والصندوق', 'تم تحديث رصيد الخزينة وحركات النقدية', 'info');
     } else if (view === 'purchasing') {
-      if (pageTitle) pageTitle.textContent = 'المشتريات وسلاسل الإمداد والتوريد (Supply Chain)';
+      if (pageTitle) pageTitle.textContent = 'المشتريات واستلام الشحنات';
       if (purchasingView) purchasingView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('PURCHASING_UPDATED'));
-      showToast('المشتريات والتوريد', 'تم استعراض أوامر الشراء ودليل الموردين المعتمدين', 'info');
+      showToast('المشتريات والتوريد', 'تم تحديث طلبات الشراء وقائمة الموردين', 'info');
     } else if (view === 'reports') {
-      if (pageTitle) pageTitle.textContent = 'التقارير المالية والتحليلات التشغيلية';
+      if (pageTitle) pageTitle.textContent = 'التقارير والأرباح المالية';
       if (reportsView) reportsView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
-      showToast('التقارير المالية والتحليلية', 'تم استخراج مؤشرات الإيرادات وتسويات بنكك', 'info');
+      showToast('التقارير المالية', 'تم تحديث المؤشرات والأرباح ومبيعات بنكك', 'info');
     } else if (view === 'design-system') {
       if (pageTitle) pageTitle.textContent = 'دليل الهوية البصرية ونظام المكونات';
       if (designSystemView) designSystemView.style.display = 'block';

@@ -9,12 +9,12 @@ export function renderHero() {
       <div class="container">
         <div class="hero-pill-badge">
           <span class="pulse-dot"></span>
-          <span>الجيل الموحد لإدارة المنشآت الصيدلانية | متوافق مع معايير R1-A1 ومزامنة دون اتصال</span>
+          <span>الجيل الحديث لإدارة الصيدليات | استقرار كامل مع أو بدون إنترنت</span>
         </div>
 
         <h1 class="hero-title">
           المنظومة السحابية المتكاملة لإدارة الصيدلية ونقطة البيع مع 
-          <span class="gradient-text">حماية الصلاحيات FEFO والدفع عبر بنكك</span>
+          <span class="gradient-text">حماية تواريخ الصلاحية والدفع المباشر عبر بنكك</span>
         </h1>
 
         <p class="hero-lead">
@@ -50,21 +50,21 @@ export function renderHero() {
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>معايير الصيدلة العالمية (FEFO Strict Safety)</span>
+            <span>صرف الأدوية الأقرب انتهاءً أولاً لمنع الهدر</span>
           </div>
 
           <div class="trust-item">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            <span>مزامنة محلية مشفرة عند انقطاع الإنترنت (IndexedDB)</span>
+            <span>استمرار البيع وحفظ الفواتير حتى عند انقطاع الإنترنت</span>
           </div>
 
           <div class="trust-item">
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <span>سجل تدقيق غير قابل للتعديل (Immutable Audit Logs)</span>
+            <span>سجل تدقيق آمن وموثق لجميع العمليات المالية</span>
           </div>
 
           <div class="trust-item">

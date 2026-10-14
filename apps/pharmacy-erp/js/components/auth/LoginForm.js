@@ -119,7 +119,7 @@ export class LoginForm {
             <button type="button" class="btn-demo-account" data-user="bluenile_admin" data-pass="Temp-9K22!2026" data-tenant="PHARMA-BLUENILE" style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; background:var(--muted); border:1px solid var(--border); border-radius:8px; cursor:pointer; text-align:right;">
               <div>
                 <strong style="display:block; font-size:12px; color:var(--foreground);">حساب جديد (تجربة التغيير الإجباري)</strong>
-                <small style="color:var(--muted-foreground); font-size:10.5px;">اختبار ميزة الدخول الأول وتعيين كلمة المرور (ADR-013)</small>
+                <small style="color:var(--muted-foreground); font-size:10.5px;">تجربة تسجيل الدخول لأول مرة وتعيين كلمة مرور جديدة</small>
               </div>
               <span class="badge" style="background:#f59e0b20; color:#d97706; font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px;">اختيار</span>
             </button>

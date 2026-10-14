@@ -87,7 +87,7 @@ export class PurchasingView {
           </span>
           <div>
             <h2>إدارة المشتريات وسلاسل الإمداد والتوريد (Supply Chain)</h2>
-            <p class="heading-meta" style="margin:0; font-size:12px;">إصدار أوامر التوريد، فحص الشحنات، واستلام التشغيلات الحقيقية إلى سجل المخزون (FEFO)</p>
+            <p class="heading-meta" style="margin:0; font-size:12px;">إصدار أوامر الشراء، فحص الشحنات، وإدخال الأدوية إلى سجل المخزون بحسب تواريخ الصلاحية</p>
           </div>
         </div>
 
@@ -156,7 +156,7 @@ export class PurchasingView {
 
     document.getElementById('btn-refresh-purchasing')?.addEventListener('click', () => {
       this.loadData();
-      showToast('تم تحديث البيانات', 'تمت مزامنة أوامر التوريد وقائمة الموردين من الباك إند', 'info');
+      showToast('تم تحديث البيانات', 'تم تحديث أوامر الشراء وقائمة الموردين بنجاح', 'info');
     });
 
     // Tab buttons

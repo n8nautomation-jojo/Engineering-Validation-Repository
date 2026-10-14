@@ -93,7 +93,7 @@ export class ReceiveShipmentDialog {
           </label>
 
           <label class="receive-field">
-            <span>تاريخ انتهاء الصلاحية (FEFO)</span>
+            <span>تاريخ انتهاء الصلاحية</span>
             <input type="date" name="expiryDate_${index}" value="${defaultExpiry}" min="${todayStr}" required />
           </label>
         </div>
@@ -108,7 +108,7 @@ export class ReceiveShipmentDialog {
     const submitBtn = this.form.querySelector('button[type="submit"]');
     if (submitBtn) {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'جاري التوريد وإدخال تشغيلات الـ FEFO...';
+      submitBtn.textContent = 'جاري التوريد وتحديث المخزون...';
     }
 
     try {
@@ -131,7 +131,7 @@ export class ReceiveShipmentDialog {
         }
 
         if (expDate < today) {
-          showToast('تحذير دوائي صارم (FEFO)', 'لا يمكن استلام دواء منتهي الصلاحية!', 'error');
+          showToast('تنبيه هام', 'لا يمكن استلام دواء منتهي الصلاحية!', 'error');
           if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.textContent = 'تأكيد الاستلام وتوريد المخزون';

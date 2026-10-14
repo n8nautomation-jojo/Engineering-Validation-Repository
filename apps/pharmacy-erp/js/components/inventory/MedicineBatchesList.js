@@ -76,7 +76,7 @@ export class MedicineBatchesList {
             <strong style="font-family:var(--font-mono); font-size:12px;" dir="ltr">${batch.batchNumber}</strong>
             ${isActiveFefo ? `
               <span class="chip chip-success" style="font-size:10px; padding:1px 6px;">
-                أولوية الصرف FEFO 🥇
+                أولوية الصرف (الأقرب انتهاءً) 🥇
               </span>
             ` : ''}
           </div>

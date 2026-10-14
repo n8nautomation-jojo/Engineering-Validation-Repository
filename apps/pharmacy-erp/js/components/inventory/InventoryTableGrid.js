@@ -49,7 +49,7 @@ export class InventoryTableGrid {
               <th>الكمية المتوفرة</th>
               <th>السعر (ج.س)</th>
               <th>تاريخ الانتهاء</th>
-              <th>تشغيلة الأولوية (FEFO)</th>
+              <th>التشغيلة الأقرب انتهاءً</th>
               <th>الحالة</th>
               <th style="text-align:left;">إجراءات</th>
             </tr>
@@ -97,8 +97,8 @@ export class InventoryTableGrid {
                     </span>
                   </td>
 
-                  <td data-label="التشغيلة (FEFO)">
-                    <span class="fefo-badge" style="font-size:11px; padding:2px 7px; border-radius:4px; font-family:var(--font-mono); font-weight:700;" title="أسبقية الصرف الدوائي FEFO">
+                  <td data-label="التشغيلة">
+                    <span class="fefo-badge" style="font-size:11px; padding:2px 7px; border-radius:4px; font-family:var(--font-mono); font-weight:700;" title="أسبقية الصرف (الأقرب انتهاءً)">
                       ${m.batch || 'BATCH-01'}
                     </span>
                   </td>

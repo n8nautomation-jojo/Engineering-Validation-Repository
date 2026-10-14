@@ -209,7 +209,7 @@ export class PosView {
         posService.addItem(foundMed, null, 1);
         showToast(
           'تمت الإضافة عبر الباركود',
-          `${foundMed.name} · أولوية FEFO تشغيلة ${foundMed.batch || 'معتمدة'}`,
+          `${foundMed.name} (تشغيلة: ${foundMed.batch || 'معتمدة'})`,
           'success'
         );
         this.searchQuery = '';
@@ -218,7 +218,7 @@ export class PosView {
         this.renderCart();
         this.renderPayment();
       } catch (err) {
-        showToast('تنبيه السلامة الدوائية', err.message, 'danger');
+        showToast('تنبيه المخزون', err.message, 'danger');
       }
     } else {
       showToast('الرمز غير مسجل', `لم يتم العثور على دواء بالرمز: ${barcode}`, 'warning');
@@ -230,7 +230,7 @@ export class PosView {
       posService.addItem(med, null, 1);
       showToast(
         'تمت الإضافة للسلة',
-        `${med.name} · أولوية FEFO تشغيلة ${med.batch || 'معتمدة'}`,
+        `${med.name} (تشغيلة: ${med.batch || 'معتمدة'})`,
         'success'
       );
       this.renderCart();
@@ -272,14 +272,14 @@ export class PosView {
     const isNowOffline = posService.toggleOfflineMode();
     if (isNowOffline) {
       showToast(
-        'وضع الأوفلاين نشط (محاكاة)',
-        'يتم الاعتماد على الحصة المحجوزة (Offline Quota) لتأمين الصرف ومنع تجاوز الرصيد',
+        'وضع العمل بدون إنترنت نشط',
+        'يمكنك الاستمرار في البيع كالمعتاد، وسيتم حفظ الفواتير تلقائياً وإرسالها لاحقاً',
         'warning'
       );
     } else {
       showToast(
-        'تمت استعادة الاتصال بالسحابة',
-        'النظام متزامن كلياً مع قاعدة البيانات السحابية',
+        'تمت العودة للوضع المتصل',
+        'النظام متصل الآن بالسحابة وكافة البيانات محدثة',
         'success'
       );
     }
@@ -300,12 +300,12 @@ export class PosView {
       checkoutBtn.disabled = true;
       checkoutBtn.innerHTML = `
         <span class="spinner" style="display:inline-block; width:14px; height:14px; border:2px solid #fff; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite; margin-left:6px;"></span>
-        جاري معالجة الفاتورة مع الباك إند...
+        جاري إصدار الفاتورة وتحديث الحساب...
       `;
     }
 
     try {
-      // Execute official CompleteSale via Core Backend API or Offline Quota Engine
+      // Execute official CompleteSale via Core Backend API or Offline Outbox Engine
       const responseDto = await posService.completeSale();
 
       // Close mobile sheet if open
@@ -326,7 +326,7 @@ export class PosView {
       this.render();
     } catch (err) {
       console.error('[POS Checkout Error]:', err);
-      showToast('خطأ في إتمام الفاتورة', err.message || 'فشلت معالجة الفاتورة مع الباك إند', 'danger');
+      showToast('تعذر إتمام الفاتورة', err.message || 'حدث خطأ أثناء حفظ الفاتورة، يرجى المحاولة مرة أخرى', 'danger');
     } finally {
       if (checkoutBtn) {
         checkoutBtn.disabled = posService.cart.length === 0;

@@ -78,7 +78,7 @@ export class PurchasingService {
 
       showToast(
         'تم توريد واستلام الشحنة بنجاح 📦',
-        `إذن استلام رقم ${result.goodsReceipt.grnNumber} — تم تزويد المخزون بتشغيلات FEFO آلياً`,
+        `إذن استلام رقم ${result.goodsReceipt.grnNumber} — تمت إضافة الأدوية إلى المخزون بنجاح`,
         'success'
       );
 

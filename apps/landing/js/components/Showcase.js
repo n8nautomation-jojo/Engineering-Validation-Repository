@@ -66,7 +66,7 @@ export function renderShowcase() {
 
                 <div class="mock-stat-box">
                   <div class="mock-stat-lbl">
-                    <span>تنبيهات الصلاحية (FEFO)</span>
+                    <span>تنبيهات الصلاحية</span>
                     <span style="color:var(--brand-amber); font-weight:700;">3 دفعات حرجة</span>
                   </div>
                   <div class="mock-stat-val" style="color:var(--brand-amber);">24 <small style="font-size:0.75rem; color:var(--text-muted);">علبة</small></div>
@@ -96,7 +96,7 @@ export function renderShowcase() {
                     <th>اسم الصنف الدوائي</th>
                     <th>رقم التشغيلة (Batch)</th>
                     <th>تاريخ الانتهاء</th>
-                    <th>حالة الصلاحية (FEFO Guard)</th>
+                    <th>حالة الصلاحية</th>
                     <th>المخزون المتوفر</th>
                     <th>سعر العلبة</th>
                   </tr>
@@ -171,7 +171,7 @@ export function renderShowcase() {
                     <div class="pos-prod-card">
                       <h4>Augmentin 1g</h4>
                       <p>18,500 ج.س</p>
-                      <div style="font-size:0.725rem; color:var(--text-muted); margin-top:2px;">مخزون: 48 (FEFO 1st)</div>
+                      <div style="font-size:0.725rem; color:var(--text-muted); margin-top:2px;">مخزون: 48 (الأقرب انتهاءً)</div>
                     </div>
                     <div class="pos-prod-card">
                       <h4>Panadol Extra</h4>
@@ -293,7 +293,7 @@ export function renderShowcase() {
                 <div style="background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:var(--space-4); display:flex; justify-content:space-between; align-items:center;">
                   <div>
                     <h4 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin-bottom:2px;">مجمع صيدليات النيلين — أم درمان (شارع الوادي)</h4>
-                    <p style="font-size:0.8rem; color:var(--text-muted);">المعرف: <span class="num">tenant_neelain_02</span> | الفروع: 2 | نقاط البيع: 4 | نظام FEFO مفعل</p>
+                    <p style="font-size:0.8rem; color:var(--text-muted);">المعرف: <span class="num">tenant_neelain_02</span> | الفروع: 2 | نقاط البيع: 4 | حماية الصلاحيات مفعلة</p>
                   </div>
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span class="fefo-pill" style="background:rgba(0,163,255,0.12); color:var(--brand-cyan);">باقة النمو (Standard)</span>

@@ -46,8 +46,8 @@ export class PosCatalogGrid {
                   <h4 style="margin:0; font-size:13px; font-weight:700; line-height:1.3;">${m.name}</h4>
                   <small dir="ltr" style="font-size:11px; color:var(--muted-foreground); display:block; margin-top:2px;">${m.generic || m.name}</small>
                 </div>
-                <span class="fefo-badge" style="font-size:10px; padding:2px 6px; border-radius:4px; font-family:var(--font-mono); font-weight:700;" title="تشغيلة الأولوية FEFO">
-                  ${m.batch || 'FEFO'}
+                <span class="fefo-badge" style="font-size:10px; padding:2px 6px; border-radius:4px; font-family:var(--font-mono); font-weight:700;" title="رقم التشغيلة للأدوية الأقرب انتهاءً">
+                  ${m.batch || 'تشغيلة'}
                 </span>
               </div>
 

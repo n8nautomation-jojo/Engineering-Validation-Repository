@@ -182,7 +182,7 @@ export class DashboardStats {
     if (expiringItems.length > 0) {
       notifications.push({
         type: 'danger',
-        title: 'تنبيه أسبقية الصلاحية (FEFO)',
+        title: 'تنبيه الأدوية الأقرب انتهاءً',
         desc: `${expiringItems.length} أدوية تقترب من تاريخ الانتهاء خلال 60 يوماً`,
         time: 'مباشر',
         action: 'EXPIRING'

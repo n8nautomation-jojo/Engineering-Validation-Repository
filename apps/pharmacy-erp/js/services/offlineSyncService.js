@@ -75,7 +75,7 @@ export class OfflineSyncService {
 
     window.addEventListener('online', () => {
       console.log('[OfflineSyncService] 🌐 Network online event detected. Initiating auto-sync...');
-      showToast('تمت استعادة الاتصال بالإنترنت 🌐', 'جاري فحص ومزامنة فواتير الأوفلاين تلقائياً...', 'info');
+      showToast('تمت استعادة الاتصال بالإنترنت 🌐', 'جاري إرسال الفواتير المحفوظة وتحديث الحسابات تلقائياً...', 'info');
       this.syncQueue({ silent: false, autoTriggered: true });
     });
   }
@@ -231,14 +231,14 @@ export class OfflineSyncService {
     if (!options.silent) {
       if (syncedCount > 0 && failedCount === 0) {
         showToast(
-          'اكتملت المزامنة بنجاح ☁️',
-          `تمت مزامنة ${syncedCount} فاتورة أوفلاين وتحديث الأرصدة والقيود المحاسبية بالكامل`,
+          'اكتمل إرسال الفواتير بنجاح ☁️',
+          `تم إرسال ${syncedCount} فواتير وتحديث الأرصدة والمخزون بالكامل`,
           'success'
         );
       } else if (syncedCount > 0 && failedCount > 0) {
         showToast(
-          'مزامنة جزئية',
-          `تمت مزامنة ${syncedCount} فاتورة، وتعذر مزامنة ${failedCount} (يرجى مراجعة سجل التعارض)`,
+          'إرسال جزئي للفواتير',
+          `تم إرسال ${syncedCount} فواتير، وتعذر إرسال ${failedCount} (يرجى مراجعة القائمة)`,
           'warning'
         );
       } else if (failedCount > 0) {

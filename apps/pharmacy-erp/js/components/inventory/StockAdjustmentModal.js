@@ -143,7 +143,7 @@ export class StockAdjustmentModal {
       );
     } catch (err) {
       console.error('[StockAdjustment Error]:', err);
-      showToast('فشل حفظ التسوية', err.message || 'حدث خطأ أثناء الاتصال بالباك إند', 'danger');
+      showToast('فشل حفظ التسوية', err.message || 'تعذر الاتصال بقاعدة البيانات، يرجى المحاولة لاحقاً', 'danger');
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;

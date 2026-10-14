@@ -177,7 +177,7 @@ export class ReportsView {
     // Refresh Button
     document.getElementById('btn-refresh-reports')?.addEventListener('click', () => {
       this.loadData();
-      showToast('تم تحديث المؤشرات', 'تمت إعادة احتساب البيانات المالية من الباك إند', 'info');
+      showToast('تم تحديث المؤشرات', 'تمت إعادة احتساب البيانات المالية بنجاح', 'info');
     });
 
     // Comprehensive CSV Export
