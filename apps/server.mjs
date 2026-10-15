@@ -15,6 +15,7 @@ import { customersRepository } from "./api/customers.mjs";
 import { salesOrdersRepository } from "./api/salesOrders.mjs";
 import { transfersRepository } from "./api/transfers.mjs";
 import { syncRepository } from "./api/sync.mjs";
+import { accountingRepository } from "./api/accounting.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -820,6 +821,147 @@ const server = http.createServer(async (req, res) => {
         } catch (err) {
           const status = err.message.includes("غير موجود") ? 404 : 400;
           sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+      // =========================================================================
+      // ACCOUNTING & GENERAL LEDGER (MVP-2 / Module Boundary)
+      // =========================================================================
+
+      // GET /api/accounting/accounts — list Chart of Accounts
+      if (req.method === "GET" && pathname === "/api/accounting/accounts") {
+        const filter = {
+          type: parsedUrl.searchParams.get("type") || undefined,
+          category: parsedUrl.searchParams.get("category") || undefined,
+          search: parsedUrl.searchParams.get("search") || undefined
+        };
+        sendJson(res, 200, accountingRepository.getChartOfAccounts(filter));
+        return;
+      }
+
+      // POST /api/accounting/accounts — create new account in chart
+      if (req.method === "POST" && pathname === "/api/accounting/accounts") {
+        try {
+          const body = await readJsonBody(req);
+          const acc = accountingRepository.createAccount(body);
+          sendJson(res, 201, acc);
+        } catch (err) {
+          sendError(res, 400, "ACCOUNT_CREATION_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // GET /api/accounting/periods — list fiscal periods
+      if (req.method === "GET" && pathname === "/api/accounting/periods") {
+        sendJson(res, 200, accountingRepository.getFiscalPeriods());
+        return;
+      }
+
+      // POST /api/accounting/periods/:id/lock — lock fiscal period
+      if (req.method === "POST" && pathname.startsWith("/api/accounting/periods/") && pathname.endsWith("/lock")) {
+        try {
+          const id = pathname.split("/")[4];
+          const locked = accountingRepository.lockFiscalPeriod(id);
+          sendJson(res, 200, locked);
+        } catch (err) {
+          sendError(res, 400, "PERIOD_LOCK_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // POST /api/accounting/periods/:id/reopen — reopen fiscal period
+      if (req.method === "POST" && pathname.startsWith("/api/accounting/periods/") && pathname.endsWith("/reopen")) {
+        try {
+          const id = pathname.split("/")[4];
+          const reopened = accountingRepository.reopenFiscalPeriod(id);
+          sendJson(res, 200, reopened);
+        } catch (err) {
+          sendError(res, 400, "PERIOD_REOPEN_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // GET /api/accounting/journal-entries — list general ledger journal entries
+      if (req.method === "GET" && pathname === "/api/accounting/journal-entries") {
+        const filters = {
+          status: parsedUrl.searchParams.get("status") || undefined,
+          sourceModule: parsedUrl.searchParams.get("sourceModule") || undefined,
+          startDate: parsedUrl.searchParams.get("startDate") || undefined,
+          endDate: parsedUrl.searchParams.get("endDate") || undefined
+        };
+        sendJson(res, 200, accountingRepository.getJournalEntries(filters));
+        return;
+      }
+
+      // POST /api/accounting/journal-entries — post balanced double-entry
+      if (req.method === "POST" && pathname === "/api/accounting/journal-entries") {
+        try {
+          const body = await readJsonBody(req);
+          const entry = accountingRepository.createJournalEntry(body);
+          sendJson(res, 201, entry);
+        } catch (err) {
+          sendError(res, 400, "JOURNAL_ENTRY_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // GET /api/accounting/journal-entries/:id — single journal entry
+      if (req.method === "GET" && pathname.startsWith("/api/accounting/journal-entries/") && !pathname.endsWith("/reverse")) {
+        const id = pathname.split("/")[4];
+        const entry = accountingRepository.getJournalEntryById(id);
+        if (!entry) {
+          sendError(res, 404, "ENTRY_NOT_FOUND", `قيد اليومية (${id}) غير موجود`, correlationId);
+        } else {
+          sendJson(res, 200, entry);
+        }
+        return;
+      }
+
+      // POST /api/accounting/journal-entries/:id/reverse — non-destructive reversal entry
+      if (req.method === "POST" && pathname.startsWith("/api/accounting/journal-entries/") && pathname.endsWith("/reverse")) {
+        try {
+          const id = pathname.split("/")[4];
+          const body = await readJsonBody(req);
+          const resResult = accountingRepository.reverseJournalEntry(id, body);
+          sendJson(res, 200, resResult);
+        } catch (err) {
+          const status = err.message.includes("غير موجود") ? 404 : 400;
+          sendError(res, status, "REVERSAL_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // GET /api/accounting/statements/trial-balance — Trial Balance statement
+      if (req.method === "GET" && pathname === "/api/accounting/statements/trial-balance") {
+        const asOfDate = parsedUrl.searchParams.get("asOfDate") || undefined;
+        sendJson(res, 200, accountingRepository.getTrialBalance(asOfDate));
+        return;
+      }
+
+      // GET /api/accounting/statements/income-statement — Income Statement (P&L)
+      if (req.method === "GET" && pathname === "/api/accounting/statements/income-statement") {
+        const startDate = parsedUrl.searchParams.get("startDate") || undefined;
+        const endDate = parsedUrl.searchParams.get("endDate") || undefined;
+        sendJson(res, 200, accountingRepository.getIncomeStatement(startDate, endDate));
+        return;
+      }
+
+      // GET /api/accounting/statements/balance-sheet — Balance Sheet
+      if (req.method === "GET" && pathname === "/api/accounting/statements/balance-sheet") {
+        const asOfDate = parsedUrl.searchParams.get("asOfDate") || undefined;
+        sendJson(res, 200, accountingRepository.getBalanceSheet(asOfDate));
+        return;
+      }
+
+      // GET /api/accounting/ledger/:accountId — General Ledger Statement for account
+      if (req.method === "GET" && pathname.startsWith("/api/accounting/ledger/")) {
+        try {
+          const accountId = pathname.split("/")[4];
+          const startDate = parsedUrl.searchParams.get("startDate") || undefined;
+          const endDate = parsedUrl.searchParams.get("endDate") || undefined;
+          sendJson(res, 200, accountingRepository.getGeneralLedgerAccountStatement(accountId, startDate, endDate));
+        } catch (err) {
+          sendError(res, 404, "ACCOUNT_NOT_FOUND", err.message, correlationId);
         }
         return;
       }

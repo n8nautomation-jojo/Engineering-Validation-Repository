@@ -184,6 +184,7 @@ export class Sidebar {
     const reportsView = document.getElementById('reports-view');
     const designSystemView = document.getElementById('design-system-view');
     const customersView = document.getElementById('customers-view');
+    const accountingView = document.getElementById('accounting-view');
 
     // Helper to hide all views
     const hideAll = () => {
@@ -198,6 +199,7 @@ export class Sidebar {
       if (reportsView) reportsView.style.display = 'none';
       if (designSystemView) designSystemView.style.display = 'none';
       if (customersView) customersView.style.display = 'none';
+      if (accountingView) accountingView.style.display = 'none';
     };
 
     hideAll();
@@ -252,6 +254,12 @@ export class Sidebar {
 
       window.dispatchEvent(new CustomEvent('CUSTOMERS_UPDATED'));
       showToast('دليل المرضى والعملاء', 'تم تحديث سجل المرضى والملفات السريرية بنجاح', 'info');
+    } else if (view === 'accounting') {
+      if (pageTitle) pageTitle.textContent = 'الإدارة المالية ودفتر الأستاذ العام (MVP-2)';
+      if (accountingView) accountingView.style.display = 'block';
+
+      window.dispatchEvent(new CustomEvent('ACCOUNTING_VIEW_ACTIVATED'));
+      showToast('النواة المحاسبية (MVP-2)', 'تم تحميل شجرة الحسابات، قيود اليومية، والقوائم المالية الختامية', 'success');
     } else if (view === 'design-system') {
       if (pageTitle) pageTitle.textContent = 'دليل الهوية البصرية ونظام المكونات';
       if (designSystemView) designSystemView.style.display = 'block';

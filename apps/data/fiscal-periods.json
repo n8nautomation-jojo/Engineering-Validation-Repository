@@ -1,0 +1,52 @@
+[
+  {
+    "id": "FP-2026-FY",
+    "name": "السنة المالية 2026",
+    "periodType": "YEAR",
+    "startDate": "2026-01-01T00:00:00.000Z",
+    "endDate": "2026-12-31T23:59:59.999Z",
+    "status": "OPEN",
+    "lockedAt": null,
+    "lockedBy": null
+  },
+  {
+    "id": "FP-2026-Q1",
+    "name": "الربع الأول 2026 (Q1)",
+    "periodType": "QUARTER",
+    "startDate": "2026-01-01T00:00:00.000Z",
+    "endDate": "2026-03-31T23:59:59.999Z",
+    "status": "LOCKED",
+    "lockedAt": "2026-04-05T10:00:00.000Z",
+    "lockedBy": "د. أحمد الطاهر (المدير العام)"
+  },
+  {
+    "id": "FP-2026-Q2",
+    "name": "الربع الثاني 2026 (Q2)",
+    "periodType": "QUARTER",
+    "startDate": "2026-04-01T00:00:00.000Z",
+    "endDate": "2026-06-30T23:59:59.999Z",
+    "status": "LOCKED",
+    "lockedAt": "2026-07-04T12:00:00.000Z",
+    "lockedBy": "د. أحمد الطاهر (المدير العام)"
+  },
+  {
+    "id": "FP-2026-Q3",
+    "name": "الربع الثالث 2026 (Q3)",
+    "periodType": "QUARTER",
+    "startDate": "2026-07-01T00:00:00.000Z",
+    "endDate": "2026-09-30T23:59:59.999Z",
+    "status": "LOCKED",
+    "lockedAt": "2026-10-02T09:30:00.000Z",
+    "lockedBy": "د. أحمد الطاهر (المدير العام)"
+  },
+  {
+    "id": "FP-2026-10",
+    "name": "شهر أكتوبر 2026 (الحالي)",
+    "periodType": "MONTH",
+    "startDate": "2026-10-01T00:00:00.000Z",
+    "endDate": "2026-10-31T23:59:59.999Z",
+    "status": "OPEN",
+    "lockedAt": null,
+    "lockedBy": null
+  }
+]

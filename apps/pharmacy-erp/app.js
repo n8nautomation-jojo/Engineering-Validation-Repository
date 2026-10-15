@@ -20,6 +20,7 @@ import { PurchasingView } from './js/components/PurchasingView.js';
 import { ReportsView } from './js/components/ReportsView.js';
 import { DesignSystemView } from './js/components/DesignSystemView.js';
 import { CustomersView } from './js/components/CustomersView.js';
+import { AccountingView } from './js/components/AccountingView.js';
 import { SettingsDialog } from './js/components/SettingsDialog.js';
 import { HelpDialog } from './js/components/HelpDialog.js';
 import { CashMovementDialog } from './js/components/CashMovementDialog.js';
@@ -55,6 +56,7 @@ class PharmaTechApp {
     this.components.sessions = new SessionsView();
     this.components.purchasing = new PurchasingView();
     this.components.customers = new CustomersView();
+    this.components.accounting = new AccountingView();
     this.components.reports = new ReportsView();
     this.components.designSystem = new DesignSystemView();
     this.components.settingsDialog = new SettingsDialog();
@@ -70,6 +72,10 @@ class PharmaTechApp {
       if (this.components.customers?.formModal) {
         this.components.customers.formModal.open({ name: e.detail?.name || '' });
       }
+    });
+
+    window.addEventListener('ACCOUNTING_VIEW_ACTIVATED', () => {
+      this.components.accounting?.loadData();
     });
 
     // Event listeners for global dialog triggers

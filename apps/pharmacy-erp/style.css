@@ -32,3 +32,6 @@
 
 /* 8. Dedicated Print Engine (Thermal 80mm Receipts, A4 Executive Reports, 50x30mm Labels) */
 @import './css/print.css';
+
+/* 9. Accounting & General Ledger Double-Entry Engine (MVP-2) */
+@import './css/accounting.css';

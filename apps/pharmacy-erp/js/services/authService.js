@@ -72,7 +72,7 @@ export class AuthService {
       return ['pos', 'sales', 'sessions', 'customers'];
     }
     // PHARMACY_MANAGER and default admin roles
-    return ['dashboard', 'inventory', 'pos', 'sales', 'sessions', 'purchasing', 'customers', 'reports', 'design-system'];
+    return ['dashboard', 'inventory', 'pos', 'sales', 'sessions', 'purchasing', 'customers', 'reports', 'accounting', 'design-system'];
   }
 
   static canAccessView(view) {
