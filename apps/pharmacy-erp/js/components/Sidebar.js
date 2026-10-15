@@ -122,6 +122,12 @@ export class Sidebar {
       }
     });
 
+    // Hide or show section titles based on role (cashiers only see their 4 operational buttons)
+    const sectionHeaders = document.querySelectorAll('.nav-section-title');
+    sectionHeaders.forEach(sec => {
+      sec.style.display = AuthService.isCashier() ? 'none' : '';
+    });
+
     // Hide or show Settings button in sidebar bottom
     if (this.settingsBtn) {
       this.settingsBtn.style.display = AuthService.isManager() ? '' : 'none';
