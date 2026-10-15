@@ -1,6 +1,6 @@
 /**
- * PharmaTech — Close Cash Session Dialog Component
- * Handles cash drawer counting, expected vs. actual variance reconciliation and Z-Report generation
+ * PharmaTech — Close Cash Session Dialog Component (Ergonomic UX 2.0)
+ * 1-Tap Exact Cash Match, Live Reconciliation, and Zero-Training Shift Closing
  */
 
 import { cashSessionService } from '../services/cashSessionService.js';
@@ -16,6 +16,7 @@ export class CloseSessionDialog {
     this.countedInput = document.getElementById('close-session-counted-input');
     this.varianceBox = document.getElementById('close-session-variance-box');
     this.varianceValEl = document.getElementById('close-session-variance-val');
+    this.matchExactBtn = document.getElementById('btn-match-exact-cash');
 
     this.init();
   }
@@ -26,6 +27,17 @@ export class CloseSessionDialog {
     // Live variance calculation as cashier counts cash
     this.countedInput?.addEventListener('input', () => {
       this.updateVarianceDisplay();
+    });
+
+    // 1-Tap Exact Match Button
+    this.matchExactBtn?.addEventListener('click', () => {
+      const session = cashSessionService.currentSession;
+      const expected = session?.metrics ? session.metrics.expectedCash : 0;
+      if (this.countedInput) {
+        this.countedInput.value = expected;
+      }
+      this.updateVarianceDisplay();
+      showToast('مطابقة تامة', `تم ضبط المبلغ المعدود على النقدية المتوقعة (${Number(expected).toLocaleString()} ج.س)`, 'info');
     });
 
     this.form?.addEventListener('submit', async (e) => {
@@ -40,13 +52,15 @@ export class CloseSessionDialog {
 
       try {
         const result = await cashSessionService.closeSession(counted, note);
-
-        showToast('تم إغلاق الوردية بنجاح', `تم إصدار تقرير الوردية ${result.zReport.zReportNumber}`, 'success');
+        const zNum = result?.zReport?.zReportNumber || '';
+        showToast('تم إغلاق الوردية بنجاح', `تم إصدار تقرير الوردية ${zNum}`, 'success');
 
         this.close();
 
         // Automatically open the thermal Z-Report preview
-        this.openZReport(result.zReport);
+        if (result?.zReport) {
+          this.openZReport(result.zReport);
+        }
       } catch (err) {
         showToast('خطأ في إغلاق الوردية', err.message, 'danger');
       }
@@ -74,6 +88,11 @@ export class CloseSessionDialog {
 
     this.updateVarianceDisplay();
     this.dialog?.classList.remove('hidden');
+
+    setTimeout(() => {
+      this.countedInput?.focus();
+      this.countedInput?.select();
+    }, 100);
   }
 
   updateVarianceDisplay() {

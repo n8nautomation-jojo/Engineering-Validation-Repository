@@ -13,12 +13,20 @@ export class Topbar {
     this.moonIcon = document.getElementById('theme-moon-icon');
     this.searchInput = document.getElementById('global-search-input');
     this.exportBtn = document.getElementById('btn-export-csv');
+    this.helpBtn = document.getElementById('topbar-help-btn');
 
     this.init();
   }
 
   init() {
     this.applyTheme(appStore.dark);
+
+    // Help Button
+    if (this.helpBtn) {
+      this.helpBtn.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('OPEN_HELP_DIALOG'));
+      });
+    }
 
     // Theme Toggle
     if (this.themeBtn) {
@@ -56,6 +64,12 @@ export class Topbar {
         e.preventDefault();
         this.searchInput?.focus();
         this.searchInput?.select();
+      }
+
+      // F1: Help & Operational Guide
+      if (e.key === 'F1') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('OPEN_HELP_DIALOG'));
       }
 
       // F2: Fast POS Switch & Barcode Focus
