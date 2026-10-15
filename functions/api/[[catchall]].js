@@ -15,6 +15,7 @@ import { platformRepository } from "../../apps/api/platform.mjs";
 import { inventoryMovementsRepository } from "../../apps/api/inventoryMovements.mjs";
 import { customersRepository } from "../../apps/api/customers.mjs";
 import { salesOrdersRepository } from "../../apps/api/salesOrders.mjs";
+import { transfersRepository } from "../../apps/api/transfers.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -267,6 +268,69 @@ export async function onRequest(context) {
       try {
         const id = pathname.split("/")[3];
         const cancelled = salesOrdersRepository.cancel(id, body?.reason);
+        return jsonResponse(cancelled, 200);
+      } catch (err) {
+        const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+        return errorResponse(status, "BAD_REQUEST", err.message, correlationId);
+      }
+    }
+
+    // =========================================================================
+    // MULTI-WAREHOUSE & STOCK TRANSFERS
+    // =========================================================================
+    if (method === "GET" && pathname === "/api/warehouses") {
+      return jsonResponse(transfersRepository.getWarehouses());
+    }
+
+    if (method === "GET" && pathname === "/api/transfers/stats") {
+      return jsonResponse(transfersRepository.getStats());
+    }
+
+    if (method === "GET" && pathname === "/api/transfers") {
+      const filters = {
+        status: url.searchParams.get("status") || undefined,
+        fromWarehouseId: url.searchParams.get("fromWarehouseId") || undefined,
+        toWarehouseId: url.searchParams.get("toWarehouseId") || undefined,
+        search: url.searchParams.get("search") || undefined,
+        limit: url.searchParams.get("limit") || undefined
+      };
+      return jsonResponse(transfersRepository.getAll(filters));
+    }
+
+    if (method === "GET" && pathname.startsWith("/api/transfers/") && !pathname.endsWith("/complete") && !pathname.endsWith("/cancel")) {
+      const id = pathname.replace("/api/transfers/", "");
+      const transfer = transfersRepository.getById(id);
+      if (!transfer) {
+        return errorResponse(404, "TRANSFER_NOT_FOUND", `أمر التحويل ${id} غير موجود`, correlationId);
+      }
+      return jsonResponse(transfer, 200);
+    }
+
+    if (method === "POST" && pathname === "/api/transfers") {
+      try {
+        const newTransfer = transfersRepository.create(body);
+        return jsonResponse(newTransfer, 201);
+      } catch (err) {
+        const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+        return errorResponse(status, "BAD_REQUEST", err.message, correlationId);
+      }
+    }
+
+    if (method === "POST" && pathname.startsWith("/api/transfers/") && pathname.endsWith("/complete")) {
+      try {
+        const id = pathname.split("/")[3];
+        const completed = transfersRepository.complete(id, body?.approvedBy);
+        return jsonResponse(completed, 200);
+      } catch (err) {
+        const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+        return errorResponse(status, "BAD_REQUEST", err.message, correlationId);
+      }
+    }
+
+    if (method === "POST" && pathname.startsWith("/api/transfers/") && pathname.endsWith("/cancel")) {
+      try {
+        const id = pathname.split("/")[3];
+        const cancelled = transfersRepository.cancel(id, body?.reason);
         return jsonResponse(cancelled, 200);
       } catch (err) {
         const status = err.message.includes("NOT_FOUND") ? 404 : 400;

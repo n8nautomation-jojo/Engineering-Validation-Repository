@@ -1,0 +1,46 @@
+[
+  {
+    "id": "WH-01",
+    "code": "WH-CENTRAL",
+    "name": "المستودع المركزي الرئيسي",
+    "type": "CENTRAL",
+    "location": "الخرطوم - المنطقة الصناعية",
+    "managerName": "د. أحمد الطاهر",
+    "isDefault": false,
+    "temperatureZone": "ROOM_TEMP_25C",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "WH-02",
+    "code": "WH-DISPENSARY",
+    "name": "صيدلية البيع بالتجزئة (صالة الصرف المباشر)",
+    "type": "RETAIL_DISPENSARY",
+    "location": "فرع الخرطوم الرئيسي - الصالة",
+    "managerName": "د. سارة الكباشي",
+    "isDefault": true,
+    "temperatureZone": "ROOM_TEMP_25C",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "WH-03",
+    "code": "WH-COLD-CHAIN",
+    "name": "وحدة التبريد وسلسلة الأنسولين والمطاعيم (2-8°C)",
+    "type": "COLD_CHAIN",
+    "location": "فرع الخرطوم - الغرفة المبردة",
+    "managerName": "د. سارة الكباشي",
+    "isDefault": false,
+    "temperatureZone": "COLD_2_TO_8C",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "WH-04",
+    "code": "WH-EMERGENCY",
+    "name": "مخزن الطوارئ والاحتياط الاستراتيجي",
+    "type": "RESERVE",
+    "location": "مستودع بحري الاحتياطي",
+    "managerName": "د. عبد المنعم الشيخ",
+    "isDefault": false,
+    "temperatureZone": "ROOM_TEMP_25C",
+    "status": "ACTIVE"
+  }
+]

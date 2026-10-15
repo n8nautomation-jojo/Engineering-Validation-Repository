@@ -13,6 +13,7 @@ import { platformRepository } from "./api/platform.mjs";
 import { inventoryMovementsRepository } from "./api/inventoryMovements.mjs";
 import { customersRepository } from "./api/customers.mjs";
 import { salesOrdersRepository } from "./api/salesOrders.mjs";
+import { transfersRepository } from "./api/transfers.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -347,6 +348,88 @@ const server = http.createServer(async (req, res) => {
           const id = pathname.split("/")[3];
           const body = await readJsonBody(req);
           const cancelled = salesOrdersRepository.cancel(id, body.reason);
+          sendJson(res, 200, cancelled);
+        } catch (err) {
+          const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+
+      // =========================================================================
+      // MULTI-WAREHOUSE & STOCK TRANSFERS ENDPOINTS
+      // =========================================================================
+
+      // GET /api/warehouses — list all storage locations/warehouses
+      if (req.method === "GET" && pathname === "/api/warehouses") {
+        sendJson(res, 200, transfersRepository.getWarehouses());
+        return;
+      }
+
+      // GET /api/transfers/stats — get transfers summary statistics
+      if (req.method === "GET" && pathname === "/api/transfers/stats") {
+        sendJson(res, 200, transfersRepository.getStats());
+        return;
+      }
+
+      // GET /api/transfers — list stock transfers with optional filtering
+      if (req.method === "GET" && pathname === "/api/transfers") {
+        const filters = {
+          status: parsedUrl.searchParams.get("status") || undefined,
+          fromWarehouseId: parsedUrl.searchParams.get("fromWarehouseId") || undefined,
+          toWarehouseId: parsedUrl.searchParams.get("toWarehouseId") || undefined,
+          search: parsedUrl.searchParams.get("search") || undefined,
+          limit: parsedUrl.searchParams.get("limit") || undefined
+        };
+        sendJson(res, 200, transfersRepository.getAll(filters));
+        return;
+      }
+
+      // GET /api/transfers/:id — get transfer by id
+      if (req.method === "GET" && pathname.startsWith("/api/transfers/") && !pathname.endsWith("/complete") && !pathname.endsWith("/cancel")) {
+        const id = pathname.replace("/api/transfers/", "");
+        const transfer = transfersRepository.getById(id);
+        if (!transfer) {
+          sendError(res, 404, "TRANSFER_NOT_FOUND", `أمر التحويل ${id} غير موجود`, correlationId);
+          return;
+        }
+        sendJson(res, 200, transfer);
+        return;
+      }
+
+      // POST /api/transfers — create new stock transfer
+      if (req.method === "POST" && pathname === "/api/transfers") {
+        try {
+          const body = await readJsonBody(req);
+          const newTransfer = transfersRepository.create(body);
+          sendJson(res, 201, newTransfer);
+        } catch (err) {
+          const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+
+      // POST /api/transfers/:id/complete — approve and complete transfer
+      if (req.method === "POST" && pathname.startsWith("/api/transfers/") && pathname.endsWith("/complete")) {
+        try {
+          const id = pathname.split("/")[3];
+          const body = await readJsonBody(req).catch(() => ({}));
+          const completed = transfersRepository.complete(id, body?.approvedBy);
+          sendJson(res, 200, completed);
+        } catch (err) {
+          const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+
+      // POST /api/transfers/:id/cancel — cancel transfer
+      if (req.method === "POST" && pathname.startsWith("/api/transfers/") && pathname.endsWith("/cancel")) {
+        try {
+          const id = pathname.split("/")[3];
+          const body = await readJsonBody(req).catch(() => ({}));
+          const cancelled = transfersRepository.cancel(id, body?.reason);
           sendJson(res, 200, cancelled);
         } catch (err) {
           const status = err.message.includes("NOT_FOUND") ? 404 : 400;
