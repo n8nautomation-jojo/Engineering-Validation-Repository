@@ -35,3 +35,6 @@
 
 /* 9. Accounting & General Ledger Double-Entry Engine (MVP-2) */
 @import './css/accounting.css';
+
+/* 10. Multi-Branch Intelligence & HQ Governance Engine (MVP-3) */
+@import './css/branches.css';

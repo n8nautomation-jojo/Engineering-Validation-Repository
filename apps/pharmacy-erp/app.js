@@ -21,6 +21,7 @@ import { ReportsView } from './js/components/ReportsView.js';
 import { DesignSystemView } from './js/components/DesignSystemView.js';
 import { CustomersView } from './js/components/CustomersView.js';
 import { AccountingView } from './js/components/AccountingView.js';
+import { BranchIntelligenceView } from './js/components/BranchIntelligenceView.js';
 import { SettingsDialog } from './js/components/SettingsDialog.js';
 import { HelpDialog } from './js/components/HelpDialog.js';
 import { CashMovementDialog } from './js/components/CashMovementDialog.js';
@@ -57,6 +58,7 @@ class PharmaTechApp {
     this.components.purchasing = new PurchasingView();
     this.components.customers = new CustomersView();
     this.components.accounting = new AccountingView();
+    this.components.branches = new BranchIntelligenceView();
     this.components.reports = new ReportsView();
     this.components.designSystem = new DesignSystemView();
     this.components.settingsDialog = new SettingsDialog();
@@ -76,6 +78,10 @@ class PharmaTechApp {
 
     window.addEventListener('ACCOUNTING_VIEW_ACTIVATED', () => {
       this.components.accounting?.loadData();
+    });
+
+    window.addEventListener('BRANCHES_VIEW_ACTIVATED', () => {
+      this.components.branches?.loadData();
     });
 
     // Event listeners for global dialog triggers

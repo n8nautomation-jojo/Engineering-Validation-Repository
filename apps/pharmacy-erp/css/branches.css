@@ -1,0 +1,91 @@
+/* ==========================================================================
+   PharmaTech — Multi-Branch Intelligence & Governance Styles (MVP-3)
+   ========================================================================== */
+
+.branches-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Executive KPI Grid */
+.network-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.kpi-card {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--card-background, #ffffff);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--muted-foreground, #64748b);
+}
+
+.kpi-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace);
+  line-height: 1.2;
+}
+
+.kpi-sub {
+  font-size: 0.775rem;
+  color: var(--muted-foreground, #64748b);
+}
+
+/* Navigation Tabs */
+.branch-tabs-nav {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid var(--border, #e2e8f0);
+  padding-bottom: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.branch-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted-foreground, #64748b);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.branch-tab-btn:hover {
+  background: rgba(14, 165, 233, 0.08);
+  color: var(--foreground, #0f172a);
+}
+
+.branch-tab-btn.active {
+  background: var(--primary, #0284c7);
+  color: #ffffff;
+  border-color: var(--primary, #0284c7);
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+}
+
+.branch-tab-btn svg {
+  stroke-width: 2.2;
+}
+
+.branch-tab-content {
+  margin-top: 8px;
+}

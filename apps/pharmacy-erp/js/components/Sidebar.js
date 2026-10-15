@@ -185,6 +185,7 @@ export class Sidebar {
     const designSystemView = document.getElementById('design-system-view');
     const customersView = document.getElementById('customers-view');
     const accountingView = document.getElementById('accounting-view');
+    const branchesView = document.getElementById('branches-view');
 
     // Helper to hide all views
     const hideAll = () => {
@@ -200,6 +201,7 @@ export class Sidebar {
       if (designSystemView) designSystemView.style.display = 'none';
       if (customersView) customersView.style.display = 'none';
       if (accountingView) accountingView.style.display = 'none';
+      if (branchesView) branchesView.style.display = 'none';
     };
 
     hideAll();
@@ -260,6 +262,12 @@ export class Sidebar {
 
       window.dispatchEvent(new CustomEvent('ACCOUNTING_VIEW_ACTIVATED'));
       showToast('النواة المحاسبية (MVP-2)', 'تم تحميل شجرة الحسابات، قيود اليومية، والقوائم المالية الختامية', 'success');
+    } else if (view === 'branches') {
+      if (pageTitle) pageTitle.textContent = 'ذكاء الفروع المتعددة والرقابة التشغيلية الموحدة (MVP-3)';
+      if (branchesView) branchesView.style.display = 'block';
+
+      window.dispatchEvent(new CustomEvent('BRANCHES_VIEW_ACTIVATED'));
+      showToast('ذكاء الفروع والرقابة الموحدة', 'تم تحميل مصفوفة أداء الفروع، محرك الموازنة الذكية، وخريطة الصلاحية FEFO', 'success');
     } else if (view === 'design-system') {
       if (pageTitle) pageTitle.textContent = 'دليل الهوية البصرية ونظام المكونات';
       if (designSystemView) designSystemView.style.display = 'block';

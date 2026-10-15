@@ -16,6 +16,7 @@ import { salesOrdersRepository } from "./api/salesOrders.mjs";
 import { transfersRepository } from "./api/transfers.mjs";
 import { syncRepository } from "./api/sync.mjs";
 import { accountingRepository } from "./api/accounting.mjs";
+import { branchesRepository } from "./api/branches.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -962,6 +963,91 @@ const server = http.createServer(async (req, res) => {
           sendJson(res, 200, accountingRepository.getGeneralLedgerAccountStatement(accountId, startDate, endDate));
         } catch (err) {
           sendError(res, 404, "ACCOUNT_NOT_FOUND", err.message, correlationId);
+        }
+        return;
+      }
+
+      // =========================================================================
+      // MULTI-BRANCH INTELLIGENCE & GOVERNANCE (MVP-3)
+      // =========================================================================
+
+      // GET /api/branches/intelligence/consolidated — network-wide aggregated analytics
+      if (req.method === "GET" && pathname === "/api/branches/intelligence/consolidated") {
+        const period = parsedUrl.searchParams.get("period") || "TODAY";
+        sendJson(res, 200, branchesRepository.getConsolidatedAnalytics(period));
+        return;
+      }
+
+      // GET /api/branches/intelligence/rebalancing-recommendations — smart stock rebalancing suggestions
+      if (req.method === "GET" && pathname === "/api/branches/intelligence/rebalancing-recommendations") {
+        sendJson(res, 200, branchesRepository.getStockRebalancingRecommendations());
+        return;
+      }
+
+      // POST /api/branches/intelligence/rebalancing-recommendations/:id/apply — 1-click apply transfer
+      if (req.method === "POST" && pathname.startsWith("/api/branches/intelligence/rebalancing-recommendations/") && pathname.endsWith("/apply")) {
+        try {
+          const recId = pathname.split("/")[5];
+          const body = await readJsonBody(req);
+          const result = branchesRepository.applyStockRebalancingRecommendation(recId, body.authorizedUser);
+          sendJson(res, 200, result);
+        } catch (err) {
+          sendError(res, 400, "REBALANCING_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // GET /api/branches/intelligence/expiry-risk-matrix — consolidated FEFO expiry risk map
+      if (req.method === "GET" && pathname === "/api/branches/intelligence/expiry-risk-matrix") {
+        sendJson(res, 200, branchesRepository.getConsolidatedExpiryMatrix());
+        return;
+      }
+
+      // GET /api/branches/intelligence/governance-health — branch compliance & liquidity limits
+      if (req.method === "GET" && pathname === "/api/branches/intelligence/governance-health") {
+        sendJson(res, 200, branchesRepository.getBranchGovernanceHealth());
+        return;
+      }
+
+      // GET /api/branches — list enterprise branches
+      if (req.method === "GET" && pathname === "/api/branches") {
+        sendJson(res, 200, branchesRepository.getBranches());
+        return;
+      }
+
+      // POST /api/branches — create new enterprise branch
+      if (req.method === "POST" && pathname === "/api/branches") {
+        try {
+          const body = await readJsonBody(req);
+          const branch = branchesRepository.createBranch(body);
+          sendJson(res, 201, branch);
+        } catch (err) {
+          sendError(res, 400, "BRANCH_CREATION_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // GET /api/branches/:id — single branch details
+      if (req.method === "GET" && pathname.startsWith("/api/branches/") && !pathname.includes("/intelligence")) {
+        const id = pathname.split("/")[3];
+        const branch = branchesRepository.getBranchById(id);
+        if (!branch) {
+          sendError(res, 404, "BRANCH_NOT_FOUND", `الفرع (${id}) غير موجود`, correlationId);
+        } else {
+          sendJson(res, 200, branch);
+        }
+        return;
+      }
+
+      // PUT /api/branches/:id — update branch
+      if (req.method === "PUT" && pathname.startsWith("/api/branches/")) {
+        try {
+          const id = pathname.split("/")[3];
+          const body = await readJsonBody(req);
+          const updated = branchesRepository.updateBranch(id, body);
+          sendJson(res, 200, updated);
+        } catch (err) {
+          sendError(res, 400, "BRANCH_UPDATE_FAILED", err.message, correlationId);
         }
         return;
       }

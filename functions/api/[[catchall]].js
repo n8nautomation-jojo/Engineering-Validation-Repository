@@ -18,6 +18,7 @@ import { salesOrdersRepository } from "../../apps/api/salesOrders.mjs";
 import { transfersRepository } from "../../apps/api/transfers.mjs";
 import { syncRepository } from "../../apps/api/sync.mjs";
 import { accountingRepository } from "../../apps/api/accounting.mjs";
+import { branchesRepository } from "../../apps/api/branches.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -718,6 +719,69 @@ export async function onRequest(context) {
         return jsonResponse(accountingRepository.getGeneralLedgerAccountStatement(accountId, startDate, endDate), 200);
       } catch (err) {
         return errorResponse(404, "ACCOUNT_NOT_FOUND", err.message, correlationId);
+      }
+    }
+
+    // =========================================================================
+    // MULTI-BRANCH INTELLIGENCE & GOVERNANCE (MVP-3)
+    // =========================================================================
+
+    if (method === "GET" && pathname === "/api/branches/intelligence/consolidated") {
+      const period = url.searchParams.get("period") || "TODAY";
+      return jsonResponse(branchesRepository.getConsolidatedAnalytics(period), 200);
+    }
+
+    if (method === "GET" && pathname === "/api/branches/intelligence/rebalancing-recommendations") {
+      return jsonResponse(branchesRepository.getStockRebalancingRecommendations(), 200);
+    }
+
+    if (method === "POST" && pathname.startsWith("/api/branches/intelligence/rebalancing-recommendations/") && pathname.endsWith("/apply")) {
+      try {
+        const recId = pathname.split("/")[5];
+        const result = branchesRepository.applyStockRebalancingRecommendation(recId, body.authorizedUser);
+        return jsonResponse(result, 200);
+      } catch (err) {
+        return errorResponse(400, "REBALANCING_FAILED", err.message, correlationId);
+      }
+    }
+
+    if (method === "GET" && pathname === "/api/branches/intelligence/expiry-risk-matrix") {
+      return jsonResponse(branchesRepository.getConsolidatedExpiryMatrix(), 200);
+    }
+
+    if (method === "GET" && pathname === "/api/branches/intelligence/governance-health") {
+      return jsonResponse(branchesRepository.getBranchGovernanceHealth(), 200);
+    }
+
+    if (method === "GET" && pathname === "/api/branches") {
+      return jsonResponse(branchesRepository.getBranches(), 200);
+    }
+
+    if (method === "POST" && pathname === "/api/branches") {
+      try {
+        const branch = branchesRepository.createBranch(body);
+        return jsonResponse(branch, 201);
+      } catch (err) {
+        return errorResponse(400, "BRANCH_CREATION_FAILED", err.message, correlationId);
+      }
+    }
+
+    if (method === "GET" && pathname.startsWith("/api/branches/") && !pathname.includes("/intelligence")) {
+      const id = pathname.split("/")[3];
+      const branch = branchesRepository.getBranchById(id);
+      if (!branch) {
+        return errorResponse(404, "BRANCH_NOT_FOUND", `الفرع (${id}) غير موجود`, correlationId);
+      }
+      return jsonResponse(branch, 200);
+    }
+
+    if (method === "PUT" && pathname.startsWith("/api/branches/")) {
+      try {
+        const id = pathname.split("/")[3];
+        const updated = branchesRepository.updateBranch(id, body);
+        return jsonResponse(updated, 200);
+      } catch (err) {
+        return errorResponse(400, "BRANCH_UPDATE_FAILED", err.message, correlationId);
       }
     }
 
