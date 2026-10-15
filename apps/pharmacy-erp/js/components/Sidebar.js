@@ -24,6 +24,8 @@ export class Sidebar {
   }
 
   init() {
+    document.body.dataset.activeView = appStore.activeView || 'dashboard';
+
     // Desktop Collapse
     if (this.toggleBtn && this.shell) {
       this.toggleBtn.addEventListener('click', () => {
@@ -176,6 +178,7 @@ export class Sidebar {
       if (targetBtn) targetBtn.classList.add('active');
     }
 
+    document.body.dataset.activeView = view;
     appStore.setActiveView(view);
 
     const pageTitle = document.getElementById('page-title-heading');

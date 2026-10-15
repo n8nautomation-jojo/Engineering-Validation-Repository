@@ -28,7 +28,7 @@ export class PosCatalogGrid {
     }
 
     el.innerHTML = `
-      <div class="pos-catalog-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; max-height:calc(100vh - 290px); overflow-y:auto; padding:2px;">
+      <div class="pos-catalog-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; flex:1; min-height:0; overflow-y:auto; padding:2px 4px 6px 2px;">
         ${medicines.map(m => {
           const isExpired = m.status === 'expired';
           const isOutOfStock = m.stock <= 0;
@@ -38,35 +38,35 @@ export class PosCatalogGrid {
             <div 
               class="pos-med-card-v2 ${isExpired || isOutOfStock ? 'disabled-card' : ''}" 
               data-id="${m.id}"
-              style="background:var(--card); border:1px solid ${isLowStock ? '#fed7aa' : 'var(--border)'}; border-radius:12px; padding:12px; cursor:${isExpired || isOutOfStock ? 'not-allowed' : 'pointer'}; display:flex; flex-direction:column; justify-content:space-between; gap:10px; transition:all 0.15s ease; box-shadow:0 1px 3px rgba(0,0,0,0.04); position:relative; overflow:hidden;"
+              style="background:var(--card); border:1px solid ${isLowStock ? '#fed7aa' : 'var(--border)'}; border-radius:10px; padding:10px; cursor:${isExpired || isOutOfStock ? 'not-allowed' : 'pointer'}; display:flex; flex-direction:column; justify-content:space-between; gap:6px; transition:all 0.15s ease; box-shadow:0 1px 3px rgba(0,0,0,0.04); position:relative; overflow:hidden;"
               tabindex="${isExpired || isOutOfStock ? '-1' : '0'}"
             >
               <!-- Card Header -->
               <div>
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px;">
-                  <h4 style="margin:0; font-size:13.5px; font-weight:800; color:var(--foreground); line-height:1.35;">${m.name}</h4>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:4px;">
+                  <h4 style="margin:0; font-size:12.5px; font-weight:800; color:var(--foreground); line-height:1.3;">${m.name}</h4>
                   ${m.batch ? `
-                    <span style="font-size:9.5px; font-family:var(--font-mono); font-weight:700; padding:1px 5px; border-radius:4px; background:var(--muted); color:var(--muted-foreground); white-space:nowrap;">
+                    <span style="font-size:9px; font-family:var(--font-mono); font-weight:700; padding:1px 4px; border-radius:4px; background:var(--muted); color:var(--muted-foreground); white-space:nowrap;">
                       ${m.batch}
                     </span>
                   ` : ''}
                 </div>
-                <small dir="ltr" style="font-size:11px; color:var(--muted-foreground); display:block; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                <small dir="ltr" style="font-size:10.5px; color:var(--muted-foreground); display:block; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                   ${m.generic || m.name}
                 </small>
               </div>
 
               <!-- Price & Stock Footer -->
-              <div style="border-top:1px dashed var(--border); padding-top:8px; display:flex; justify-content:space-between; align-items:flex-end;">
+              <div style="border-top:1px dashed var(--border); padding-top:6px; display:flex; justify-content:space-between; align-items:flex-end;">
                 <div>
-                  <div style="font-size:10px; color:var(--muted-foreground);">السعر:</div>
-                  <div style="font-size:15px; font-weight:900; color:#0284c7; font-family:var(--font-latin); line-height:1.2;">
-                    ${Number(m.price).toLocaleString()} <span style="font-size:10.5px; font-weight:700;">ج.س</span>
+                  <div style="font-size:9.5px; color:var(--muted-foreground);">السعر:</div>
+                  <div style="font-size:14px; font-weight:900; color:#0284c7; font-family:var(--font-latin); line-height:1.2;">
+                    ${Number(m.price).toLocaleString()} <span style="font-size:10px; font-weight:700;">ج.س</span>
                   </div>
                 </div>
 
                 <div style="text-align:left;">
-                  <span style="display:inline-block; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:12px; ${
+                  <span style="display:inline-block; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; ${
                     isExpired 
                       ? 'background:#fef2f2; color:#dc2626;' 
                       : isOutOfStock 
@@ -82,7 +82,7 @@ export class PosCatalogGrid {
 
               <!-- 1-Tap Add Hover Pill -->
               ${!isExpired && !isOutOfStock ? `
-                <div class="card-add-hint" style="font-size:11px; font-weight:700; color:var(--primary); text-align:center; padding-top:4px; opacity:0.85;">
+                <div class="card-add-hint" style="font-size:10.5px; font-weight:700; color:var(--primary); text-align:center; padding-top:2px; opacity:0.85;">
                   + اضغط للإضافة
                 </div>
               ` : ''}

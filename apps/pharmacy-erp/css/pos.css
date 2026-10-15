@@ -3,16 +3,74 @@
    Clinical Touch Terminal, FEFO Batch Ordering, Allocation Meter & Split Payments
    ========================================================================== */
 
+/* Zero-Scroll / Fixed Viewport Ergonomics for POS */
+@media (min-width: 901px) {
+  body[data-active-view="pos"],
+  body:has(#pos-terminal-view[style*="display: grid"]),
+  body:has(#pos-terminal-view:not([style*="display:none"]):not([style*="display: none"])) {
+    overflow: hidden !important;
+  }
+
+  body[data-active-view="pos"] .app-shell,
+  body:has(#pos-terminal-view[style*="display: grid"]) .app-shell,
+  body:has(#pos-terminal-view:not([style*="display:none"]):not([style*="display: none"])) .app-shell {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  body[data-active-view="pos"] .main-shell,
+  body:has(#pos-terminal-view[style*="display: grid"]) .main-shell,
+  body:has(#pos-terminal-view:not([style*="display:none"]):not([style*="display: none"])) .main-shell {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body[data-active-view="pos"] .page-heading,
+  body:has(#pos-terminal-view[style*="display: grid"]) .page-heading,
+  body:has(#pos-terminal-view:not([style*="display:none"]):not([style*="display: none"])) .page-heading {
+    display: none !important;
+  }
+
+  body[data-active-view="pos"] .app-footer,
+  body:has(#pos-terminal-view[style*="display: grid"]) .app-footer,
+  body:has(#pos-terminal-view:not([style*="display:none"]):not([style*="display: none"])) .app-footer {
+    display: none !important;
+  }
+
+  body[data-active-view="pos"] .content,
+  body:has(#pos-terminal-view[style*="display: grid"]) .content,
+  body:has(#pos-terminal-view:not([style*="display:none"]):not([style*="display: none"])) .content {
+    padding: 6px 14px 6px 14px !important;
+    margin: 0 !important;
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - 64px) !important;
+    max-height: calc(100vh - 64px) !important;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 .pos-terminal-view {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
-  gap: 16px;
-  align-items: start;
-  animation: fade-up 0.2s ease-out;
+  grid-template-columns: minmax(0, 1fr) 370px;
+  grid-template-rows: auto 1fr;
+  gap: 8px;
+  align-items: stretch;
+  animation: fade-up 0.15s ease-out;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* POS Terminal Top Bar */
@@ -140,12 +198,17 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 10px 12px;
   box-shadow: var(--shadow-soft);
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
 }
 
 .pos-category-tabs {
@@ -186,14 +249,17 @@
 
 .pos-catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 12px;
-  max-height: calc(100vh - 280px);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
-  padding: 2px;
+  padding: 2px 4px 6px 2px;
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  scrollbar-width: thin;
 }
 
 .pos-med-card {
@@ -276,13 +342,18 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: 10px 12px;
   box-shadow: var(--shadow-soft);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  position: sticky;
-  top: 88px;
+  gap: 6px;
+  position: static;
+  top: auto;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .pos-cart-head {
@@ -290,24 +361,28 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 12px;
+  padding-bottom: 6px;
+  flex-shrink: 0;
 }
 
 .pos-cart-head h3 {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .cart-items-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 280px;
+  gap: 5px;
+  flex: 1;
+  min-height: 60px;
+  max-height: none;
   overflow-y: auto;
   padding-left: 2px;
+  scrollbar-width: thin;
 }
 
 .cart-empty-message {
@@ -666,30 +741,41 @@ body.pos-kiosk-mode .page-heading {
   display: none !important;
 }
 
+body.pos-kiosk-mode {
+  overflow: hidden !important;
+}
+
 body.pos-kiosk-mode .main-shell {
   margin: 0 !important;
-  padding: 10px !important;
+  padding: 6px 10px !important;
   width: 100vw !important;
   max-width: 100vw !important;
   height: 100vh !important;
   box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
 body.pos-kiosk-mode .content {
   padding: 0 !important;
   max-width: 100% !important;
+  height: calc(100vh - 12px) !important;
+  max-height: calc(100vh - 12px) !important;
+  overflow: hidden !important;
 }
 
 body.pos-kiosk-mode .pos-terminal-view {
-  height: calc(100vh - 20px);
+  height: 100% !important;
+  max-height: 100% !important;
 }
 
 body.pos-kiosk-mode .pos-catalog-grid {
-  max-height: calc(100vh - 210px) !important;
+  flex: 1 !important;
+  max-height: none !important;
 }
 
 body.pos-kiosk-mode .cart-items-list {
-  max-height: calc(100vh - 460px) !important;
+  flex: 1 !important;
+  max-height: none !important;
 }
 
 /* 2. Quick-Pick Pills */

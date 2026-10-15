@@ -42,45 +42,45 @@ export class PosPaymentSelector {
     const quickCashOptions = this.generateQuickCashOptions(grandTotal);
 
     el.innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:12px; margin-top:4px;">
+      <div style="display:flex; flex-direction:column; gap:6px; margin-top:2px;">
         
         <!-- Grand Total Hero Box -->
-        <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#fff; border-radius:12px; padding:14px 18px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
+        <div style="background:linear-gradient(135deg, #0f172a, #1e293b); color:#fff; border-radius:10px; padding:8px 14px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 3px 10px rgba(0,0,0,0.12);">
           <div>
-            <span style="font-size:12px; color:#94a3b8; font-weight:700; display:block;">المبلغ الإجمالي المطلوب:</span>
-            <span style="font-size:11px; color:#64748b;">(معفي من ضريبة القيمة المضافة)</span>
+            <span style="font-size:11px; color:#94a3b8; font-weight:700; display:block;">المبلغ المطلوب:</span>
+            <span style="font-size:10px; color:#64748b;">(شامل ومعفي من الضريبة)</span>
           </div>
           <div style="text-align:left;">
-            <strong style="font-size:26px; font-weight:900; font-family:var(--font-latin); color:#38bdf8; letter-spacing:-0.5px;">
+            <strong style="font-size:22px; font-weight:900; font-family:var(--font-latin); color:#38bdf8; letter-spacing:-0.5px;">
               ${Number(grandTotal).toLocaleString()}
             </strong>
-            <span style="font-size:13px; font-weight:700; color:#e2e8f0; margin-right:4px;">ج.س</span>
+            <span style="font-size:12px; font-weight:700; color:#e2e8f0; margin-right:3px;">ج.س</span>
           </div>
         </div>
 
         <!-- Payment Method Selector Tabs -->
         <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <label style="font-size:12px; font-weight:800; color:var(--foreground); margin:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="font-size:11.5px; font-weight:800; color:var(--foreground); margin:0;">
               طريقة الدفع:
             </label>
             <button 
               type="button" 
               id="btn-toggle-split-payment" 
-              style="cursor:pointer; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; border:1px solid ${isSplit ? '#0284c7' : 'var(--border)'}; background:${isSplit ? 'rgba(2,132,199,0.1)' : 'transparent'}; color:${isSplit ? '#0284c7' : 'var(--muted-foreground)'};"
+              style="cursor:pointer; font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:5px; border:1px solid ${isSplit ? '#0284c7' : 'var(--border)'}; background:${isSplit ? 'rgba(2,132,199,0.1)' : 'transparent'}; color:${isSplit ? '#0284c7' : 'var(--muted-foreground)'};"
             >
-              ${isSplit ? '✓ إلغاء التجزئة' : '⚡ سداد مجزأ (نقد + بنكك)'}
+              ${isSplit ? '✓ إلغاء التجزئة' : '⚡ تجزئة (نقد+بنكك)'}
             </button>
           </div>
 
           <!-- Single Mode Buttons -->
           ${!isSplit ? `
-            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
+            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:5px;">
               <button 
                 type="button" 
                 class="btn-pay-tab ${activeMethod === 'CASH' ? 'active-cash' : ''}" 
                 data-method="CASH"
-                style="cursor:pointer; padding:9px 4px; border-radius:8px; font-size:12.5px; font-weight:800; border:2px solid ${activeMethod === 'CASH' ? '#10b981' : 'var(--border)'}; background:${activeMethod === 'CASH' ? '#ecfdf5' : 'var(--card)'}; color:${activeMethod === 'CASH' ? '#047857' : 'var(--foreground)'}; transition:all 0.15s ease;"
+                style="cursor:pointer; padding:6px 2px; border-radius:6px; font-size:11.5px; font-weight:800; border:2px solid ${activeMethod === 'CASH' ? '#10b981' : 'var(--border)'}; background:${activeMethod === 'CASH' ? '#ecfdf5' : 'var(--card)'}; color:${activeMethod === 'CASH' ? '#047857' : 'var(--foreground)'}; transition:all 0.15s ease;"
               >
                 💵 نقداً (F9)
               </button>
@@ -89,7 +89,7 @@ export class PosPaymentSelector {
                 type="button" 
                 class="btn-pay-tab ${activeMethod === 'BANKAK' ? 'active-bankak' : ''}" 
                 data-method="BANKAK"
-                style="cursor:pointer; padding:9px 4px; border-radius:8px; font-size:12.5px; font-weight:800; border:2px solid ${activeMethod === 'BANKAK' ? '#0284c7' : 'var(--border)'}; background:${activeMethod === 'BANKAK' ? '#f0f9ff' : 'var(--card)'}; color:${activeMethod === 'BANKAK' ? '#0284c7' : 'var(--foreground)'}; transition:all 0.15s ease;"
+                style="cursor:pointer; padding:6px 2px; border-radius:6px; font-size:11.5px; font-weight:800; border:2px solid ${activeMethod === 'BANKAK' ? '#0284c7' : 'var(--border)'}; background:${activeMethod === 'BANKAK' ? '#f0f9ff' : 'var(--card)'}; color:${activeMethod === 'BANKAK' ? '#0284c7' : 'var(--foreground)'}; transition:all 0.15s ease;"
               >
                 📱 بنكك (F10)
               </button>
@@ -98,7 +98,7 @@ export class PosPaymentSelector {
                 type="button" 
                 class="btn-pay-tab ${activeMethod === 'CARD' ? 'active-other' : ''}" 
                 data-method="CARD"
-                style="cursor:pointer; padding:9px 4px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid ${activeMethod === 'CARD' ? 'var(--primary)' : 'var(--border)'}; background:${activeMethod === 'CARD' ? 'var(--muted)' : 'var(--card)'}; color:var(--foreground);"
+                style="cursor:pointer; padding:6px 2px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid ${activeMethod === 'CARD' ? 'var(--primary)' : 'var(--border)'}; background:${activeMethod === 'CARD' ? 'var(--muted)' : 'var(--card)'}; color:var(--foreground);"
               >
                 💳 بطاقة
               </button>
@@ -107,9 +107,9 @@ export class PosPaymentSelector {
                 type="button" 
                 class="btn-pay-tab ${activeMethod === 'INSURANCE' ? 'active-other' : ''}" 
                 data-method="INSURANCE"
-                style="cursor:pointer; padding:9px 4px; border-radius:8px; font-size:12px; font-weight:700; border:1px solid ${activeMethod === 'INSURANCE' ? 'var(--primary)' : 'var(--border)'}; background:${activeMethod === 'INSURANCE' ? 'var(--muted)' : 'var(--card)'}; color:var(--foreground);"
+                style="cursor:pointer; padding:6px 2px; border-radius:6px; font-size:11px; font-weight:700; border:1px solid ${activeMethod === 'INSURANCE' ? 'var(--primary)' : 'var(--border)'}; background:${activeMethod === 'INSURANCE' ? 'var(--muted)' : 'var(--card)'}; color:var(--foreground);"
               >
-                🏥 تأمين/آجل
+                🏥 تأمين
               </button>
             </div>
           ` : ''}
@@ -117,29 +117,29 @@ export class PosPaymentSelector {
 
         <!-- Mode 1: CASH Smart Tender Calculator -->
         ${!isSplit && activeMethod === 'CASH' && grandTotal > 0 ? `
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:5px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:11.5px; font-weight:700; color:#475569;">المبلغ المستلم من العميل:</span>
-              <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:11px; font-weight:700; color:#475569;">المبلغ المستلم:</span>
+              <div style="display:flex; align-items:center; gap:4px;">
                 <input 
                   type="number" 
                   id="input-cash-tender" 
                   value="${tender}" 
                   step="50"
-                  style="width:110px; font-size:14px; font-weight:900; font-family:var(--font-mono); padding:4px 8px; border-radius:6px; border:1px solid var(--border); text-align:left; background:#fff;" 
+                  style="width:95px; font-size:13px; font-weight:900; font-family:var(--font-mono); padding:3px 6px; border-radius:5px; border:1px solid var(--border); text-align:left; background:#fff;" 
                 />
-                <span style="font-size:11px; font-weight:700; color:#64748b;">ج.س</span>
+                <span style="font-size:10.5px; font-weight:700; color:#64748b;">ج.س</span>
               </div>
             </div>
 
             <!-- Quick Cash Denomination Buttons -->
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <div style="display:flex; gap:4px; flex-wrap:wrap;">
               ${quickCashOptions.map(opt => `
                 <button 
                   type="button" 
                   class="btn-quick-tender ${tender === opt.val ? 'active-tender' : ''}" 
                   data-val="${opt.val}"
-                  style="cursor:pointer; flex:1; min-width:65px; padding:4px 6px; font-size:11px; font-weight:700; border-radius:6px; border:1px solid ${tender === opt.val ? '#10b981' : '#cbd5e1'}; background:${tender === opt.val ? '#10b981' : '#ffffff'}; color:${tender === opt.val ? '#ffffff' : '#1e293b'}; text-align:center;"
+                  style="cursor:pointer; flex:1; min-width:55px; padding:3px 4px; font-size:10.5px; font-weight:700; border-radius:5px; border:1px solid ${tender === opt.val ? '#10b981' : '#cbd5e1'}; background:${tender === opt.val ? '#10b981' : '#ffffff'}; color:${tender === opt.val ? '#ffffff' : '#1e293b'}; text-align:center;"
                 >
                   ${opt.label}
                 </button>
@@ -147,11 +147,11 @@ export class PosPaymentSelector {
             </div>
 
             <!-- Change Due Output Banner (الباقي للعميل) -->
-            <div style="background:${isUnderpaid ? '#fef2f2' : '#ecfdf5'}; border:1px solid ${isUnderpaid ? '#fecaca' : '#a7f3d0'}; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
-              <span style="font-size:12px; font-weight:800; color:${isUnderpaid ? '#dc2626' : '#047857'};">
-                ${isUnderpaid ? '⚠️ المبلغ أقل من الإجمالي:' : '💰 الباقي للعميل (المتبقي):'}
+            <div style="background:${isUnderpaid ? '#fef2f2' : '#ecfdf5'}; border:1px solid ${isUnderpaid ? '#fecaca' : '#a7f3d0'}; border-radius:6px; padding:5px 8px; display:flex; justify-content:space-between; align-items:center; margin-top:1px;">
+              <span style="font-size:11px; font-weight:800; color:${isUnderpaid ? '#dc2626' : '#047857'};">
+                ${isUnderpaid ? '⚠️ أقل من الإجمالي:' : '💰 الباقي للعميل:'}
               </span>
-              <strong style="font-size:18px; font-weight:900; font-family:var(--font-latin); color:${isUnderpaid ? '#dc2626' : '#059669'};">
+              <strong style="font-size:15px; font-weight:900; font-family:var(--font-latin); color:${isUnderpaid ? '#dc2626' : '#059669'};">
                 ${isUnderpaid ? (grandTotal - tender).toLocaleString() : changeDue.toLocaleString()} ج.س
               </strong>
             </div>
@@ -251,15 +251,15 @@ export class PosPaymentSelector {
           </div>
         ` : ''}
 
-        <!-- Giant 1-Click Complete Sale Action Button -->
+        <!-- 1-Click Complete Sale Action Button -->
         <button 
           type="button" 
           class="btn-checkout-sale-v2" 
           id="btn-pos-checkout" 
           ${canCheckout ? '' : 'disabled'}
-          style="width:100%; height:52px; font-size:15px; font-weight:900; border-radius:10px; border:none; display:flex; align-items:center; justify-content:center; gap:8px; cursor:${canCheckout ? 'pointer' : 'not-allowed'}; margin-top:4px; background:${canCheckout ? 'linear-gradient(135deg, #059669, #10b981)' : '#94a3b8'}; color:#ffffff; box-shadow:${canCheckout ? '0 4px 14px rgba(16,185,129,0.4)' : 'none'}; transition:all 0.2s ease;"
+          style="width:100%; height:44px; font-size:14px; font-weight:800; border-radius:8px; border:none; display:flex; align-items:center; justify-content:center; gap:8px; cursor:${canCheckout ? 'pointer' : 'not-allowed'}; margin-top:2px; background:${canCheckout ? 'linear-gradient(135deg, #059669, #10b981)' : '#94a3b8'}; color:#ffffff; box-shadow:${canCheckout ? '0 3px 12px rgba(16,185,129,0.35)' : 'none'}; transition:all 0.15s ease;"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           <span>صرف الفاتورة وطباعة الإيصال (F4 أو Enter)</span>
         </button>
 

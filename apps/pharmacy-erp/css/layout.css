@@ -78,16 +78,19 @@ h1, h2, h3, h4, h5, h6 {
   position: fixed;
   inset: 0 0 0 auto;
   width: 260px;
+  height: 100vh;
+  max-height: 100vh;
   z-index: 40;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 16px 14px;
+  gap: 4px;
+  padding: 10px 10px 8px 10px;
   background: var(--sidebar);
   color: var(--sidebar-foreground);
   border-left: 1px solid var(--sidebar-border);
   transition: width 0.25s ease, transform 0.25s ease, background 0.25s ease;
   user-select: none;
+  overflow: hidden;
 }
 
 html[dir="ltr"] .sidebar {
@@ -101,10 +104,11 @@ html[dir="ltr"] .sidebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 8px 6px 16px 6px;
+  gap: 6px;
+  padding: 4px 4px 8px 4px;
   border-bottom: 1px solid var(--border-light);
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
 }
 
 .brand-natural {
@@ -113,13 +117,13 @@ html[dir="ltr"] .sidebar {
   overflow: hidden;
   transition: opacity 0.2s;
   background: transparent;
-  padding: 2px 0;
+  padding: 0;
 }
 
 .brand-natural img {
-  height: 52px;
+  height: 36px;
   width: auto;
-  max-width: 195px;
+  max-width: 165px;
   object-fit: contain;
   display: block;
   transition: transform 0.2s ease;
@@ -206,15 +210,16 @@ html[dir="ltr"] .sidebar {
 .branch {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
   background: var(--sidebar-muted);
   border: 1px solid var(--border-light);
   cursor: pointer;
   text-align: right;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 html[dir="ltr"] .branch {
@@ -227,20 +232,20 @@ html[dir="ltr"] .branch {
 }
 
 .branch-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   display: grid;
   place-items: center;
   background: var(--gradient-primary);
   color: #FFFFFF;
   flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(0, 82, 204, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 82, 204, 0.2);
 }
 
 .branch-icon svg {
-  width: 17px;
-  height: 17px;
+  width: 14px;
+  height: 14px;
 }
 
 .branch-text {
@@ -250,66 +255,75 @@ html[dir="ltr"] .branch {
 
 .branch-text strong {
   display: block;
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 700;
   color: var(--foreground);
-  line-height: 1.25;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .branch-text small {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--muted-foreground);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .branch-caret {
   color: var(--muted-foreground);
   transition: transform 0.2s;
+  flex-shrink: 0;
 }
 
-/* Navigation Links */
+/* Navigation Links - Single-Screen Compact Fitting */
 .nav {
-  display: grid;
-  gap: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 2px;
-  max-height: calc(100vh - 360px);
+  padding-right: 0;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: none;
 }
 
 .nav::-webkit-scrollbar {
-  width: 3px;
-}
-.nav::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 99px;
+  display: none;
+  width: 0;
 }
 
 .nav-section-title {
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 800;
   color: var(--muted-foreground);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 10px 10px 4px 10px;
-  margin-top: 4px;
+  letter-spacing: 0.3px;
+  padding: 4px 6px 2px 6px;
+  margin-top: 3px;
   user-select: none;
   border-top: 1px solid var(--border-light, #e2e8f0);
 }
 
 .nav-button {
   width: 100%;
-  height: 42px;
+  height: 33px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 0 12px;
-  border-radius: 11px;
-  gap: 12px;
+  padding: 0 10px;
+  border-radius: 8px;
+  gap: 8px;
   color: var(--sidebar-foreground);
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 12.5px;
+  font-weight: 600;
   position: relative;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .nav-button:hover {
@@ -321,12 +335,12 @@ html[dir="ltr"] .branch {
   background: var(--gradient-primary);
   color: #FFFFFF;
   font-weight: 700;
-  box-shadow: var(--shadow-lift);
+  box-shadow: 0 2px 8px rgba(0, 82, 204, 0.25);
 }
 
 .nav-button svg {
-  width: 18px !important;
-  height: 18px !important;
+  width: 15px !important;
+  height: 15px !important;
   flex-shrink: 0;
 }
 
@@ -337,10 +351,11 @@ html[dir="ltr"] .branch {
 .nav-count {
   margin-right: auto;
   font-family: var(--font-latin);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  min-width: 22px;
-  height: 20px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
   display: grid;
   place-items: center;
   border-radius: 999px;
@@ -361,45 +376,48 @@ html[dir="ltr"] .nav-count {
 /* Sidebar Bottom & Pro Card */
 .sidebar-bottom {
   margin-top: auto;
-  display: grid;
-  gap: 3px;
-  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
   border-top: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.sidebar-bottom .nav-button {
+  height: 31px;
 }
 
 .pro-card {
-  margin-top: 6px;
-  padding: 14px 16px;
-  border-radius: var(--radius-md);
+  margin-top: 3px;
+  padding: 5px 8px;
+  border-radius: 7px;
   background: var(--gradient-hero);
   color: #FFFFFF;
-  display: grid;
-  gap: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(10, 37, 64, 0.35);
+  box-shadow: 0 2px 6px rgba(10, 37, 64, 0.2);
 }
 
 .pro-card::after {
-  content: '';
-  position: absolute;
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  left: -30px;
-  bottom: -40px;
-  pointer-events: none;
+  display: none;
 }
 
 .pro-card strong {
   font-family: var(--font-display);
-  font-size: 13.5px;
+  font-size: 11px;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .pro-card small {
-  font-size: 11px;
+  font-size: 9.5px;
   opacity: 0.85;
 }
 

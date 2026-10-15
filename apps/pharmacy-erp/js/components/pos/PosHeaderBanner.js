@@ -31,32 +31,32 @@ export class PosHeaderBanner {
     const isSyncing = offlineSyncService.isSyncing;
 
     el.innerHTML = `
-      <div class="pos-top-banner-v2" style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+      <div class="pos-top-banner-v2" style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:6px 12px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         
         <!-- Right: Cashier Identity & Station -->
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div style="width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #059669, #10b981); color:#fff; display:grid; place-items:center; font-weight:800; font-size:14px; box-shadow:0 2px 6px rgba(16,185,129,0.3);">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #059669, #10b981); color:#fff; display:grid; place-items:center; font-weight:800; font-size:12px; box-shadow:0 2px 5px rgba(16,185,129,0.3);">
             ${(posService.session.cashierName || 'ك').slice(0, 2)}
           </div>
           <div>
-            <div style="font-weight:800; font-size:13.5px; color:var(--foreground); display:flex; align-items:center; gap:6px;">
+            <div style="font-weight:800; font-size:12.5px; color:var(--foreground); display:flex; align-items:center; gap:5px;">
               <span>${posService.session.cashierName || 'كاشير نقطة البيع'}</span>
-              <span class="badge" style="font-size:10px; padding:1px 6px; background:rgba(16,185,129,0.12); color:#059669; border:1px solid rgba(16,185,129,0.25);">
-                الوردية الأولى
+              <span class="badge" style="font-size:9.5px; padding:1px 5px; background:rgba(16,185,129,0.12); color:#059669; border:1px solid rgba(16,185,129,0.25);">
+                وردية 1
               </span>
             </div>
-            <div style="font-size:11px; color:var(--muted-foreground); margin-top:1px;">
-              نقطة البيع الرئيسية #1 · صيدلية النيلين النموذجية
+            <div style="font-size:10px; color:var(--muted-foreground); margin-top:1px;">
+              نقطة البيع #1 · صيدلية النيلين النموذجية
             </div>
           </div>
         </div>
 
         <!-- Center: Connection State & Outbox Sync Indicator -->
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:6px;">
           <!-- Network Pill -->
-          <div style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:20px; font-size:11.5px; font-weight:700; background:${isOffline ? '#fffbeb' : '#ecfdf5'}; color:${isOffline ? '#b45309' : '#047857'}; border:1px solid ${isOffline ? '#fde68a' : '#a7f3d0'};">
-            <span style="width:7px; height:7px; border-radius:50%; background:${isOffline ? '#f59e0b' : '#10b981'}; box-shadow:0 0 0 2px ${isOffline ? 'rgba(245,158,11,0.25)' : 'rgba(16,185,129,0.25)'};"></span>
-            <span>${isOffline ? 'وضع الحفظ المحلي (أوفلاين)' : 'متصل بالسحابة آمن'}</span>
+          <div style="display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:16px; font-size:11px; font-weight:700; background:${isOffline ? '#fffbeb' : '#ecfdf5'}; color:${isOffline ? '#b45309' : '#047857'}; border:1px solid ${isOffline ? '#fde68a' : '#a7f3d0'};">
+            <span style="width:6px; height:6px; border-radius:50%; background:${isOffline ? '#f59e0b' : '#10b981'}; box-shadow:0 0 0 2px ${isOffline ? 'rgba(245,158,11,0.25)' : 'rgba(16,185,129,0.25)'};"></span>
+            <span>${isOffline ? 'حفظ محلي (أوفلاين)' : 'متصل بالسحابة'}</span>
           </div>
 
           <!-- Pending Invoices Pill (if any) -->

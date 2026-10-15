@@ -43,9 +43,9 @@ export class PosSearchBar {
 
     el.innerHTML = `
       <!-- Fast Barcode / Search Hero Bar -->
-      <div class="pos-search-hero-bar" style="margin-bottom:10px;">
+      <div class="pos-search-hero-bar" style="margin-bottom:6px;">
         <div style="position:relative; display:flex; align-items:center; width:100%;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="position:absolute; right:14px; color:var(--primary); pointer-events:none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="position:absolute; right:12px; color:var(--primary); pointer-events:none;">
             <path d="M3 5v14M8 5v14M12 5v14M17 5v14M21 5v14"/>
           </svg>
           <input 
@@ -53,18 +53,18 @@ export class PosSearchBar {
             value="${currentQuery}"
             placeholder="امسح الباركود، أو اكتب اسم الدواء (مثال: بنادول، أوجمنتين)... اضغط Enter للإضافة المباشرة" 
             autocomplete="off" 
-            style="width:100%; box-sizing:border-box; height:46px; padding:8px 44px 8px 50px; border-radius:10px; border:2px solid var(--border); background:var(--background); color:var(--foreground); font-size:14.5px; font-weight:600; outline:none; transition:border-color 0.2s ease, box-shadow 0.2s ease;"
+            style="width:100%; box-sizing:border-box; height:38px; padding:6px 38px 6px 44px; border-radius:8px; border:2px solid var(--border); background:var(--background); color:var(--foreground); font-size:13.5px; font-weight:600; outline:none; transition:border-color 0.2s ease, box-shadow 0.2s ease;"
           />
           ${currentQuery ? `
-            <button type="button" id="btn-clear-search" style="position:absolute; left:48px; border:none; background:transparent; font-size:16px; color:var(--muted-foreground); cursor:pointer; padding:4px;">✕</button>
+            <button type="button" id="btn-clear-search" style="position:absolute; left:44px; border:none; background:transparent; font-size:15px; color:var(--muted-foreground); cursor:pointer; padding:3px;">✕</button>
           ` : ''}
-          <kbd style="position:absolute; left:12px; font-size:11px; padding:3px 7px; background:var(--muted); border:1px solid var(--border); border-radius:6px; color:var(--muted-foreground); font-family:var(--font-mono); font-weight:700;">F2</kbd>
+          <kbd style="position:absolute; left:10px; font-size:10px; padding:2px 5px; background:var(--muted); border:1px solid var(--border); border-radius:5px; color:var(--muted-foreground); font-family:var(--font-mono); font-weight:700;">F2</kbd>
         </div>
       </div>
 
       <!-- Quick-Pick Fast Buttons (1-Tap direct addition for top sellers) -->
-      <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; scrollbar-width:none;">
-        <span style="font-size:11.5px; font-weight:700; color:var(--muted-foreground); white-space:nowrap; display:flex; align-items:center; gap:4px; padding-left:4px;">
+      <div style="display:flex; align-items:center; gap:5px; overflow-x:auto; padding-bottom:4px; margin-bottom:6px; scrollbar-width:none;">
+        <span style="font-size:11px; font-weight:700; color:var(--muted-foreground); white-space:nowrap; display:flex; align-items:center; gap:4px; padding-left:2px;">
           ⚡ الأكثر طلباً:
         </span>
         ${this.quickPicks.map(qp => `
@@ -73,23 +73,23 @@ export class PosSearchBar {
             class="pos-quick-pick-btn" 
             data-name="${qp.name}" 
             data-generic="${qp.generic}"
-            style="cursor:pointer; white-space:nowrap; padding:4px 10px; border-radius:8px; font-size:12px; font-weight:700; background:var(--card); border:1px solid var(--border); color:var(--foreground); display:inline-flex; align-items:center; gap:5px; transition:all 0.15s ease;"
+            style="cursor:pointer; white-space:nowrap; padding:3px 8px; border-radius:6px; font-size:11.5px; font-weight:700; background:var(--card); border:1px solid var(--border); color:var(--foreground); display:inline-flex; align-items:center; gap:4px; transition:all 0.15s ease;"
             title="إضافة سريعة بنقرة واحدة إلى السلة"
           >
-            <span style="width:7px; height:7px; border-radius:50%; background:${qp.color};"></span>
+            <span style="width:6px; height:6px; border-radius:50%; background:${qp.color};"></span>
             <span>${qp.name}</span>
           </button>
         `).join('')}
       </div>
 
       <!-- Category Filter Pills -->
-      <div class="pos-category-tabs" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:12px; scrollbar-width:none;">
+      <div class="pos-category-tabs" style="display:flex; gap:5px; overflow-x:auto; padding-bottom:4px; margin-bottom:8px; scrollbar-width:none;">
         ${this.categories.map(c => `
           <button 
             type="button" 
             class="pos-tab-btn ${this.selectedCategory === c.id ? 'active' : ''}" 
             data-category="${c.id}"
-            style="white-space:nowrap; padding:5px 12px; font-size:12px; border-radius:20px; font-weight:600; cursor:pointer;"
+            style="white-space:nowrap; padding:4px 10px; font-size:11.5px; border-radius:16px; font-weight:600; cursor:pointer;"
           >
             ${c.label}
           </button>
