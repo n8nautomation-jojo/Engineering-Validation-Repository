@@ -73,7 +73,7 @@ export class PurchasingOrdersTable {
                 <th>تاريخ الطلب</th>
                 <th>موعد التوريد</th>
                 <th>الأصناف والكميات</th>
-                <th>إجمالي التكلفة</th>
+                <th>إجمالي التكلفة (ج.س)</th>
                 <th>الحالة والمرحلة</th>
                 <th aria-label="الإجراءات">الإجراء التشغيلي</th>
               </tr>
@@ -103,10 +103,10 @@ export class PurchasingOrdersTable {
                         ${itemsCount} أصناف مطلوبة
                       </span>
                     </td>
-                    <td class="num" style="font-weight:700; color:var(--foreground);">${totalCost.toLocaleString('en-US')} ج.س</td>
+                    <td class="num" style="font-weight:700; color:var(--foreground);">${totalCost.toLocaleString('en-US')}</td>
                     <td>
-                      ${isPending ? '<span class="chip chip-warning">⏳ قيد الشحن / بانتظار الفحص</span>' : ''}
-                      ${isDelivered ? '<span class="chip chip-success">✓ تم الاستلام وتوريد المخزون</span>' : ''}
+                      ${isPending ? '<span class="chip chip-warning">قيد الشحن</span>' : ''}
+                      ${isDelivered ? '<span class="chip chip-success">تم الاستلام</span>' : ''}
                     </td>
                     <td>
                       <div style="display:flex; gap:6px; align-items:center;">

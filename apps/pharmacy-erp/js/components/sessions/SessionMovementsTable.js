@@ -43,7 +43,7 @@ export class SessionMovementsTable {
           <thead>
             <tr>
               <th>نوع الحركة</th>
-              <th>المبلغ</th>
+              <th>المبلغ (ج.س)</th>
               <th>الوقت والتاريخ</th>
               <th>السبب / البيان</th>
               <th style="text-align:left;">حالة التأكيد</th>
@@ -68,7 +68,7 @@ export class SessionMovementsTable {
                   </td>
                   <td>
                     <strong style="color:${typeColor}; font-size:13.5px;" dir="ltr">
-                      ${isCashOut ? '-' : '+'}${Number(mov.amount?.value || mov.amount).toLocaleString()} ج.س
+                      ${isCashOut ? '-' : '+'}${Number(mov.amount?.value || mov.amount).toLocaleString()}
                     </strong>
                   </td>
                   <td>

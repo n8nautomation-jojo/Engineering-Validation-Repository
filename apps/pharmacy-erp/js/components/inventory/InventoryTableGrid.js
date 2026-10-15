@@ -87,7 +87,7 @@ export class InventoryTableGrid {
 
                   <td data-label="السعر" dir="ltr">
                     <strong style="font-size:13px; font-family:var(--font-mono); color:var(--primary);">
-                      ${Number(m.price).toLocaleString()} <small style="font-size:10px;">ج.س</small>
+                      ${Number(m.price).toLocaleString()}
                     </strong>
                   </td>
 

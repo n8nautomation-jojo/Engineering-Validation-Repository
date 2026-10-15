@@ -45,9 +45,9 @@ export class SessionHistoryTable {
               <th>وقت فتح الوردية</th>
               <th>وقت إغلاق الوردية</th>
               <th>الكاشير المسؤول</th>
-              <th>مبيعات بنكك</th>
-              <th>النقدية المتوقعة</th>
-              <th>النقدية المعدودة</th>
+              <th>مبيعات بنكك (ج.س)</th>
+              <th>النقدية المتوقعة (ج.س)</th>
+              <th>النقدية المعدودة (ج.س)</th>
               <th>فارق المطابقة</th>
               <th style="text-align:left;">تقرير Z</th>
             </tr>
@@ -69,9 +69,9 @@ export class SessionHistoryTable {
                   <td><span style="font-size:12px; color:var(--muted-foreground);">${openTime}</span></td>
                   <td><span style="font-size:12px; color:var(--muted-foreground);">${closeTime}</span></td>
                   <td><strong>${h.cashierName || 'د. أحمد'}</strong></td>
-                  <td dir="ltr" style="color:#0052CC; font-weight:700;">${Number(h.metrics?.bankakSales || 0).toLocaleString()} ج.س</td>
-                  <td dir="ltr">${Number(h.metrics?.expectedCash || 0).toLocaleString()} ج.س</td>
-                  <td dir="ltr"><strong>${Number(h.countedCash || h.metrics?.countedCash || 0).toLocaleString()} ج.س</strong></td>
+                  <td dir="ltr" style="color:#0052CC; font-weight:700;">${Number(h.metrics?.bankakSales || 0).toLocaleString()}</td>
+                  <td dir="ltr">${Number(h.metrics?.expectedCash || 0).toLocaleString()}</td>
+                  <td dir="ltr"><strong>${Number(h.countedCash || h.metrics?.countedCash || 0).toLocaleString()}</strong></td>
                   <td>
                     <span class="chip" style="color:${varianceColor}; font-weight:700;">
                       ${varianceLabel}

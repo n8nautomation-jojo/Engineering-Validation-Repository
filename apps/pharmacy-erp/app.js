@@ -149,7 +149,7 @@ class PharmaTechApp {
         const metaEl = document.getElementById('page-heading-pharmacy-meta');
         if (metaEl) {
           const dateStr = new Date().toLocaleDateString('ar-SD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-          metaEl.textContent = `${dateStr} — كاشير: ${user.fullName} (${user.branchName || 'فرع الخرطوم الرئيسي'})`;
+          metaEl.textContent = dateStr;
         }
       } else {
         document.body.classList.remove('pos-kiosk-mode');
@@ -194,7 +194,7 @@ class PharmaTechApp {
         const metaEl = document.getElementById('page-heading-pharmacy-meta');
         if (metaEl && !AuthService.isCashier()) {
           const dateStr = new Date().toLocaleDateString('ar-SD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-          metaEl.textContent = `${dateStr} — ${settings.pharmacyName}`;
+          metaEl.textContent = dateStr;
         }
 
         document.title = `${settings.pharmacyName} — PharmaTech`;

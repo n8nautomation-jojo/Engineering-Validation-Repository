@@ -28,7 +28,7 @@ export class PurchasingStats {
           <span class="chip chip-info">${orders.length} طلبات</span>
         </div>
         <div class="stat-value num">${orders.length} <small>طلب</small></div>
-        <div class="stat-label">إجمالي أوامر الشراء الصادرة</div>
+        <div class="stat-label">أوامر الشراء</div>
       </div>
 
       <div class="stat-card featured" style="background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(0,179,126,0.04));">
@@ -39,7 +39,7 @@ export class PurchasingStats {
           <span class="chip chip-warning">بانتظار الاستلام</span>
         </div>
         <div class="stat-value num" style="color:var(--warning);">${pendingOrders.length} <small>شحنة</small></div>
-        <div class="stat-label">شحنات جارية بانتظار الفحص والتوريد</div>
+        <div class="stat-label">شحنات قيد الانتظار</div>
       </div>
 
       <div class="stat-card">
@@ -50,7 +50,7 @@ export class PurchasingStats {
           <span class="chip chip-success">معتمدون</span>
         </div>
         <div class="stat-value num">${suppliers.length} <small>مورد</small></div>
-        <div class="stat-label">شركات ومصانع الأدوية المعتمدة</div>
+        <div class="stat-label">الموردون المعتمدون</div>
       </div>
 
       <div class="stat-card">
@@ -61,7 +61,7 @@ export class PurchasingStats {
           <span class="chip chip-success">مستلم</span>
         </div>
         <div class="stat-value num">${totalPurchasesVolume.toLocaleString('en-US')} <small>ج.س</small></div>
-        <div class="stat-label">قيمة المشتريات الموردة فعلياً</div>
+        <div class="stat-label">المشتريات المستلمة</div>
       </div>
     `;
   }

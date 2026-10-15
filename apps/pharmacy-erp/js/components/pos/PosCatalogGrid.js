@@ -43,26 +43,16 @@ export class PosCatalogGrid {
             >
               <!-- Card Header -->
               <div>
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:4px;">
-                  <h4 style="margin:0; font-size:12.5px; font-weight:800; color:var(--foreground); line-height:1.3;">${m.name}</h4>
-                  ${m.batch ? `
-                    <span style="font-size:9px; font-family:var(--font-mono); font-weight:700; padding:1px 4px; border-radius:4px; background:var(--muted); color:var(--muted-foreground); white-space:nowrap;">
-                      ${m.batch}
-                    </span>
-                  ` : ''}
-                </div>
+                <h4 style="margin:0; font-size:12.5px; font-weight:800; color:var(--foreground); line-height:1.3;">${m.name}</h4>
                 <small dir="ltr" style="font-size:10.5px; color:var(--muted-foreground); display:block; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                   ${m.generic || m.name}
                 </small>
               </div>
 
               <!-- Price & Stock Footer -->
-              <div style="border-top:1px dashed var(--border); padding-top:6px; display:flex; justify-content:space-between; align-items:flex-end;">
-                <div>
-                  <div style="font-size:9.5px; color:var(--muted-foreground);">السعر:</div>
-                  <div style="font-size:14px; font-weight:900; color:#0284c7; font-family:var(--font-latin); line-height:1.2;">
-                    ${Number(m.price).toLocaleString()} <span style="font-size:10px; font-weight:700;">ج.س</span>
-                  </div>
+              <div style="border-top:1px dashed var(--border); padding-top:6px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:14.5px; font-weight:900; color:#0284c7; font-family:var(--font-latin); line-height:1.2;">
+                  ${Number(m.price).toLocaleString()} <span style="font-size:10px; font-weight:700;">ج.س</span>
                 </div>
 
                 <div style="text-align:left;">
@@ -75,7 +65,7 @@ export class PosCatalogGrid {
                           ? 'background:#fffbeb; color:#b45309;' 
                           : 'background:#ecfdf5; color:#059669;'
                   }">
-                    ${isExpired ? 'منتهي' : isOutOfStock ? 'نفد' : `متاح: ${m.stock}`}
+                    ${isExpired ? 'منتهي' : isOutOfStock ? 'نفد' : `${m.stock} عبوة`}
                   </span>
                 </div>
               </div>

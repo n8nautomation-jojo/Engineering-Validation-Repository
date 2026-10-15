@@ -222,68 +222,56 @@ export class Sidebar {
       if (featuredStat) featuredStat.style.display = 'block';
       if (tablePanel) tablePanel.style.display = 'block';
     } else if (view === 'inventory') {
-      if (pageTitle) pageTitle.textContent = 'المخزون والتشغيلات الدوائية';
+      if (pageTitle) pageTitle.textContent = 'دليل المخزون';
       if (statsGrid) statsGrid.style.display = 'grid';
       if (featuredStat) featuredStat.style.display = 'block';
       if (tablePanel) tablePanel.style.display = 'block';
       appStore.setStatusFilter('all');
     } else if (view === 'pos') {
-      if (pageTitle) pageTitle.textContent = 'شاشة البيع السريع (الكاشير)';
+      if (pageTitle) pageTitle.textContent = 'نقطة البيع';
       if (posView) posView.style.display = 'grid';
 
-      showToast('شاشة البيع الفوري', 'امسح الباركود أو اختر الصنف لصرف الدواء ومحاسبة العميل', 'success');
       setTimeout(() => {
         document.getElementById('product-search-input')?.focus();
       }, 100);
     } else if (view === 'sales') {
-      if (pageTitle) pageTitle.textContent = 'سجل الفواتير والمبيعات اليومية';
+      if (pageTitle) pageTitle.textContent = 'سجل المبيعات';
       if (salesView) salesView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
-      showToast('سجل الفواتير والمبيعات', 'تم تحديث قائمة الفواتير بنجاح', 'info');
     } else if (view === 'sessions') {
-      if (pageTitle) pageTitle.textContent = 'الورديات وحركات الخزينة';
+      if (pageTitle) pageTitle.textContent = 'الورديات والخزينة';
       if (sessionsView) sessionsView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('SESSION_UPDATED'));
-      showToast('الورديات والصندوق', 'تم تحديث رصيد الخزينة وحركات النقدية', 'info');
     } else if (view === 'purchasing') {
-      if (pageTitle) pageTitle.textContent = 'المشتريات واستلام الشحنات';
+      if (pageTitle) pageTitle.textContent = 'المشتريات والتوريد';
       if (purchasingView) purchasingView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('PURCHASING_UPDATED'));
-      showToast('المشتريات والتوريد', 'تم تحديث طلبات الشراء وقائمة الموردين', 'info');
     } else if (view === 'reports') {
-      if (pageTitle) pageTitle.textContent = 'التقارير والأرباح المالية';
+      if (pageTitle) pageTitle.textContent = 'التقارير المالية';
       if (reportsView) reportsView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
-      showToast('التقارير المالية', 'تم تحديث المؤشرات والأرباح ومبيعات بنكك', 'info');
     } else if (view === 'customers') {
-      if (pageTitle) pageTitle.textContent = 'دليل وسجل المرضى والعملاء';
+      if (pageTitle) pageTitle.textContent = 'سجل العملاء والمرضى';
       if (customersView) customersView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('CUSTOMERS_UPDATED'));
-      showToast('دليل المرضى والعملاء', 'تم تحديث سجل المرضى والملفات السريرية بنجاح', 'info');
     } else if (view === 'accounting') {
-      if (pageTitle) pageTitle.textContent = 'الإدارة المالية ودفتر الأستاذ العام (MVP-2)';
+      if (pageTitle) pageTitle.textContent = 'الحسابات العامة';
       if (accountingView) accountingView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('ACCOUNTING_VIEW_ACTIVATED'));
-      showToast('النواة المحاسبية (MVP-2)', 'تم تحميل شجرة الحسابات، قيود اليومية، والقوائم المالية الختامية', 'success');
     } else if (view === 'branches') {
-      if (pageTitle) pageTitle.textContent = 'ذكاء الفروع المتعددة والرقابة التشغيلية الموحدة (MVP-3)';
+      if (pageTitle) pageTitle.textContent = 'ذكاء الفروع';
       if (branchesView) branchesView.style.display = 'block';
 
       window.dispatchEvent(new CustomEvent('BRANCHES_VIEW_ACTIVATED'));
-      showToast('ذكاء الفروع والرقابة الموحدة', 'تم تحميل مصفوفة أداء الفروع، محرك الموازنة الذكية، وخريطة الصلاحية FEFO', 'success');
     } else if (view === 'design-system') {
-      if (pageTitle) pageTitle.textContent = 'دليل الهوية البصرية ونظام المكونات';
+      if (pageTitle) pageTitle.textContent = 'نظام التصميم';
       if (designSystemView) designSystemView.style.display = 'block';
-
-      showToast('الهوية البصرية ونظام التصميم', 'جميع الرموز والألوان مستخلصة بدقة من الشعار الرسمي', 'success');
-    } else {
-      showToast(btnEl.querySelector('.nav-text')?.textContent || 'القسم قيد التحديث', 'تم تفعيل القسم وربطه بالمنظومة', 'info');
     }
   }
 }

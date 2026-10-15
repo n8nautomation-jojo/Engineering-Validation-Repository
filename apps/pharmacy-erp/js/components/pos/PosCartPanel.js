@@ -54,11 +54,11 @@ export class PosCartPanel {
           <div style="display:flex; align-items:center; gap:4px;">
             <span style="font-size:14px;">👤</span>
             <strong style="font-size:12px; color:var(--foreground); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              ${activeCustomer ? activeCustomer.name : 'عميل نقدي عابر (افتراضي)'}
+              ${activeCustomer ? activeCustomer.name : 'عميل نقدي (افتراضي)'}
             </strong>
             ${activeCustomer?.type ? `
               <span class="badge" style="font-size:9.5px; padding:1px 5px; background:${activeCustomer.type === 'CHRONIC' ? '#fef3c7' : '#e0e7ff'}; color:${activeCustomer.type === 'CHRONIC' ? '#b45309' : '#3730a3'};">
-                ${activeCustomer.type === 'CHRONIC' ? 'أمراض مزمنة' : 'تأمين'}
+                ${activeCustomer.type === 'CHRONIC' ? 'مزمن' : 'تأمين'}
               </span>
             ` : ''}
           </div>
@@ -76,7 +76,7 @@ export class PosCartPanel {
             <button type="button" id="btn-pos-clear-customer" style="cursor:pointer; border:none; background:transparent; color:#dc2626; font-size:13px; padding:2px 4px;" title="إلغاء المريض والعودة لعميل عابر">✕</button>
           ` : ''}
           <button type="button" id="btn-pos-select-customer" style="cursor:pointer; padding:3px 8px; font-size:11px; font-weight:700; color:var(--primary); background:var(--card); border:1px solid var(--border); border-radius:6px;">
-            ${activeCustomer ? 'تغيير' : '+ ربط بمريض'}
+            ${activeCustomer ? 'تغيير' : '+ مريض'}
           </button>
         </div>
       </div>

@@ -9,24 +9,23 @@ export function renderHero() {
       <div class="container">
         <div class="hero-pill-badge">
           <span class="pulse-dot"></span>
-          <span>الجيل الحديث لإدارة الصيدليات | استقرار كامل مع أو بدون إنترنت</span>
+          <span>منظومة الصيدليات ونقاط البيع السحابية</span>
         </div>
 
         <h1 class="hero-title">
-          المنظومة السحابية المتكاملة لإدارة الصيدلية ونقطة البيع مع 
-          <span class="gradient-text">حماية تواريخ الصلاحية والدفع المباشر عبر بنكك</span>
+          إدارة الصيدليات ونقاط البيع، <span class="gradient-text">بكل سهولة ودقة.</span>
         </h1>
 
         <p class="hero-lead">
-          صُممت فارماتك خصيصاً لتلبي احتياجات الصيدليات الحديثة في السودان: كفاءة عمليات البيع الفورية، الرقابة التامة على تواريخ الصلاحية لمنع الهدر المالي، والعمل المستمر بثبات فائق حتى في حال انقطاع شبكة الإنترنت.
+          منظومة سحابية متكاملة تضمن استقرار عمليات البيع، وتتبع الصلاحيات بدقة، مع ربط مباشر وآمن للدفع عبر «بنكك».
         </p>
 
         <div class="hero-ctas">
-          <a href="/pharmacy-erp/" class="btn btn-primary btn-lg" title="فتح منظومة الصيدلية ونقطة البيع">
+          <a href="/pharmacy-erp/" class="btn btn-primary btn-lg" title="دخول نقطة البيع والمنظومة">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            <span>فتح منظومة الصيدلية ونقطة البيع</span>
+            <span>دخول نقطة البيع والمنظومة</span>
           </a>
 
           <a href="/platform-admin/" class="btn btn-secondary btn-lg" title="لوحة المنصة المركزية">

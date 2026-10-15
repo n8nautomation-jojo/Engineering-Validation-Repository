@@ -193,7 +193,7 @@ export class SettingsDialog {
       const metaEl = document.getElementById('page-heading-pharmacy-meta');
       if (metaEl) {
         const dateStr = new Date().toLocaleDateString('ar-SD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        metaEl.textContent = `${dateStr} — ${settings.pharmacyName}`;
+        metaEl.textContent = dateStr;
       }
 
       document.title = `${settings.pharmacyName} — PharmaTech`;

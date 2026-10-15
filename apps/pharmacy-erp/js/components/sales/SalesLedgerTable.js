@@ -49,7 +49,7 @@ export class SalesLedgerTable {
               <th>الصيدلي / الكاشير</th>
               <th>الأصناف والتشغيلات</th>
               <th>طريقة السداد</th>
-              <th>الإجمالي</th>
+              <th>الإجمالي (ج.س)</th>
               <th>الحالة</th>
               <th style="text-align:left;">إجراءات</th>
             </tr>
@@ -101,10 +101,10 @@ export class SalesLedgerTable {
 
               const totalHtml = isReversed
                 ? `<div style="display:grid; gap:1px;">
-                     <s style="font-size:12px; color:var(--muted-foreground);" dir="ltr">${Number(s.totals?.total || 0).toLocaleString()} ج.س</s>
-                     <strong style="font-size:12px; color:#DC2626;" dir="ltr">-${Number(s.totals?.total || 0).toLocaleString()} ج.س</strong>
+                     <s style="font-size:12px; color:var(--muted-foreground);" dir="ltr">${Number(s.totals?.total || 0).toLocaleString()}</s>
+                     <strong style="font-size:12px; color:#DC2626;" dir="ltr">-${Number(s.totals?.total || 0).toLocaleString()}</strong>
                    </div>`
-                : `<strong style="font-size:13px;" dir="ltr">${Number(s.totals?.total || 0).toLocaleString()} ج.س</strong>`;
+                : `<strong style="font-size:13px;" dir="ltr">${Number(s.totals?.total || 0).toLocaleString()}</strong>`;
 
               const statusHtml = isReversed
                 ? `<span class="chip" style="background:#FEE2E2; color:#DC2626; border:1px solid #FECACA; font-weight:700; font-size:11px;" title="سبب الإرجاع: ${s.reversal_reason || 'مرتجع'}">

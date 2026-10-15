@@ -51,7 +51,7 @@ export class PosSearchBar {
           <input 
             id="product-search-input" 
             value="${currentQuery}"
-            placeholder="امسح الباركود، أو اكتب اسم الدواء (مثال: بنادول، أوجمنتين)... اضغط Enter للإضافة المباشرة" 
+            placeholder="ابحث باسم الدواء أو امسح الباركود مباشرة..." 
             autocomplete="off" 
             style="width:100%; box-sizing:border-box; height:38px; padding:6px 38px 6px 44px; border-radius:8px; border:2px solid var(--border); background:var(--background); color:var(--foreground); font-size:13.5px; font-weight:600; outline:none; transition:border-color 0.2s ease, box-shadow 0.2s ease;"
           />

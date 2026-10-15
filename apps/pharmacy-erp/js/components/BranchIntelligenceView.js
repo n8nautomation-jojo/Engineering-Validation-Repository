@@ -266,10 +266,10 @@ export class BranchIntelligenceView {
                 <th style="width: 60px; text-align: center;">الترتيب</th>
                 <th>اسم الفرع والمدينة</th>
                 <th style="width: 130px;">مدير الفرع</th>
-                <th style="width: 140px; text-align: left;">مبيعات اليوم</th>
+                <th style="width: 140px; text-align: left;">مبيعات اليوم (ج.س)</th>
                 <th style="width: 80px; text-align: center;">الطلبات</th>
                 <th style="width: 180px;">تحقيق الهدف</th>
-                <th style="width: 120px; text-align: left;">متوسط الفاتورة</th>
+                <th style="width: 120px; text-align: left;">متوسط الفاتورة (ج.س)</th>
               </tr>
             </thead>
             <tbody>
@@ -286,7 +286,7 @@ export class BranchIntelligenceView {
                   </td>
                   <td>${brn.managerName}</td>
                   <td style="text-align: left; font-family: var(--font-mono); font-weight: 800; color: #0284c7;">
-                    ${brn.revenue.toLocaleString()} SDG
+                    ${brn.revenue.toLocaleString()}
                   </td>
                   <td style="text-align: center; font-family: var(--font-mono);">${brn.ordersCount}</td>
                   <td>
@@ -297,7 +297,7 @@ export class BranchIntelligenceView {
                       <span style="font-size: 0.78rem; font-weight: 700; width: 42px; text-align: left;">${brn.targetAchievedPercent}%</span>
                     </div>
                   </td>
-                  <td style="text-align: left; font-family: var(--font-mono);">${brn.averageBasket.toLocaleString()} SDG</td>
+                  <td style="text-align: left; font-family: var(--font-mono);">${brn.averageBasket.toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>

@@ -260,7 +260,7 @@ export class PosPaymentSelector {
           style="width:100%; height:44px; font-size:14px; font-weight:800; border-radius:8px; border:none; display:flex; align-items:center; justify-content:center; gap:8px; cursor:${canCheckout ? 'pointer' : 'not-allowed'}; margin-top:2px; background:${canCheckout ? 'linear-gradient(135deg, #059669, #10b981)' : '#94a3b8'}; color:#ffffff; box-shadow:${canCheckout ? '0 3px 12px rgba(16,185,129,0.35)' : 'none'}; transition:all 0.15s ease;"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>صرف الفاتورة وطباعة الإيصال (F4 أو Enter)</span>
+          <span>إتمام وطباعة [F4]</span>
         </button>
 
       </div>

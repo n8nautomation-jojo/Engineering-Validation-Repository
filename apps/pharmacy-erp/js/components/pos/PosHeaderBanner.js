@@ -46,7 +46,7 @@ export class PosHeaderBanner {
               </span>
             </div>
             <div style="font-size:10px; color:var(--muted-foreground); margin-top:1px;">
-              نقطة البيع #1 · صيدلية النيلين النموذجية
+              نقطة البيع #1
             </div>
           </div>
         </div>

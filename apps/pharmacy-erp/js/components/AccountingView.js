@@ -571,8 +571,8 @@ export class AccountingView {
                   <th style="width: 90px;">الرمز</th>
                   <th>اسم الحساب</th>
                   <th style="width: 100px;">النوع</th>
-                  <th style="width: 140px; text-align: left; color: #0284c7;">رصيد مدين</th>
-                  <th style="width: 140px; text-align: left; color: #d97706;">رصيد دائن</th>
+                  <th style="width: 140px; text-align: left; color: #0284c7;">رصيد مدين (ج.س)</th>
+                  <th style="width: 140px; text-align: left; color: #d97706;">رصيد دائن (ج.س)</th>
                 </tr>
               </thead>
               <tbody>

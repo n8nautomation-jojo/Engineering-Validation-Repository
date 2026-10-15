@@ -100,8 +100,7 @@ export class PurchasingView {
             </svg>
           </span>
           <div>
-            <h2>إدارة المشتريات وسلاسل الإمداد والتوريد (Supply Chain)</h2>
-            <p class="heading-meta" style="margin:0; font-size:12px;">إصدار أوامر الشراء، فحص الشحنات، فواتير الموردين، وإدارة الذمم الدائنة والتسويات</p>
+            <h2>المشتريات والتوريد</h2>
           </div>
         </div>
 

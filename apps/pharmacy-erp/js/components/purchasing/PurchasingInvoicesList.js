@@ -119,9 +119,9 @@ export class PurchasingInvoicesList {
                 <th>المورد التجاري</th>
                 <th>تاريخ الفاتورة</th>
                 <th>تاريخ الاستحقاق</th>
-                <th>إجمالي الفاتورة</th>
-                <th>المسدد</th>
-                <th>الرصيد المتبقي</th>
+                <th>إجمالي الفاتورة (ج.س)</th>
+                <th>المسدد (ج.س)</th>
+                <th>الرصيد المتبقي (ج.س)</th>
                 <th>حالة السداد</th>
                 <th aria-label="الإجراءات">إجراءات الذمم</th>
               </tr>
@@ -165,13 +165,13 @@ export class PurchasingInvoicesList {
                       ${isOverdue ? '<span style="display:block; font-size:10px; color:#DC2626;">(متأخرة)</span>' : ''}
                     </td>
                     <td class="num" style="font-weight:700;">
-                      ${total.toLocaleString()} <small>ج.س</small>
+                      ${total.toLocaleString()}
                     </td>
                     <td class="num" style="color:#059669; font-weight:700;">
-                      ${paid.toLocaleString()} <small>ج.س</small>
+                      ${paid.toLocaleString()}
                     </td>
                     <td class="num" style="color:${remaining > 0 ? '#DC2626' : 'var(--muted-foreground)'}; font-weight:800; font-size:13px;">
-                      ${remaining.toLocaleString()} <small>ج.س</small>
+                      ${remaining.toLocaleString()}
                     </td>
                     <td>${statusBadge}</td>
                     <td>
