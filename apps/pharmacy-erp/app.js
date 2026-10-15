@@ -140,12 +140,22 @@ class PharmaTechApp {
         const targetBtn = document.querySelector('.nav-button[data-view="pos"]');
         this.components?.sidebar?.switchView('pos', targetBtn);
 
+        // Zero-Training Ergonomics: Auto-enable Fullscreen Kiosk Mode for Cashiers
+        document.body.classList.add('pos-kiosk-mode');
+        if (this.components?.pos?.headerBanner) {
+          this.components.pos.headerBanner.isFocusMode = true;
+        }
+
         const metaEl = document.getElementById('page-heading-pharmacy-meta');
         if (metaEl) {
           const dateStr = new Date().toLocaleDateString('ar-SD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
           metaEl.textContent = `${dateStr} — كاشير: ${user.fullName} (${user.branchName || 'فرع الخرطوم الرئيسي'})`;
         }
       } else {
+        document.body.classList.remove('pos-kiosk-mode');
+        if (this.components?.pos?.headerBanner) {
+          this.components.pos.headerBanner.isFocusMode = false;
+        }
         const pageTitle = document.getElementById('page-title-heading');
         if (pageTitle && appStore.activeView === 'dashboard') {
           pageTitle.textContent = `صباح الخير، ${user.fullName} 👋`;

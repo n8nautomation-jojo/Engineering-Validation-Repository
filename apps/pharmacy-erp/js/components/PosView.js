@@ -49,13 +49,15 @@ export class PosView {
     // Instantiate Decomposed Sub-components
     this.headerBanner = new PosHeaderBanner('pos-header-banner-container', {
       onToggleOffline: () => this.handleToggleOffline(),
-      onOpenQueue: () => this.queueModal.open()
+      onOpenQueue: () => this.queueModal.open(),
+      onToggleFocusMode: (isFocus) => this.handleToggleFocusMode(isFocus)
     });
 
     this.searchBar = new PosSearchBar('pos-search-bar-container', {
       onSearch: (query) => this.handleSearch(query),
       onCategorySelect: (cat) => this.handleCategorySelect(cat),
-      onBarcodeEnter: (barcode) => this.handleBarcodeEnter(barcode)
+      onBarcodeEnter: (barcode) => this.handleBarcodeEnter(barcode),
+      onQuickPick: (name, generic) => this.handleQuickPick(name, generic)
     });
 
     this.catalogGrid = new PosCatalogGrid('pos-catalog-grid-container', {
@@ -94,18 +96,28 @@ export class PosView {
       }
     });
 
-    // Keyboard Shortcuts (F2: Barcode focus, F4: Checkout)
+    // POS 2.0 Ergonomic Keyboard Shortcuts
     document.addEventListener('keydown', (e) => {
       if (appStore.activeView !== 'pos') return;
 
-      if (e.key === 'F2') {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        this.headerBanner.showKeyboardHelpModal();
+      } else if (e.key === 'F2') {
         e.preventDefault();
         this.searchBar.focus();
-      }
-
-      if (e.key === 'F4') {
+      } else if (e.key === 'F4') {
         e.preventDefault();
         this.handleCheckout();
+      } else if (e.key === 'F8') {
+        e.preventDefault();
+        if (posService.cart.length > 0) this.handleClearCart();
+      } else if (e.key === 'F9') {
+        e.preventDefault();
+        this.handlePaymentMethodChange('CASH');
+      } else if (e.key === 'F10') {
+        e.preventDefault();
+        this.handlePaymentMethodChange('BANKAK');
       }
     });
 
@@ -382,6 +394,35 @@ export class PosView {
       this.renderPayment();
     } catch (err) {
       showToast('تنبيه السلامة الدوائية', err.message, 'danger');
+    }
+  }
+
+  handleQuickPick(name, generic) {
+    const term = name.toLowerCase();
+    const gen = (generic || '').toLowerCase();
+
+    const found = appStore.medicines.find(m => {
+      const mName = m.name.toLowerCase();
+      const mAr = (m.nameAr || '').toLowerCase();
+      const mGen = (m.generic || '').toLowerCase();
+      return mName.includes(term) || mAr.includes(term) || (gen && mGen.includes(gen));
+    });
+
+    if (found) {
+      this.handleSelectProduct(found);
+    } else {
+      // Fallback: search in catalog directly
+      this.searchBar.focus();
+      this.handleSearch(name.split(' ')[0]);
+    }
+  }
+
+  handleToggleFocusMode(isFocus) {
+    document.body.classList.toggle('pos-focus-mode', isFocus);
+    if (isFocus) {
+      showToast('شاشة الكاشير الكاملة', 'تم تفعيل وضع التركيز وإخفاء القوائم الجانبية لتسهيل البيع السريع', 'info');
+    } else {
+      showToast('الوضع القياسي', 'تمت استعادة القوائم الجانبية للنظام', 'info');
     }
   }
 
