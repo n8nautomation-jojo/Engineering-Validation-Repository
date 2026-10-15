@@ -1,0 +1,22 @@
+[
+  {
+    "id": "CONF-2026-0001",
+    "operationId": "op-offline-8821",
+    "conflictType": "BATCH_CONCURRENT_DEPLETION",
+    "severity": "HIGH",
+    "state": "QUARANTINED",
+    "originatingDeviceId": "DEV-POS-02",
+    "originatingCashier": "د. سارة الكباشي",
+    "branchId": "brn-khartoum-01",
+    "detectedAt": "2026-10-15T09:45:10.000Z",
+    "details": {
+      "productName": "Panadol Extra 500mg",
+      "batchNumber": "BATCH-2026-A1",
+      "requestedQuantity": 4,
+      "authoritativeStock": 0,
+      "message": "تم استهلاك رصيد التشغيلة بالكامل عبر نقطة بيع أخرى قبل إتمام مزامنة هذه العملية",
+      "offlineSaleReference": "INV-OFFLINE-0041"
+    },
+    "resolution": null
+  }
+]

@@ -14,6 +14,7 @@ import { inventoryMovementsRepository } from "./api/inventoryMovements.mjs";
 import { customersRepository } from "./api/customers.mjs";
 import { salesOrdersRepository } from "./api/salesOrders.mjs";
 import { transfersRepository } from "./api/transfers.mjs";
+import { syncRepository } from "./api/sync.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -737,6 +738,89 @@ const server = http.createServer(async (req, res) => {
       // GET /api/platform/telemetry — SaaS metrics snapshot
       if (req.method === "GET" && pathname === "/api/platform/telemetry") {
         sendJson(res, 200, platformRepository.getTelemetry());
+        return;
+      }
+
+      // =========================================================================
+      // OFFLINE POS SYNCHRONIZATION & CONFLICT CONTAINMENT (ADR-011 / Phase 2.2)
+      // =========================================================================
+
+      // GET /api/sync/status — sync health, registered devices, and protocol info
+      if (req.method === "GET" && pathname === "/api/sync/status") {
+        const deviceId = parsedUrl.searchParams.get("deviceId");
+        sendJson(res, 200, syncRepository.getSyncStatus(deviceId));
+        return;
+      }
+
+      // GET /api/sync/telemetry — sync metrics snapshot
+      if (req.method === "GET" && pathname === "/api/sync/telemetry") {
+        sendJson(res, 200, syncRepository.getSyncTelemetry());
+        return;
+      }
+
+      // GET /api/sync/devices — list registered POS devices
+      if (req.method === "GET" && pathname === "/api/sync/devices") {
+        sendJson(res, 200, syncRepository.getRegisteredDevices());
+        return;
+      }
+
+      // POST /api/sync/devices/register — register new POS device / terminal
+      if (req.method === "POST" && pathname === "/api/sync/devices/register") {
+        try {
+          const body = await readJsonBody(req);
+          const dev = syncRepository.registerDevice(body);
+          sendJson(res, 201, dev);
+        } catch (err) {
+          sendError(res, 400, "DEVICE_REGISTRATION_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // GET /api/sync/pull — Delta Pull protocol using monotonic cursor
+      if (req.method === "GET" && pathname === "/api/sync/pull") {
+        const queryParams = {
+          deviceId: parsedUrl.searchParams.get("deviceId") || undefined,
+          branchId: parsedUrl.searchParams.get("branchId") || undefined,
+          cursor: parsedUrl.searchParams.get("cursor") || undefined,
+          limit: parsedUrl.searchParams.get("limit") ? Number(parsedUrl.searchParams.get("limit")) : 100
+        };
+        sendJson(res, 200, syncRepository.handlePull(queryParams));
+        return;
+      }
+
+      // POST /api/sync/push — Transactional Push protocol with idempotent deduplication & conflict quarantine
+      if (req.method === "POST" && pathname === "/api/sync/push") {
+        try {
+          const body = await readJsonBody(req);
+          const pushResult = await syncRepository.handlePush(body);
+          sendJson(res, 200, pushResult);
+        } catch (err) {
+          sendError(res, 400, "SYNC_PUSH_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // GET /api/sync/conflicts — list quarantined sync conflicts
+      if (req.method === "GET" && pathname === "/api/sync/conflicts") {
+        const filters = {
+          state: parsedUrl.searchParams.get("state") || undefined,
+          deviceId: parsedUrl.searchParams.get("deviceId") || undefined
+        };
+        sendJson(res, 200, syncRepository.getConflicts(filters));
+        return;
+      }
+
+      // POST /api/sync/conflicts/:id/resolve — resolve quarantined sync conflict
+      if (req.method === "POST" && pathname.startsWith("/api/sync/conflicts/") && pathname.endsWith("/resolve")) {
+        try {
+          const id = pathname.split("/")[4];
+          const body = await readJsonBody(req);
+          const resolved = syncRepository.resolveConflict(id, body);
+          sendJson(res, 200, resolved);
+        } catch (err) {
+          const status = err.message.includes("غير موجود") ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
         return;
       }
 

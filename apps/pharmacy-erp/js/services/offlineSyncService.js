@@ -173,40 +173,80 @@ export class OfflineSyncService {
     let syncedCount = 0;
     let failedCount = 0;
 
-    for (const item of pendingItems) {
-      item.status = 'SYNCING';
-      item.attempts += 1;
-      item.lastAttemptAt = new Date().toISOString();
-      this.persistQueue();
-      this.notifyQueueChanged();
+    try {
+      const events = pendingItems.map(item => ({
+        eventId: item.id,
+        idempotencyKey: item.idempotencyKey,
+        correlationId: item.correlationId,
+        eventType: 'SALE_COMPLETED',
+        cashierName: item.cashierName,
+        offlineInvoiceNumber: item.offlineInvoiceNumber,
+        payload: item.dto
+      }));
 
-      try {
-        const headers = {
-          'Idempotency-Key': item.idempotencyKey,
-          'X-Correlation-Id': item.correlationId
-        };
+      const batchResponse = await apiClient.post('/api/sync/push', {
+        deviceId: 'DEV-POS-01',
+        branchId: 'brn-khartoum-01',
+        batchSequence: Date.now(),
+        events
+      });
 
-        // Post to official backend CompleteSale endpoint
-        const serverResult = await apiClient.post('/api/sales', item.dto, headers);
+      if (batchResponse && Array.isArray(batchResponse.results)) {
+        for (const res of batchResponse.results) {
+          const item = pendingItems.find(i => i.id === res.eventId);
+          if (!item) continue;
 
-        item.status = 'SYNCED';
-        item.serverInvoiceNumber = serverResult.invoice_number || serverResult.invoiceNumber;
-        item.errorMessage = null;
-        syncedCount += 1;
+          item.attempts += 1;
+          item.lastAttemptAt = new Date().toISOString();
 
-        // Archive synced item
-        this.archiveSyncedItem(item);
-      } catch (err) {
-        console.error(`[OfflineSyncService] Error syncing item ${item.offlineInvoiceNumber}:`, err);
-        const msg = String(err.message || '');
-        const isConflict = msg.includes('BATCH_EXPIRED') ||
-                           msg.includes('INSUFFICIENT_BATCH_STOCK') ||
-                           msg.includes('BUSINESS_RULE_VIOLATION') ||
-                           msg.includes('NO_VALID_STOCK');
+          if (res.status === 'ACCEPTED' || res.status === 'DUPLICATE') {
+            item.status = 'SYNCED';
+            item.serverInvoiceNumber = res.serverInvoiceNumber || item.offlineInvoiceNumber;
+            item.errorMessage = null;
+            syncedCount += 1;
+            this.archiveSyncedItem(item);
+          } else if (res.status === 'CONFLICT') {
+            item.status = 'CONFLICT';
+            item.errorMessage = res.reason || 'تعارض في المخزون أو البيانات قيد المراجعة';
+            failedCount += 1;
+          } else {
+            item.status = 'PENDING';
+            failedCount += 1;
+          }
+        }
+      }
+    } catch (batchErr) {
+      console.warn('[OfflineSyncService] Batch push failed, using sequential sync:', batchErr);
+      for (const item of pendingItems) {
+        item.status = 'SYNCING';
+        item.attempts += 1;
+        item.lastAttemptAt = new Date().toISOString();
+        this.persistQueue();
+        this.notifyQueueChanged();
 
-        item.status = isConflict ? 'CONFLICT' : 'PENDING';
-        item.errorMessage = err.message || 'خطأ غير معروف في الاتصال';
-        failedCount += 1;
+        try {
+          const headers = {
+            'Idempotency-Key': item.idempotencyKey,
+            'X-Correlation-Id': item.correlationId
+          };
+
+          const serverResult = await apiClient.post('/api/sales', item.dto, headers);
+          item.status = 'SYNCED';
+          item.serverInvoiceNumber = serverResult.invoice_number || serverResult.invoiceNumber;
+          item.errorMessage = null;
+          syncedCount += 1;
+          this.archiveSyncedItem(item);
+        } catch (err) {
+          const msg = String(err.message || '');
+          const isConflict = msg.includes('BATCH_EXPIRED') ||
+                             msg.includes('INSUFFICIENT_BATCH_STOCK') ||
+                             msg.includes('BUSINESS_RULE_VIOLATION') ||
+                             msg.includes('NO_VALID_STOCK');
+
+          item.status = isConflict ? 'CONFLICT' : 'PENDING';
+          item.errorMessage = err.message || 'خطأ غير معروف في الاتصال';
+          failedCount += 1;
+        }
       }
     }
 
@@ -251,6 +291,76 @@ export class OfflineSyncService {
     }
 
     return { total: pendingItems.length, synced: syncedCount, failed: failedCount };
+  }
+
+  /**
+   * Delta Pull Protocol: Fetches delta updates using sequential cursor.
+   */
+  async pullDelta(cursor = null) {
+    try {
+      const q = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+      const result = await apiClient.get(`/api/sync/pull${q}`);
+      return result;
+    } catch (err) {
+      console.warn('[OfflineSyncService] Failed to pull delta from server:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Fetches quarantined sync conflicts.
+   */
+  async fetchConflicts(filters = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (filters.state) params.append('state', filters.state);
+      if (filters.deviceId) params.append('deviceId', filters.deviceId);
+      const q = params.toString() ? `?${params.toString()}` : '';
+      const list = await apiClient.get(`/api/sync/conflicts${q}`);
+      return Array.isArray(list) ? list : [];
+    } catch (err) {
+      console.warn('[OfflineSyncService] Failed to fetch sync conflicts:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Resolves a quarantined conflict with audit trace.
+   */
+  async resolveConflict(conflictId, resolutionData) {
+    try {
+      const result = await apiClient.post(`/api/sync/conflicts/${conflictId}/resolve`, resolutionData);
+      showToast('تمت تسوية التعارض بنجاح', `تم معالجة الإشكال الجردي للعملية ${conflictId}`, 'success');
+      return result;
+    } catch (err) {
+      showToast('خطأ في تسوية التعارض', err.message, 'danger');
+      throw err;
+    }
+  }
+
+  /**
+   * Fetches registered POS devices list.
+   */
+  async fetchDevices() {
+    try {
+      const list = await apiClient.get('/api/sync/devices');
+      return Array.isArray(list) ? list : [];
+    } catch (err) {
+      console.warn('[OfflineSyncService] Failed to fetch sync devices:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Fetches sync telemetry metrics.
+   */
+  async fetchSyncTelemetry() {
+    try {
+      return await apiClient.get('/api/sync/telemetry');
+    } catch (err) {
+      console.warn('[OfflineSyncService] Failed to fetch sync telemetry:', err);
+      return null;
+    }
   }
 
   /**

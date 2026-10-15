@@ -16,6 +16,7 @@ import { inventoryMovementsRepository } from "./api/inventoryMovements.mjs";
 import { customersRepository } from "./api/customers.mjs";
 import { salesOrdersRepository } from "./api/salesOrders.mjs";
 import { transfersRepository } from "./api/transfers.mjs";
+import { syncRepository } from "./api/sync.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -558,6 +559,69 @@ export default {
 
         if (method === "GET" && pathname === "/api/platform/telemetry") {
           return jsonResponse(platformRepository.getTelemetry(), 200);
+        }
+
+        // =========================================================================
+        // OFFLINE POS SYNCHRONIZATION & CONFLICT CONTAINMENT (ADR-011 / Phase 2.2)
+        // =========================================================================
+        if (method === "GET" && pathname === "/api/sync/status") {
+          const deviceId = url.searchParams.get("deviceId");
+          return jsonResponse(syncRepository.getSyncStatus(deviceId), 200);
+        }
+
+        if (method === "GET" && pathname === "/api/sync/telemetry") {
+          return jsonResponse(syncRepository.getSyncTelemetry(), 200);
+        }
+
+        if (method === "GET" && pathname === "/api/sync/devices") {
+          return jsonResponse(syncRepository.getRegisteredDevices(), 200);
+        }
+
+        if (method === "POST" && pathname === "/api/sync/devices/register") {
+          try {
+            const dev = syncRepository.registerDevice(body);
+            return jsonResponse(dev, 201);
+          } catch (err) {
+            return errorResponse(400, "DEVICE_REGISTRATION_FAILED", err.message, correlationId);
+          }
+        }
+
+        if (method === "GET" && pathname === "/api/sync/pull") {
+          const queryParams = {
+            deviceId: url.searchParams.get("deviceId") || undefined,
+            branchId: url.searchParams.get("branchId") || undefined,
+            cursor: url.searchParams.get("cursor") || undefined,
+            limit: url.searchParams.get("limit") ? Number(url.searchParams.get("limit")) : 100
+          };
+          return jsonResponse(syncRepository.handlePull(queryParams), 200);
+        }
+
+        if (method === "POST" && pathname === "/api/sync/push") {
+          try {
+            const pushResult = await syncRepository.handlePush(body);
+            return jsonResponse(pushResult, 200);
+          } catch (err) {
+            return errorResponse(400, "SYNC_PUSH_FAILED", err.message, correlationId);
+          }
+        }
+
+        if (method === "GET" && pathname === "/api/sync/conflicts") {
+          const filters = {
+            state: url.searchParams.get("state") || undefined,
+            deviceId: url.searchParams.get("deviceId") || undefined
+          };
+          return jsonResponse(syncRepository.getConflicts(filters), 200);
+        }
+
+        if (method === "POST" && pathname.startsWith("/api/sync/conflicts/") && pathname.endsWith("/resolve")) {
+          try {
+            const id = pathname.split("/")[4];
+            const resolved = syncRepository.resolveConflict(id, body);
+            return jsonResponse(resolved, 200);
+          } catch (err) {
+            const status = err.message.includes("غير موجود") ? 404 : 400;
+            return errorResponse(status, err.message, err.message, correlationId);
+          }
         }
 
         return errorResponse(404, "NOT_FOUND", `Endpoint '${method} ${pathname}' not found.`, correlationId);

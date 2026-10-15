@@ -1,0 +1,27 @@
+[
+  {
+    "inboxId": "INBOX-2026-0001",
+    "deviceId": "DEV-POS-01",
+    "batchSequence": 1,
+    "receivedAt": "2026-10-15T09:00:00.000Z",
+    "eventsCount": 2,
+    "acceptedCount": 2,
+    "conflictCount": 0,
+    "events": [
+      {
+        "eventId": "evt-018f-0001",
+        "eventType": "SALE_COMPLETED",
+        "idempotencyKey": "018f-idem-0001",
+        "status": "ACCEPTED",
+        "serverInvoiceNumber": "INV-2026-0038"
+      },
+      {
+        "eventId": "evt-018f-0002",
+        "eventType": "SALE_COMPLETED",
+        "idempotencyKey": "018f-idem-0002",
+        "status": "ACCEPTED",
+        "serverInvoiceNumber": "INV-2026-0039"
+      }
+    ]
+  }
+]

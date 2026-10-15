@@ -1,0 +1,41 @@
+[
+  {
+    "deviceId": "DEV-POS-01",
+    "name": "كاشير الصالة الرئيسي — نقطة البيع 01",
+    "branchId": "brn-khartoum-01",
+    "branchName": "فرع الخرطوم الرئيسي",
+    "status": "ACTIVE",
+    "deviceType": "DESKTOP_TAURI_POS",
+    "registeredAt": "2026-10-01T08:00:00.000Z",
+    "lastSyncAt": "2026-10-15T10:00:00.000Z",
+    "lastCursor": "cur-2026-10-15-001",
+    "offlineAllocationQuota": 1500000,
+    "consumedQuota": 230000
+  },
+  {
+    "deviceId": "DEV-POS-02",
+    "name": "كاشير الصيدلية السريع — نقطة البيع 02",
+    "branchId": "brn-khartoum-01",
+    "branchName": "فرع الخرطوم الرئيسي",
+    "status": "ACTIVE",
+    "deviceType": "DESKTOP_TAURI_POS",
+    "registeredAt": "2026-10-01T08:00:00.000Z",
+    "lastSyncAt": "2026-10-15T09:45:00.000Z",
+    "lastCursor": "cur-2026-10-15-001",
+    "offlineAllocationQuota": 1000000,
+    "consumedQuota": 120000
+  },
+  {
+    "deviceId": "DEV-POS-03",
+    "name": "جهاز الصرف المتنقل / قسم الطوارئ",
+    "branchId": "brn-khartoum-01",
+    "branchName": "فرع الخرطوم الرئيسي",
+    "status": "ACTIVE",
+    "deviceType": "MOBILE_TABLET_POS",
+    "registeredAt": "2026-10-05T12:00:00.000Z",
+    "lastSyncAt": "2026-10-15T09:30:00.000Z",
+    "lastCursor": "cur-2026-10-15-001",
+    "offlineAllocationQuota": 500000,
+    "consumedQuota": 50000
+  }
+]
