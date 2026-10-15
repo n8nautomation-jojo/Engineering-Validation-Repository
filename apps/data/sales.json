@@ -1,5 +1,260 @@
 [
   {
+    "sale_id": "sale-64f796d8-9710-43b1-a33d-f9b28428f6e8",
+    "invoice_number": "INV-2026-0851",
+    "status": "COMPLETED",
+    "created_at": "2026-10-15T09:54:37.288Z",
+    "cashier_id": "018f0000-0000-7000-8000-000000000001",
+    "cashier_name": "د. أحمد الطاهر",
+    "customer_id": "CUST-088",
+    "customer_name": "عثمان الفاضل كباشي",
+    "items": [
+      {
+        "productId": "MED-004",
+        "name": "Glucophage 500mg Metformin",
+        "nameAr": "جلوكوفاج 500 مجم",
+        "batchNumber": "BATCH-GLU-12",
+        "expiryDate": "2026-11-05",
+        "quantity": 3,
+        "unitPrice": 8400,
+        "lineTotal": 25200
+      }
+    ],
+    "totals": {
+      "subtotal": "25200.00",
+      "tax": "0.00",
+      "total": "25200.00",
+      "currency": "SDG"
+    },
+    "payments": [
+      {
+        "method": "BANK_TRANSFER",
+        "amount": {
+          "value": "25200.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "EVIDENCE_REVIEW",
+        "evidence_reference": "TXN-BOK-REFILL-8812"
+      }
+    ],
+    "payment_summary": {
+      "paid_amount": "25200.00",
+      "change_amount": "0.00"
+    },
+    "inventory_effect": {
+      "transaction_id": "tx-8c494514-5559-4992-b085-0cf3968112d4",
+      "consumed_allocations": [
+        "pos-dev-01"
+      ]
+    },
+    "sync_status": "SYNCED",
+    "correlation_id": "corr-1792058077287"
+  },
+  {
+    "sale_id": "sale-1543938e-1667-4498-b254-fdef3d1210c3",
+    "invoice_number": "INV-2026-0850",
+    "status": "COMPLETED",
+    "created_at": "2026-10-15T09:53:06.085Z",
+    "cashier_id": "018f0000-0000-7000-8000-000000000001",
+    "cashier_name": "د. أحمد الطاهر",
+    "customer_id": "CUST-088",
+    "customer_name": "عثمان الفاضل كباشي",
+    "items": [
+      {
+        "productId": "MED-004",
+        "name": "Glucophage 500mg Metformin",
+        "nameAr": "جلوكوفاج 500 مجم",
+        "batchNumber": "BATCH-GLU-12",
+        "expiryDate": "2026-11-05",
+        "quantity": 3,
+        "unitPrice": 8400,
+        "lineTotal": 25200
+      }
+    ],
+    "totals": {
+      "subtotal": "25200.00",
+      "tax": "0.00",
+      "total": "25200.00",
+      "currency": "SDG"
+    },
+    "payments": [
+      {
+        "method": "BANK_TRANSFER",
+        "amount": {
+          "value": "25200.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "EVIDENCE_REVIEW",
+        "evidence_reference": "TXN-BOK-REFILL-8812"
+      }
+    ],
+    "payment_summary": {
+      "paid_amount": "25200.00",
+      "change_amount": "0.00"
+    },
+    "inventory_effect": {
+      "transaction_id": "tx-8cd6e7f0-1d16-4790-9bcb-f85c63a83ebe",
+      "consumed_allocations": [
+        "pos-dev-01"
+      ]
+    },
+    "sync_status": "SYNCED",
+    "correlation_id": "corr-1792057986083"
+  },
+  {
+    "sale_id": "sale-55db6072-7757-4c74-950d-3ae7a8168aa5",
+    "invoice_number": "INV-2026-0849",
+    "status": "COMPLETED",
+    "created_at": "2026-10-15T09:51:52.001Z",
+    "cashier_id": "018f0000-0000-7000-8000-000000000001",
+    "cashier_name": "د. أحمد الطاهر",
+    "customer_id": "CUST-088",
+    "customer_name": "عثمان الفاضل كباشي",
+    "items": [
+      {
+        "productId": "MED-004",
+        "name": "Glucophage 500mg Metformin",
+        "nameAr": "جلوكوفاج 500 مجم",
+        "batchNumber": "BATCH-GLU-12",
+        "expiryDate": "2026-11-05",
+        "quantity": 3,
+        "unitPrice": 8400,
+        "lineTotal": 25200
+      }
+    ],
+    "totals": {
+      "subtotal": "25200.00",
+      "tax": "0.00",
+      "total": "25200.00",
+      "currency": "SDG"
+    },
+    "payments": [
+      {
+        "method": "BANK_TRANSFER",
+        "amount": {
+          "value": "25200.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "EVIDENCE_REVIEW",
+        "evidence_reference": "TXN-BOK-REFILL-8812"
+      }
+    ],
+    "payment_summary": {
+      "paid_amount": "25200.00",
+      "change_amount": "0.00"
+    },
+    "inventory_effect": {
+      "transaction_id": "tx-f091713f-90a9-4207-9913-247309db6a84",
+      "consumed_allocations": [
+        "pos-dev-01"
+      ]
+    },
+    "sync_status": "SYNCED",
+    "correlation_id": "corr-1792057912000"
+  },
+  {
+    "sale_id": "sale-8581d2b5-cedf-4538-8b2f-d98c8899dbdc",
+    "invoice_number": "INV-2026-0848",
+    "status": "COMPLETED",
+    "created_at": "2026-10-15T09:51:35.070Z",
+    "cashier_id": "018f0000-0000-7000-8000-000000000001",
+    "cashier_name": "د. أحمد الطاهر",
+    "customer_id": "CUST-088",
+    "customer_name": "عثمان الفاضل كباشي",
+    "items": [
+      {
+        "productId": "MED-004",
+        "name": "Glucophage 500mg Metformin",
+        "nameAr": "جلوكوفاج 500 مجم",
+        "batchNumber": "BATCH-GLU-12",
+        "expiryDate": "2026-11-05",
+        "quantity": 3,
+        "unitPrice": 8400,
+        "lineTotal": 25200
+      }
+    ],
+    "totals": {
+      "subtotal": "25200.00",
+      "tax": "0.00",
+      "total": "25200.00",
+      "currency": "SDG"
+    },
+    "payments": [
+      {
+        "method": "BANK_TRANSFER",
+        "amount": {
+          "value": "25200.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "EVIDENCE_REVIEW",
+        "evidence_reference": "TXN-BOK-REFILL-8812"
+      }
+    ],
+    "payment_summary": {
+      "paid_amount": "25200.00",
+      "change_amount": "0.00"
+    },
+    "inventory_effect": {
+      "transaction_id": "tx-76464384-4366-47d2-9c9d-35e6c0d1c96e",
+      "consumed_allocations": [
+        "pos-dev-01"
+      ]
+    },
+    "sync_status": "SYNCED",
+    "correlation_id": "corr-1792057895069"
+  },
+  {
+    "sale_id": "sale-d90e2af3-b2cb-4a4e-97bc-6d67306bd640",
+    "invoice_number": "INV-2026-0847",
+    "status": "COMPLETED",
+    "created_at": "2026-10-15T09:51:15.944Z",
+    "cashier_id": "018f0000-0000-7000-8000-000000000001",
+    "cashier_name": "د. أحمد الطاهر",
+    "customer_id": "CUST-088",
+    "customer_name": "عثمان الفاضل كباشي",
+    "items": [
+      {
+        "productId": "MED-004",
+        "name": "Glucophage 500mg Metformin",
+        "nameAr": "جلوكوفاج 500 مجم",
+        "batchNumber": "BATCH-GLU-12",
+        "expiryDate": "2026-11-05",
+        "quantity": 3,
+        "unitPrice": 8400,
+        "lineTotal": 25200
+      }
+    ],
+    "totals": {
+      "subtotal": "25200.00",
+      "tax": "0.00",
+      "total": "25200.00",
+      "currency": "SDG"
+    },
+    "payments": [
+      {
+        "method": "BANK_TRANSFER",
+        "amount": {
+          "value": "25200.00",
+          "currency": "SDG"
+        },
+        "verification_mode": "EVIDENCE_REVIEW",
+        "evidence_reference": "TXN-BOK-REFILL-8812"
+      }
+    ],
+    "payment_summary": {
+      "paid_amount": "25200.00",
+      "change_amount": "0.00"
+    },
+    "inventory_effect": {
+      "transaction_id": "tx-903179c3-45ca-4007-8e4d-992758b3716c",
+      "consumed_allocations": [
+        "pos-dev-01"
+      ]
+    },
+    "sync_status": "SYNCED",
+    "correlation_id": "corr-1792057875942"
+  },
+  {
     "sale_id": "sale-c5d6bbde-e3b9-48d9-b2ff-db3e2c8a78dc",
     "invoice_number": "INV-2026-0846",
     "status": "REVERSED",

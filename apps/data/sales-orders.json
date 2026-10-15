@@ -1,0 +1,161 @@
+[
+  {
+    "id": "SO-2026-0108",
+    "orderNumber": "SO-2026-0108",
+    "customerId": null,
+    "customerName": "فاطمة التوم الطيب",
+    "customerPhone": "0123456789",
+    "doctorName": "د. منى حسن",
+    "prescriptionNumber": "RX-2026-CANCEL",
+    "status": "CANCELLED",
+    "priority": "REGULAR",
+    "items": [
+      {
+        "productId": "MED-001",
+        "name": "Panadol Extra 500mg/65mg",
+        "nameAr": "بنادول إكسترا",
+        "quantity": 1,
+        "unitPrice": 3200,
+        "lineTotal": 3200
+      }
+    ],
+    "totalAmount": 3200,
+    "notes": "",
+    "createdAt": "2026-10-15T09:54:37.295Z",
+    "fulfilledInvoiceNumber": null,
+    "fulfilledAt": null,
+    "cancellationReason": "اعتذر المريض عن استلام الروشتة",
+    "cancelReason": "اعتذر المريض عن استلام الروشتة",
+    "cancelledAt": "2026-10-15T09:54:37.298Z"
+  },
+  {
+    "id": "SO-2026-0107",
+    "orderNumber": "SO-2026-0107",
+    "customerId": "CUST-088",
+    "customerName": "عثمان الفاضل كباشي",
+    "customerPhone": "0998765432",
+    "doctorName": "د. خالد عبد الله (استشاري السكري والغدد)",
+    "prescriptionNumber": "RX-2026-9921",
+    "status": "FULFILLED",
+    "priority": "CHRONIC_REFILL",
+    "items": [
+      {
+        "productId": "MED-004",
+        "name": "Glucophage 500mg Metformin",
+        "nameAr": "جلوكوفاج 500 مجم",
+        "quantity": 3,
+        "unitPrice": 8400,
+        "lineTotal": 25200
+      }
+    ],
+    "totalAmount": 25200,
+    "notes": "حجز حصة الأنسولين والشهرية مع إشعار بالرسائل",
+    "createdAt": "2026-10-15T09:54:37.283Z",
+    "fulfilledInvoiceNumber": "INV-2026-0851",
+    "fulfilledAt": "2026-10-15T09:54:37.292Z"
+  },
+  {
+    "id": "SO-2026-0101",
+    "orderNumber": "SO-2026-0101",
+    "customerId": "CUST-088",
+    "customerName": "عثمان الفاضل كباشي",
+    "customerPhone": "0998765432",
+    "doctorName": "د. عبد المنعم الشيخ",
+    "prescriptionNumber": "RX-2026-8812",
+    "status": "CONFIRMED",
+    "priority": "CHRONIC_REFILL",
+    "items": [
+      {
+        "productId": "MED-004",
+        "name": "Glucophage 500mg Metformin",
+        "nameAr": "جلوكوفاج 500 مجم",
+        "quantity": 2,
+        "unitPrice": 8400,
+        "lineTotal": 16800
+      }
+    ],
+    "totalAmount": 16800,
+    "notes": "صرف شهري منتظم - حجز مسبق للاستلام مساء اليوم",
+    "createdAt": "2026-10-14T10:00:00.000Z",
+    "fulfilledInvoiceNumber": null,
+    "fulfilledAt": null
+  },
+  {
+    "id": "SO-2026-0102",
+    "orderNumber": "SO-2026-0102",
+    "customerId": "CUST-012",
+    "customerName": "محمد عبد الرحمن علي",
+    "customerPhone": "0912345678",
+    "doctorName": "د. سامي المهدي (أخصائي الباطنية)",
+    "prescriptionNumber": "RX-2026-9041",
+    "status": "CONFIRMED",
+    "priority": "REGULAR",
+    "items": [
+      {
+        "productId": "MED-003",
+        "name": "Augmentin 1g Amoxicillin/Clavulanate",
+        "nameAr": "أوجمنتين 1 جم",
+        "quantity": 1,
+        "unitPrice": 10700,
+        "lineTotal": 10700
+      }
+    ],
+    "totalAmount": 10700,
+    "notes": "روشتة عيادة النيلين - صرف كورس مضاد حيوي كامل 7 أيام",
+    "createdAt": "2026-10-14T14:30:00.000Z",
+    "fulfilledInvoiceNumber": null,
+    "fulfilledAt": null
+  },
+  {
+    "id": "SO-2026-0103",
+    "orderNumber": "SO-2026-0103",
+    "customerId": "CUST-088",
+    "customerName": "عثمان الفاضل كباشي",
+    "customerPhone": "0998765432",
+    "doctorName": "د. هالة السر (استشاري القلب)",
+    "prescriptionNumber": "RX-2026-7731",
+    "status": "FULFILLED",
+    "priority": "CHRONIC_REFILL",
+    "items": [
+      {
+        "productId": "MED-002",
+        "name": "Concor 5mg Bisoprolol",
+        "nameAr": "كونكور 5 مجم",
+        "quantity": 2,
+        "unitPrice": 6500,
+        "lineTotal": 13000
+      }
+    ],
+    "totalAmount": 13000,
+    "notes": "صرف حصة ضغط الدم - تم الصرف بنجاح",
+    "createdAt": "2026-10-12T09:15:00.000Z",
+    "fulfilledInvoiceNumber": "INV-2026-0814",
+    "fulfilledAt": "2026-10-12T11:20:00.000Z"
+  },
+  {
+    "id": "SO-2026-0104",
+    "orderNumber": "SO-2026-0104",
+    "customerId": null,
+    "customerName": "سارة إبراهيم الشيخ",
+    "customerPhone": "0918887766",
+    "doctorName": "د. عمر بشير (الصدرية والحساسية)",
+    "prescriptionNumber": "RX-2026-6419",
+    "status": "CONFIRMED",
+    "priority": "URGENT",
+    "items": [
+      {
+        "productId": "MED-006",
+        "name": "Ventolin Inhaler 100mcg",
+        "nameAr": "بخاخ فنتولين 100 ميكروجرام",
+        "quantity": 1,
+        "unitPrice": 9200,
+        "lineTotal": 9200
+      }
+    ],
+    "totalAmount": 9200,
+    "notes": "طلب هاتفي عاجل لحالة ربو شعبي حادة",
+    "createdAt": "2026-10-15T08:00:00.000Z",
+    "fulfilledInvoiceNumber": null,
+    "fulfilledAt": null
+  }
+]

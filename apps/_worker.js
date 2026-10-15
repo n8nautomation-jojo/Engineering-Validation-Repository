@@ -14,6 +14,7 @@ import { authRepository } from "./api/auth.mjs";
 import { platformRepository } from "./api/platform.mjs";
 import { inventoryMovementsRepository } from "./api/inventoryMovements.mjs";
 import { customersRepository } from "./api/customers.mjs";
+import { salesOrdersRepository } from "./api/salesOrders.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -219,6 +220,64 @@ export default {
           const id = pathname.replace("/api/customers/", "");
           const updated = customersRepository.update(id, body);
           return jsonResponse(updated, 200);
+        }
+
+        // =========================================================================
+        // SALES ORDERS & PRESCRIPTION RESERVATIONS
+        // =========================================================================
+        if (method === "GET" && pathname === "/api/sales-orders/stats") {
+          return jsonResponse(salesOrdersRepository.getStats());
+        }
+
+        if (method === "GET" && (pathname === "/api/sales-orders" || pathname === "/api/sales-orders/")) {
+          const filters = {
+            status: url.searchParams.get("status") || undefined,
+            search: url.searchParams.get("search") || undefined,
+            customerId: url.searchParams.get("customerId") || undefined,
+            limit: url.searchParams.get("limit") || undefined
+          };
+          return jsonResponse(salesOrdersRepository.getAll(filters));
+        }
+
+        if (method === "GET" && pathname.startsWith("/api/sales-orders/")) {
+          const id = pathname.replace("/api/sales-orders/", "");
+          const order = salesOrdersRepository.getById(id);
+          if (!order) {
+            return errorResponse(404, "ORDER_NOT_FOUND", `أمر البيع/الحجز ${id} غير موجود`, correlationId);
+          }
+          return jsonResponse(order, 200);
+        }
+
+        if (method === "POST" && pathname === "/api/sales-orders") {
+          try {
+            const newOrder = salesOrdersRepository.create(body);
+            return jsonResponse(newOrder, 201);
+          } catch (err) {
+            const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+            return errorResponse(status, "BAD_REQUEST", err.message, correlationId);
+          }
+        }
+
+        if (method === "POST" && pathname.startsWith("/api/sales-orders/") && pathname.endsWith("/fulfill")) {
+          try {
+            const id = pathname.split("/")[3];
+            const fulfilled = salesOrdersRepository.fulfill(id, body?.invoiceNumber);
+            return jsonResponse(fulfilled, 200);
+          } catch (err) {
+            const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+            return errorResponse(status, "BAD_REQUEST", err.message, correlationId);
+          }
+        }
+
+        if (method === "POST" && pathname.startsWith("/api/sales-orders/") && pathname.endsWith("/cancel")) {
+          try {
+            const id = pathname.split("/")[3];
+            const cancelled = salesOrdersRepository.cancel(id, body?.reason);
+            return jsonResponse(cancelled, 200);
+          } catch (err) {
+            const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+            return errorResponse(status, "BAD_REQUEST", err.message, correlationId);
+          }
         }
 
         // Sales & Invoices

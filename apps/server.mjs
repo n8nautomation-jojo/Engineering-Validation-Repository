@@ -12,6 +12,7 @@ import { authRepository } from "./api/auth.mjs";
 import { platformRepository } from "./api/platform.mjs";
 import { inventoryMovementsRepository } from "./api/inventoryMovements.mjs";
 import { customersRepository } from "./api/customers.mjs";
+import { salesOrdersRepository } from "./api/salesOrders.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -278,6 +279,83 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 200, updated);
         return;
       }
+
+      // =========================================================================
+      // SALES ORDERS & PRESCRIPTION RESERVATIONS ENDPOINTS
+      // =========================================================================
+
+      // GET /api/sales-orders/stats — statistics on confirmed, fulfilled, and pending revenue
+      if (req.method === "GET" && pathname === "/api/sales-orders/stats") {
+        sendJson(res, 200, salesOrdersRepository.getStats());
+        return;
+      }
+
+      // GET /api/sales-orders — list sales orders with status, customerId & search filters
+      if (req.method === "GET" && (pathname === "/api/sales-orders" || pathname === "/api/sales-orders/")) {
+        const filters = {
+          status: parsedUrl.searchParams.get("status") || undefined,
+          search: parsedUrl.searchParams.get("search") || undefined,
+          customerId: parsedUrl.searchParams.get("customerId") || undefined,
+          limit: parsedUrl.searchParams.get("limit") || undefined
+        };
+        sendJson(res, 200, salesOrdersRepository.getAll(filters));
+        return;
+      }
+
+      // GET /api/sales-orders/:id — get specific sales order
+      if (req.method === "GET" && pathname.startsWith("/api/sales-orders/")) {
+        const id = pathname.replace("/api/sales-orders/", "");
+        const order = salesOrdersRepository.getById(id);
+        if (!order) {
+          sendError(res, 404, "ORDER_NOT_FOUND", `أمر البيع/الحجز ${id} غير موجود`, correlationId);
+          return;
+        }
+        sendJson(res, 200, order);
+        return;
+      }
+
+      // POST /api/sales-orders — book new prescription / sales order
+      if (req.method === "POST" && pathname === "/api/sales-orders") {
+        try {
+          const body = await readJsonBody(req);
+          const newOrder = salesOrdersRepository.create(body);
+          sendJson(res, 201, newOrder);
+        } catch (err) {
+          const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+
+      // POST /api/sales-orders/:id/fulfill — mark order as fulfilled with invoice reference
+      if (req.method === "POST" && pathname.startsWith("/api/sales-orders/") && pathname.endsWith("/fulfill")) {
+        try {
+          const id = pathname.split("/")[3];
+          const body = await readJsonBody(req);
+          const fulfilled = salesOrdersRepository.fulfill(id, body.invoiceNumber);
+          sendJson(res, 200, fulfilled);
+        } catch (err) {
+          const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+
+      // POST /api/sales-orders/:id/cancel — cancel sales order
+      if (req.method === "POST" && pathname.startsWith("/api/sales-orders/") && pathname.endsWith("/cancel")) {
+        try {
+          const id = pathname.split("/")[3];
+          const body = await readJsonBody(req);
+          const cancelled = salesOrdersRepository.cancel(id, body.reason);
+          sendJson(res, 200, cancelled);
+        } catch (err) {
+          const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+
+      // GET /api/sales — completed sales & invoices ledger
       if (req.method === "GET" && pathname === "/api/sales") {
         sendJson(res, 200, salesRepository.getAllSales());
         return;

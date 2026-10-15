@@ -14,6 +14,7 @@ import { authRepository } from "../../apps/api/auth.mjs";
 import { platformRepository } from "../../apps/api/platform.mjs";
 import { inventoryMovementsRepository } from "../../apps/api/inventoryMovements.mjs";
 import { customersRepository } from "../../apps/api/customers.mjs";
+import { salesOrdersRepository } from "../../apps/api/salesOrders.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -217,7 +218,63 @@ export async function onRequest(context) {
       return jsonResponse(updated, 200);
     }
 
-    // 8. Sales & Invoices Ledger
+    // 8. Sales Orders & Prescription Reservations
+    if (method === "GET" && pathname === "/api/sales-orders/stats") {
+      return jsonResponse(salesOrdersRepository.getStats());
+    }
+
+    if (method === "GET" && (pathname === "/api/sales-orders" || pathname === "/api/sales-orders/")) {
+      const filters = {
+        status: url.searchParams.get("status") || undefined,
+        search: url.searchParams.get("search") || undefined,
+        customerId: url.searchParams.get("customerId") || undefined,
+        limit: url.searchParams.get("limit") || undefined
+      };
+      return jsonResponse(salesOrdersRepository.getAll(filters));
+    }
+
+    if (method === "GET" && pathname.startsWith("/api/sales-orders/")) {
+      const id = pathname.replace("/api/sales-orders/", "");
+      const order = salesOrdersRepository.getById(id);
+      if (!order) {
+        return errorResponse(404, "ORDER_NOT_FOUND", `أمر البيع/الحجز ${id} غير موجود`, correlationId);
+      }
+      return jsonResponse(order, 200);
+    }
+
+    if (method === "POST" && pathname === "/api/sales-orders") {
+      try {
+        const newOrder = salesOrdersRepository.create(body);
+        return jsonResponse(newOrder, 201);
+      } catch (err) {
+        const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+        return errorResponse(status, "BAD_REQUEST", err.message, correlationId);
+      }
+    }
+
+    if (method === "POST" && pathname.startsWith("/api/sales-orders/") && pathname.endsWith("/fulfill")) {
+      try {
+        const id = pathname.split("/")[3];
+        const fulfilled = salesOrdersRepository.fulfill(id, body?.invoiceNumber);
+        return jsonResponse(fulfilled, 200);
+      } catch (err) {
+        const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+        return errorResponse(status, "BAD_REQUEST", err.message, correlationId);
+      }
+    }
+
+    if (method === "POST" && pathname.startsWith("/api/sales-orders/") && pathname.endsWith("/cancel")) {
+      try {
+        const id = pathname.split("/")[3];
+        const cancelled = salesOrdersRepository.cancel(id, body?.reason);
+        return jsonResponse(cancelled, 200);
+      } catch (err) {
+        const status = err.message.includes("NOT_FOUND") ? 404 : 400;
+        return errorResponse(status, "BAD_REQUEST", err.message, correlationId);
+      }
+    }
+
+    // 9. Sales & Invoices Ledger
     if (method === "GET" && pathname === "/api/sales") {
       return jsonResponse(salesRepository.getAllSales());
     }

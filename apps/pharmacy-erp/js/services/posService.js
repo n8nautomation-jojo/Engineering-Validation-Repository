@@ -19,6 +19,7 @@ class PosService {
     this.splitCashAmount = 0;
     this.splitBankakAmount = 0;
     this.splitBankakRef = '';
+    this.activeSalesOrderId = null;
 
     const activeUser = typeof AuthService !== 'undefined' ? AuthService.getCurrentUser() : null;
     this.session = {
@@ -204,6 +205,15 @@ class PosService {
     this.splitCashAmount = 0;
     this.splitBankakAmount = 0;
     this.splitBankakRef = '';
+    this.activeSalesOrderId = null;
+  }
+
+  setActiveSalesOrder(id) {
+    this.activeSalesOrderId = id;
+  }
+
+  clearActiveSalesOrder() {
+    this.activeSalesOrderId = null;
   }
 
   setSplitMode(active) {

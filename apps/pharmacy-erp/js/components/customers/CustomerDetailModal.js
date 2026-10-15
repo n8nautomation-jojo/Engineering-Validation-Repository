@@ -31,6 +31,14 @@ export class CustomerDetailModal {
       }
     });
 
+    modal.querySelector('#btn-book-prescription-patient')?.addEventListener('click', () => {
+      if (this.currentCustomer) {
+        const cust = this.currentCustomer;
+        this.close();
+        window.dispatchEvent(new CustomEvent('OPEN_SALES_ORDER_MODAL', { detail: { customer: cust } }));
+      }
+    });
+
     modal.querySelector('#btn-pos-dispense-patient')?.addEventListener('click', () => {
       if (this.currentCustomer && this.onSelectForPos) {
         const cust = this.currentCustomer;
