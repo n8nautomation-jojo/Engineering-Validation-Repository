@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { catalogRepository } from "./catalog.mjs";
 import { sessionRepository } from "./session.mjs";
 import { inventoryMovementsRepository } from "./inventoryMovements.mjs";
+import { customersRepository } from "./customers.mjs";
 
 const resolveDataDir = () => {
   try {
@@ -36,6 +37,7 @@ class SalesRepository {
         const raw = fs.readFileSync(SALES_FILE, "utf-8");
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
+          this.salesLedger = parsed;
           return parsed;
         }
       }
@@ -44,6 +46,7 @@ class SalesRepository {
     }
     const initial = this.getInitialHistory();
     this.persistSales(initial);
+    this.salesLedger = initial;
     return initial;
   }
 
@@ -230,10 +233,12 @@ class SalesRepository {
   }
 
   getAllSales() {
+    this.loadSales();
     return [...this.salesLedger].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }
 
   getSaleById(idOrInv) {
+    this.loadSales();
     return this.salesLedger.find(s => s.sale_id === idOrInv || s.invoice_number === idOrInv) || null;
   }
 
@@ -325,6 +330,18 @@ class SalesRepository {
     const nextInvNumber = `INV-2026-${String(this.salesLedger.length + 843).padStart(4, "0")}`;
     const changeAmount = Math.max(0, totalPaidNumber - subtotalNumber);
 
+    let customerId = dto.customer_id || "CUST-WALK-IN";
+    let customerName = "مواطن — صرف صيدلاني";
+    if (dto.customer_id && dto.customer_id !== "CUST-WALK-IN") {
+      const cust = customersRepository.getById(dto.customer_id);
+      if (cust) {
+        customerId = cust.id;
+        customerName = cust.name;
+      } else {
+        customerName = `عميل رقم ${dto.customer_id}`;
+      }
+    }
+
     const completeSaleRecord = {
       sale_id: saleId,
       invoice_number: nextInvNumber,
@@ -332,8 +349,8 @@ class SalesRepository {
       created_at: new Date().toISOString(),
       cashier_id: dto.cash_register_id || "usr-001",
       cashier_name: "د. أحمد الطاهر",
-      customer_id: dto.customer_id || "CUST-WALK-IN",
-      customer_name: dto.customer_id ? `عميل رقم ${dto.customer_id}` : "مواطن — صرف صيدلاني",
+      customer_id: customerId,
+      customer_name: customerName,
       items: executedLines,
       totals: {
         subtotal: subtotalNumber.toFixed(2),
@@ -362,6 +379,15 @@ class SalesRepository {
     // 7. Persist to ledger and idempotency store
     this.salesLedger.unshift(completeSaleRecord);
     this.persistSales();
+
+    // 8. Update customer's aggregate stats if registered
+    if (customerId !== "CUST-WALK-IN") {
+      try {
+        customersRepository.recordSaleVisit(customerId, subtotalNumber, completeSaleRecord.created_at);
+      } catch (custErr) {
+        console.warn("[Sales] Failed to update customer record:", custErr.message);
+      }
+    }
 
     // Record stock movements for all executed lines (FEFO deduction)
     for (const item of executedLines) {

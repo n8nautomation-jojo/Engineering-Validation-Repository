@@ -69,10 +69,10 @@ export class AuthService {
     if (!this._currentUser) return ['pos'];
     const role = this._currentUser.role;
     if (role === 'CASHIER') {
-      return ['pos', 'sales', 'sessions'];
+      return ['pos', 'sales', 'sessions', 'customers'];
     }
     // PHARMACY_MANAGER and default admin roles
-    return ['dashboard', 'inventory', 'pos', 'sales', 'sessions', 'purchasing', 'reports', 'design-system'];
+    return ['dashboard', 'inventory', 'pos', 'sales', 'sessions', 'purchasing', 'customers', 'reports', 'design-system'];
   }
 
   static canAccessView(view) {

@@ -1,0 +1,77 @@
+[
+  {
+    "id": "CUST-012",
+    "name": "محمد عبد الرحمن علي",
+    "phone": "0912345678",
+    "type": "CHRONIC",
+    "chronicConditions": [
+      "ارتفاع ضغط الدم (Hypertension)",
+      "داء السكري النوع الثاني (Type 2 Diabetes)"
+    ],
+    "allergies": [
+      "حساسية بنسلين (Penicillin Allergy)"
+    ],
+    "insuranceDetails": null,
+    "notes": "يحتاج مراجعة دورية للضغط وفحص السكر التراكمي",
+    "totalPurchases": 18500,
+    "visitsCount": 1,
+    "lastVisitAt": "2026-10-13T08:45:12.000Z",
+    "createdAt": "2026-09-01T10:00:00.000Z",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "CUST-088",
+    "name": "عثمان الفاضل كباشي",
+    "phone": "0998765432",
+    "type": "CHRONIC",
+    "chronicConditions": [
+      "داء السكري النوع الثاني (Type 2 Diabetes)"
+    ],
+    "allergies": [],
+    "insuranceDetails": null,
+    "notes": "صرف شهري لجلوكوفاج 500 مجم",
+    "totalPurchases": 25800,
+    "visitsCount": 1,
+    "lastVisitAt": "2026-10-13T07:30:00.000Z",
+    "createdAt": "2026-09-10T11:30:00.000Z",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "CUST-049",
+    "name": "فاطمة إدريس حسن",
+    "phone": "0123456789",
+    "type": "INSURANCE",
+    "chronicConditions": [
+      "الربو الشعبي (Bronchial Asthma)"
+    ],
+    "allergies": [
+      "حساسية أسبرين ومسكنات NSAIDs"
+    ],
+    "insuranceDetails": {
+      "provider": "شركة شيكان للتأمين",
+      "policyNumber": "SHK-2026-99120",
+      "copayPercent": 15
+    },
+    "notes": "بطاقة تأمين سارية حتى نهاية 2026",
+    "totalPurchases": 15800,
+    "visitsCount": 1,
+    "lastVisitAt": "2026-10-13T09:15:30.000Z",
+    "createdAt": "2026-08-15T09:00:00.000Z",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "CUST-104",
+    "name": "د. نزار مصطفى عوض",
+    "phone": "0911223344",
+    "type": "WALK_IN",
+    "chronicConditions": [],
+    "allergies": [],
+    "insuranceDetails": null,
+    "notes": "عميل منتظم للحي",
+    "totalPurchases": 0,
+    "visitsCount": 0,
+    "lastVisitAt": null,
+    "createdAt": "2026-10-01T12:00:00.000Z",
+    "status": "ACTIVE"
+  }
+]

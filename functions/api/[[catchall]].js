@@ -13,6 +13,7 @@ import { settingsRepository } from "../../apps/api/settings.mjs";
 import { authRepository } from "../../apps/api/auth.mjs";
 import { platformRepository } from "../../apps/api/platform.mjs";
 import { inventoryMovementsRepository } from "../../apps/api/inventoryMovements.mjs";
+import { customersRepository } from "../../apps/api/customers.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -180,7 +181,43 @@ export async function onRequest(context) {
       return jsonResponse(inventoryMovementsRepository.getMovementsStats());
     }
 
-    // 7. Sales & Invoices Ledger
+    // 7. Customer & Patient Directory
+    if (method === "GET" && pathname === "/api/customers/stats") {
+      return jsonResponse(customersRepository.getStats());
+    }
+
+    if (method === "GET" && (pathname === "/api/customers" || pathname === "/api/customers/")) {
+      const filters = {
+        search: url.searchParams.get("search") || undefined,
+        type: url.searchParams.get("type") || undefined,
+        status: url.searchParams.get("status") || undefined,
+        limit: url.searchParams.get("limit") || undefined
+      };
+      return jsonResponse(customersRepository.getAll(filters));
+    }
+
+    if (method === "GET" && pathname.startsWith("/api/customers/")) {
+      const id = pathname.replace("/api/customers/", "");
+      const customer = customersRepository.getById(id);
+      if (!customer) {
+        return errorResponse(404, "CUSTOMER_NOT_FOUND", `المريض/العميل ${id} غير مسجل`, correlationId);
+      }
+      const purchases = salesRepository.getAllSales().filter(s => s.customer_id === id);
+      return jsonResponse({ ...customer, purchases }, 200);
+    }
+
+    if (method === "POST" && pathname === "/api/customers") {
+      const created = customersRepository.create(body);
+      return jsonResponse(created, 201);
+    }
+
+    if (method === "PUT" && pathname.startsWith("/api/customers/")) {
+      const id = pathname.replace("/api/customers/", "");
+      const updated = customersRepository.update(id, body);
+      return jsonResponse(updated, 200);
+    }
+
+    // 8. Sales & Invoices Ledger
     if (method === "GET" && pathname === "/api/sales") {
       return jsonResponse(salesRepository.getAllSales());
     }

@@ -17,12 +17,14 @@ import { PosCatalogGrid } from './pos/PosCatalogGrid.js';
 import { PosCartPanel } from './pos/PosCartPanel.js';
 import { PosPaymentSelector } from './pos/PosPaymentSelector.js';
 import { OfflineQueueModal } from './pos/OfflineQueueModal.js';
+import { PosCustomerSelectModal } from './pos/PosCustomerSelectModal.js';
 
 export class PosView {
   constructor() {
     this.container = document.getElementById('pos-terminal-view');
     this.searchQuery = '';
     this.selectedCategory = 'ALL';
+    this.activeCustomer = null;
 
     // Mobile Sheet & Bar Elements
     this.cartPanel = document.getElementById('pos-cart-panel');
@@ -33,6 +35,14 @@ export class PosView {
 
     // Offline Outbox Inspection Modal
     this.queueModal = new OfflineQueueModal();
+
+    // Fast Customer Selection Modal
+    this.customerSelectModal = new PosCustomerSelectModal('dialog-pos-customer-select', {
+      onSelectCustomer: (cust) => this.handleCustomerChange(cust),
+      onRegisterNew: (initialName) => {
+        window.dispatchEvent(new CustomEvent('OPEN_CUSTOMER_ADD_MODAL', { detail: { name: initialName } }));
+      }
+    });
 
     // Instantiate Decomposed Sub-components
     this.headerBanner = new PosHeaderBanner('pos-header-banner-container', {
@@ -54,7 +64,9 @@ export class PosView {
       onUpdateQty: (idx, q) => this.handleUpdateQty(idx, q),
       onRemoveItem: (idx) => this.handleRemoveItem(idx),
       onClearCart: () => this.handleClearCart(),
-      onCloseMobileSheet: () => this.closeMobileSheet()
+      onCloseMobileSheet: () => this.closeMobileSheet(),
+      onOpenCustomerSelector: () => this.customerSelectModal.open(),
+      onClearCustomer: () => this.handleCustomerChange(null)
     });
 
     this.paymentSelector = new PosPaymentSelector('pos-payment-selector-container', {
@@ -120,6 +132,11 @@ export class PosView {
     });
     window.openOfflineQueue = () => this.queueModal.open();
 
+    // React to POS patient selection from Customers registry
+    window.addEventListener('POS_SET_CUSTOMER', (e) => {
+      this.handleCustomerChange(e.detail);
+    });
+
     // Initial Full Render
     this.render();
   }
@@ -162,8 +179,45 @@ export class PosView {
   }
 
   renderCart() {
-    this.cartPanelComponent.render(posService.cart, posService.grandTotal);
+    this.cartPanelComponent.render(posService.cart, posService.grandTotal, this.activeCustomer);
     this.updateMobileCartBar();
+  }
+
+  handleCustomerChange(customer) {
+    this.activeCustomer = customer;
+    this.renderCart();
+  }
+
+  checkAllergyContraindication(med) {
+    if (!this.activeCustomer || !Array.isArray(this.activeCustomer.allergies) || this.activeCustomer.allergies.length === 0) {
+      return null;
+    }
+
+    const medText = `${med.name} ${med.generic || ''} ${med.nameAr || ''}`.toLowerCase();
+    
+    // Penicillin check
+    const hasPenicillinAllergy = this.activeCustomer.allergies.some(a => 
+      a.includes('بنسلين') || a.toLowerCase().includes('penicillin')
+    );
+    if (hasPenicillinAllergy) {
+      const penicillinKeywords = ['augmentin', 'أوجمنتين', 'amoxicillin', 'أموكسيسيلين', 'penicillin', 'بنسلين', 'ampicillin', 'أمبيسيلين', 'clavam', 'كلافام'];
+      if (penicillinKeywords.some(kw => medText.includes(kw))) {
+        return `تحذير سريري حرج: المريض مسجل بحساسية البنسلين (Penicillin Allergy)، والصنف (${med.name}) يحتوي على مشتقات البنسلين والأموكسيسيلين!`;
+      }
+    }
+
+    // Aspirin & NSAIDs check
+    const hasNsaidAllergy = this.activeCustomer.allergies.some(a => 
+      a.includes('أسبرين') || a.includes('مسكنات') || a.toLowerCase().includes('nsaid') || a.toLowerCase().includes('aspirin')
+    );
+    if (hasNsaidAllergy) {
+      const nsaidKeywords = ['aspirin', 'أسبرين', 'ibuprofen', 'بروفين', 'diclofenac', 'ديكلوفيناك', 'cataflam', 'كتافلام', 'voltaren', 'فولتارين'];
+      if (nsaidKeywords.some(kw => medText.includes(kw))) {
+        return `تحذير سريري حرج: المريض مسجل بحساسية الأسبرين والمسكنات (NSAIDs)، والصنف (${med.name}) قد يسبب مضاعفات خطيرة!`;
+      }
+    }
+
+    return null;
   }
 
   renderPayment() {
@@ -206,6 +260,11 @@ export class PosView {
 
     if (foundMed) {
       try {
+        const contraindication = this.checkAllergyContraindication(foundMed);
+        if (contraindication) {
+          showToast('تحذير سريري عالي الخطورة', contraindication, 'danger');
+        }
+
         posService.addItem(foundMed, null, 1);
         showToast(
           'تمت الإضافة عبر الباركود',
@@ -227,6 +286,11 @@ export class PosView {
 
   handleSelectProduct(med) {
     try {
+      const contraindication = this.checkAllergyContraindication(med);
+      if (contraindication) {
+        showToast('تحذير سريري عالي الخطورة', contraindication, 'danger');
+      }
+
       posService.addItem(med, null, 1);
       showToast(
         'تمت الإضافة للسلة',
@@ -306,10 +370,14 @@ export class PosView {
 
     try {
       // Execute official CompleteSale via Core Backend API or Offline Outbox Engine
-      const responseDto = await posService.completeSale();
+      const customerId = this.activeCustomer ? this.activeCustomer.id : null;
+      const responseDto = await posService.completeSale(customerId);
 
       // Close mobile sheet if open
       this.closeMobileSheet();
+
+      // Reset active customer after completed dispensation
+      this.activeCustomer = null;
 
       // Trigger 80mm thermal receipt modal with real sale data
       window.dispatchEvent(new CustomEvent('OPEN_RECEIPT_MODAL', { detail: responseDto }));

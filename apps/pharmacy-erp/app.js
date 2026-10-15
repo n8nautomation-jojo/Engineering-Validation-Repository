@@ -19,6 +19,7 @@ import { SessionsView } from './js/components/SessionsView.js';
 import { PurchasingView } from './js/components/PurchasingView.js';
 import { ReportsView } from './js/components/ReportsView.js';
 import { DesignSystemView } from './js/components/DesignSystemView.js';
+import { CustomersView } from './js/components/CustomersView.js';
 import { SettingsDialog } from './js/components/SettingsDialog.js';
 import { HelpDialog } from './js/components/HelpDialog.js';
 import { CashMovementDialog } from './js/components/CashMovementDialog.js';
@@ -53,6 +54,7 @@ class PharmaTechApp {
     this.components.sales = new SalesView();
     this.components.sessions = new SessionsView();
     this.components.purchasing = new PurchasingView();
+    this.components.customers = new CustomersView();
     this.components.reports = new ReportsView();
     this.components.designSystem = new DesignSystemView();
     this.components.settingsDialog = new SettingsDialog();
@@ -63,6 +65,12 @@ class PharmaTechApp {
     this.components.dashboardStats = new DashboardStats();
     this.components.loginModal = new LoginModal();
     this.components.userMenuModal = new UserMenuModal();
+
+    window.addEventListener('OPEN_CUSTOMER_ADD_MODAL', (e) => {
+      if (this.components.customers?.formModal) {
+        this.components.customers.formModal.open({ name: e.detail?.name || '' });
+      }
+    });
 
     // Event listeners for global dialog triggers
     window.addEventListener('OPEN_SETTINGS_DIALOG', () => {

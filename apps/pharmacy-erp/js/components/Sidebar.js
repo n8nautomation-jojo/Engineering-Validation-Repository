@@ -183,6 +183,7 @@ export class Sidebar {
     const purchasingView = document.getElementById('purchasing-view');
     const reportsView = document.getElementById('reports-view');
     const designSystemView = document.getElementById('design-system-view');
+    const customersView = document.getElementById('customers-view');
 
     // Helper to hide all views
     const hideAll = () => {
@@ -196,6 +197,7 @@ export class Sidebar {
       if (purchasingView) purchasingView.style.display = 'none';
       if (reportsView) reportsView.style.display = 'none';
       if (designSystemView) designSystemView.style.display = 'none';
+      if (customersView) customersView.style.display = 'none';
     };
 
     hideAll();
@@ -244,6 +246,12 @@ export class Sidebar {
 
       window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
       showToast('التقارير المالية', 'تم تحديث المؤشرات والأرباح ومبيعات بنكك', 'info');
+    } else if (view === 'customers') {
+      if (pageTitle) pageTitle.textContent = 'دليل وسجل المرضى والعملاء';
+      if (customersView) customersView.style.display = 'block';
+
+      window.dispatchEvent(new CustomEvent('CUSTOMERS_UPDATED'));
+      showToast('دليل المرضى والعملاء', 'تم تحديث سجل المرضى والملفات السريرية بنجاح', 'info');
     } else if (view === 'design-system') {
       if (pageTitle) pageTitle.textContent = 'دليل الهوية البصرية ونظام المكونات';
       if (designSystemView) designSystemView.style.display = 'block';

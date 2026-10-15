@@ -129,6 +129,14 @@
             <circle cx="7" cy="18" r="2" />
           </svg>
           <span class="nav-text">المشتريات والتوريد</span>
+        <button class="nav-button" data-view="customers" id="nav-customers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span class="nav-text">المرضى والعملاء</span>
         </button>
 
         <button class="nav-button" data-view="reports" id="nav-reports">
@@ -561,7 +569,12 @@
         <section class="panel" id="purchasing-view" style="display:none;"></section>
 
         <!-- =====================================================================
-             8. FINANCIAL & OPERATIONAL REPORTS VIEW
+             8. CUSTOMER & PATIENT DIRECTORY VIEW
+             ===================================================================== -->
+        <section class="panel" id="customers-view" style="display:none;"></section>
+
+        <!-- =====================================================================
+             9. FINANCIAL & OPERATIONAL REPORTS VIEW
              ===================================================================== -->
         <section class="panel" id="reports-view" style="display:none;"></section>
 
@@ -1520,6 +1533,196 @@
         </table>
       </div>
 
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       20. Customer / Patient Add & Edit Dialog
+       ========================================================================= -->
+  <div class="dialog-backdrop hidden" id="dialog-customer-form" role="dialog" aria-modal="true">
+    <div class="dialog" style="max-width:560px; max-height:90vh; overflow-y:auto;">
+      <button class="dialog-close" id="btn-cancel-customer-x">&times;</button>
+      
+      <div class="dialog-head">
+        <span class="title-icon lg">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </span>
+        <div>
+          <h3 class="dialog-title" id="customer-modal-title">تسجيل مريض / عميل جديد</h3>
+          <p class="dialog-desc">تسجيل الملف السريري، رقم الهاتف، والأمراض المزمنة لربط الصرف الدوائي</p>
+        </div>
+      </div>
+
+      <form id="customer-edit-form" style="margin-top:16px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:5px;">اسم المريض / العميل الرباعي *</label>
+            <input type="text" id="customer-form-name" required placeholder="مثال: محمد عبد الرحمن علي" 
+              style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--background); color:var(--foreground); font-size:13px;">
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:5px;">رقم الهاتف (سوداني / بنكك)</label>
+            <input type="tel" id="customer-form-phone" placeholder="0912345678" dir="ltr"
+              style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--background); color:var(--foreground); font-size:13px; font-family:var(--font-mono);">
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:5px;">تصنيف العميل / المريض</label>
+          <select id="customer-form-type" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--background); color:var(--foreground); font-size:13px;">
+            <option value="WALK_IN">عميل نقدي عابر (صرف عام)</option>
+            <option value="CHRONIC">مريض أمراض مزمنة (متابعة دورية)</option>
+            <option value="INSURANCE">تأمين صحي معتمد</option>
+          </select>
+        </div>
+
+        <!-- Chronic Conditions Chips -->
+        <div style="margin-bottom:12px;">
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:5px;">الأمراض المزمنة (اختر ما ينطبق):</label>
+          <div id="customer-chronic-chips-container" style="display:flex; flex-wrap:wrap; gap:6px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Allergy Safety Warning Tags -->
+        <div style="margin-bottom:14px; background:rgba(225,29,72,0.05); border:1px dashed #FDA4AF; border-radius:8px; padding:10px;">
+          <label style="display:block; font-size:12px; font-weight:800; color:#BE123C; margin-bottom:5px;">
+            ⚠️ الحساسية الدوائية وموانع الاستعمال (فائقة الأهمية للسلامة):
+          </label>
+          <div id="customer-allergy-chips-container" style="display:flex; flex-wrap:wrap; gap:6px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Insurance Section (Dynamic) -->
+        <div id="customer-insurance-section" style="display:none; background:rgba(59,130,246,0.05); border:1px solid #BFDBFE; border-radius:8px; padding:12px; margin-bottom:14px;">
+          <h4 style="margin:0 0 8px; font-size:13px; font-weight:800; color:#1D4ED8;">بيانات التأمين الصحي</h4>
+          <div style="display:grid; grid-template-columns:1fr 1fr 90px; gap:8px;">
+            <div>
+              <label style="display:block; font-size:11px; font-weight:600; margin-bottom:3px;">شركة التأمين</label>
+              <input type="text" id="customer-form-ins-provider" placeholder="مثال: شيكان للتأمين"
+                style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12px;">
+            </div>
+            <div>
+              <label style="display:block; font-size:11px; font-weight:600; margin-bottom:3px;">رقم البطاقة / الوثيقة</label>
+              <input type="text" id="customer-form-ins-policy" placeholder="SHK-2026-XXXX" dir="ltr"
+                style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12px; font-family:var(--font-mono);">
+            </div>
+            <div>
+              <label style="display:block; font-size:11px; font-weight:600; margin-bottom:3px;">التحمل (%)</label>
+              <input type="number" id="customer-form-ins-copay" min="0" max="100" value="0" dir="ltr"
+                style="width:100%; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:700; margin-bottom:5px;">ملاحظات الطبيب الصيدلي</label>
+          <textarea id="customer-form-notes" rows="2" placeholder="أي تعليمات علاجية خاصة، مواعيد تكرار الصرف، أو توصيات..."
+            style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--background); color:var(--foreground); font-size:12.5px;"></textarea>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border); padding-top:14px;">
+          <button type="button" class="btn-table-action" id="btn-cancel-customer" style="padding:8px 16px;">إلغاء</button>
+          <button type="submit" class="btn-primary" id="btn-save-customer" style="padding:8px 20px; font-weight:700;">حفظ بيانات المريض</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       21. Customer Detailed Profile & Medical History Dialog
+       ========================================================================= -->
+  <div class="dialog-backdrop hidden" id="dialog-customer-detail" role="dialog" aria-modal="true">
+    <div class="dialog" style="max-width:760px; width:95vw; max-height:88vh; display:flex; flex-direction:column;">
+      <button class="dialog-close" id="btn-close-customer-detail-x">&times;</button>
+      
+      <div class="dialog-head" style="flex-shrink:0;">
+        <span class="title-icon lg">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </span>
+        <div>
+          <h3 class="dialog-title">الملف السريري وسجل مبيعات المريض</h3>
+          <p class="dialog-desc">استعراض الحالات المزمنة، التحذيرات الدوائية، وتاريخ الفواتير المصروفة</p>
+        </div>
+      </div>
+
+      <div id="customer-detail-body" style="flex:1; overflow-y:auto; padding:10px 0;">
+        <!-- Dynamically rendered by CustomerDetailModal.js -->
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); padding-top:14px; margin-top:10px; flex-shrink:0;">
+        <button type="button" class="btn-table-action" id="btn-close-customer-detail" style="padding:8px 16px;">إغلاق</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-table-action" id="btn-edit-from-detail" style="padding:8px 14px;">تعديل البيانات</button>
+          <button type="button" class="btn-primary" id="btn-pos-dispense-patient" style="padding:8px 18px; font-weight:700; background:#00B37E; border-color:#00B37E;">
+            صرف فوري في POS ➔
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       22. POS Fast Customer Selector Modal
+       ========================================================================= -->
+  <div class="dialog-backdrop hidden" id="dialog-pos-customer-select" role="dialog" aria-modal="true">
+    <div class="dialog" style="max-width:520px; width:95vw; max-height:85vh; display:flex; flex-direction:column;">
+      <button class="dialog-close" id="btn-close-pos-customer-x">&times;</button>
+      
+      <div class="dialog-head" style="flex-shrink:0;">
+        <span class="title-icon lg">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+          </svg>
+        </span>
+        <div>
+          <h3 class="dialog-title">اختيار أو ربط مريض بنقطة البيع</h3>
+          <p class="dialog-desc">ابحث برقم الهاتف (بنكك) أو الاسم لتوثيق الفاتورة وتفعيل فحص الحساسية</p>
+        </div>
+      </div>
+
+      <!-- Quick Search Toolbar -->
+      <div style="margin:12px 0; flex-shrink:0;">
+        <div style="position:relative; margin-bottom:10px;">
+          <input type="text" id="pos-customer-search-input" placeholder="اكتب رقم هاتف العميل (09xxxxxxxx) أو اسمه..." 
+            style="width:100%; padding:10px 38px 10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--background); color:var(--foreground); font-size:13.5px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" 
+            style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:var(--muted-foreground); pointer-events:none;">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <button type="button" class="btn-table-action" id="btn-pos-walkin-mode" style="padding:5px 10px; font-size:11.5px; color:var(--muted-foreground);">
+            صرف عام بدون ربط ملف
+          </button>
+          <button type="button" class="btn-table-action" id="btn-pos-quick-add-customer" style="padding:5px 12px; font-size:11.5px; font-weight:700; color:var(--primary);">
+            + تسجيل مريض جديد
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Results List -->
+      <div id="pos-customer-results-list" style="flex:1; overflow-y:auto; border-top:1px solid var(--border); padding-top:10px;">
+        <!-- Populated dynamically by PosCustomerSelectModal.js -->
+      </div>
+
+      <div style="border-top:1px solid var(--border); padding-top:10px; margin-top:8px; text-align:left; flex-shrink:0;">
+        <button type="button" class="btn-table-action" id="btn-close-pos-customer" style="padding:6px 14px; font-size:12px;">إغلاق</button>
+      </div>
     </div>
   </div>
 

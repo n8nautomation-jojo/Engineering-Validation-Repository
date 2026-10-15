@@ -11,6 +11,7 @@ import { settingsRepository } from "./api/settings.mjs";
 import { authRepository } from "./api/auth.mjs";
 import { platformRepository } from "./api/platform.mjs";
 import { inventoryMovementsRepository } from "./api/inventoryMovements.mjs";
+import { customersRepository } from "./api/customers.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -226,7 +227,57 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
-      // GET /api/sales — completed sales & invoices ledger
+      // =========================================================================
+      // CUSTOMER & PATIENT DIRECTORY ENDPOINTS
+      // =========================================================================
+
+      // GET /api/customers/stats — customer aggregate statistics
+      if (req.method === "GET" && pathname === "/api/customers/stats") {
+        sendJson(res, 200, customersRepository.getStats());
+        return;
+      }
+
+      // GET /api/customers — list customers with search & filter
+      if (req.method === "GET" && (pathname === "/api/customers" || pathname === "/api/customers/")) {
+        const filters = {
+          search: parsedUrl.searchParams.get("search") || undefined,
+          type: parsedUrl.searchParams.get("type") || undefined,
+          status: parsedUrl.searchParams.get("status") || undefined,
+          limit: parsedUrl.searchParams.get("limit") || undefined
+        };
+        sendJson(res, 200, customersRepository.getAll(filters));
+        return;
+      }
+
+      // GET /api/customers/:id — get single customer and purchase history
+      if (req.method === "GET" && pathname.startsWith("/api/customers/")) {
+        const id = pathname.replace("/api/customers/", "");
+        const customer = customersRepository.getById(id);
+        if (!customer) {
+          sendError(res, 404, "CUSTOMER_NOT_FOUND", `المريض/العميل ${id} غير مسجل`, correlationId);
+          return;
+        }
+        const purchases = salesRepository.getAllSales().filter(s => s.customer_id === id);
+        sendJson(res, 200, { ...customer, purchases });
+        return;
+      }
+
+      // POST /api/customers — register new patient/customer
+      if (req.method === "POST" && pathname === "/api/customers") {
+        const body = await readJsonBody(req);
+        const created = customersRepository.create(body);
+        sendJson(res, 201, created);
+        return;
+      }
+
+      // PUT /api/customers/:id — update patient/customer details
+      if (req.method === "PUT" && pathname.startsWith("/api/customers/")) {
+        const id = pathname.replace("/api/customers/", "");
+        const body = await readJsonBody(req);
+        const updated = customersRepository.update(id, body);
+        sendJson(res, 200, updated);
+        return;
+      }
       if (req.method === "GET" && pathname === "/api/sales") {
         sendJson(res, 200, salesRepository.getAllSales());
         return;
