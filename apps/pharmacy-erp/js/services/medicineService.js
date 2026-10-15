@@ -156,5 +156,32 @@ export const MedicineService = {
     URL.revokeObjectURL(url);
 
     return list.length;
+  },
+
+  async fetchStockMovements(filters = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (filters.productId) params.set('productId', filters.productId);
+      if (filters.batchNumber) params.set('batchNumber', filters.batchNumber);
+      if (filters.type && filters.type !== 'ALL') params.set('type', filters.type);
+      if (filters.direction && filters.direction !== 'ALL') params.set('direction', filters.direction);
+      if (filters.search) params.set('search', filters.search);
+      if (filters.limit) params.set('limit', filters.limit);
+
+      const qs = params.toString() ? `?${params.toString()}` : '';
+      return await apiClient.get(`/api/inventory/movements${qs}`);
+    } catch (err) {
+      console.warn('[MedicineService] fetchStockMovements failed:', err.message);
+      return [];
+    }
+  },
+
+  async fetchStockMovementsStats() {
+    try {
+      return await apiClient.get('/api/inventory/movements/stats');
+    } catch (err) {
+      console.warn('[MedicineService] fetchStockMovementsStats failed:', err.message);
+      return { totalMovements: 0, totalInUnits: 0, totalOutUnits: 0, netStockChange: 0 };
+    }
   }
 };

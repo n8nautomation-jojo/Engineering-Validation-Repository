@@ -14,6 +14,7 @@ export class MedicineDetailDialog {
     this.closeBtn = document.getElementById('btn-close-detail-dialog');
     this.deleteBtn = document.getElementById('btn-delete-medicine');
     this.reorderBtn = document.getElementById('btn-reorder-medicine');
+    this.movementsBtn = document.getElementById('btn-view-medicine-movements');
     this.batchesList = new MedicineBatchesList('detail-medicine-batches-list');
 
     this.init();
@@ -21,6 +22,13 @@ export class MedicineDetailDialog {
 
   init() {
     this.closeBtn?.addEventListener('click', () => this.close());
+
+    this.movementsBtn?.addEventListener('click', () => {
+      if (!appStore.selectedMedicine) return;
+      const med = appStore.selectedMedicine;
+      this.close();
+      window.dispatchEvent(new CustomEvent('OPEN_STOCK_MOVEMENTS_MODAL', { detail: { medicine: med } }));
+    });
 
     this.deleteBtn?.addEventListener('click', async () => {
       if (!appStore.selectedMedicine) return;

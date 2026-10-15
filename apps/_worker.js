@@ -12,6 +12,7 @@ import { reportsRepository } from "./api/reports.mjs";
 import { settingsRepository } from "./api/settings.mjs";
 import { authRepository } from "./api/auth.mjs";
 import { platformRepository } from "./api/platform.mjs";
+import { inventoryMovementsRepository } from "./api/inventoryMovements.mjs";
 
 function jsonResponse(data, status = 200, customHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -158,6 +159,27 @@ export default {
             return jsonResponse({ error: { code: "PRODUCT_NOT_FOUND", message: `Product ${id} not found` } }, 404);
           }
           return jsonResponse({ success: true, deletedId: id });
+        }
+
+        // =========================================================================
+        // INVENTORY AUDIT & STOCK MOVEMENTS (P0-7 / FEFO LEDGER)
+        // =========================================================================
+        if (method === "GET" && (pathname === "/api/inventory/movements" || pathname === "/api/inventory/movements/")) {
+          const filters = {
+            productId: url.searchParams.get("productId") || undefined,
+            batchNumber: url.searchParams.get("batchNumber") || undefined,
+            type: url.searchParams.get("type") || undefined,
+            direction: url.searchParams.get("direction") || undefined,
+            search: url.searchParams.get("search") || undefined,
+            dateFrom: url.searchParams.get("dateFrom") || undefined,
+            dateTo: url.searchParams.get("dateTo") || undefined,
+            limit: url.searchParams.get("limit") || 100
+          };
+          return jsonResponse(inventoryMovementsRepository.getAllMovements(filters));
+        }
+
+        if (method === "GET" && pathname === "/api/inventory/movements/stats") {
+          return jsonResponse(inventoryMovementsRepository.getMovementsStats());
         }
 
         // Sales & Invoices

@@ -10,6 +10,7 @@ import { reportsRepository } from "./api/reports.mjs";
 import { settingsRepository } from "./api/settings.mjs";
 import { authRepository } from "./api/auth.mjs";
 import { platformRepository } from "./api/platform.mjs";
+import { inventoryMovementsRepository } from "./api/inventoryMovements.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -196,6 +197,32 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         sendJson(res, 200, { success: true, deletedId: id });
+        return;
+      }
+
+      // =========================================================================
+      // INVENTORY AUDIT & STOCK MOVEMENTS ENDPOINTS (P0-7 / FEFO LEDGER)
+      // =========================================================================
+
+      // GET /api/inventory/movements — query stock movements stream
+      if (req.method === "GET" && (pathname === "/api/inventory/movements" || pathname === "/api/inventory/movements/")) {
+        const filters = {
+          productId: parsedUrl.searchParams.get("productId") || undefined,
+          batchNumber: parsedUrl.searchParams.get("batchNumber") || undefined,
+          type: parsedUrl.searchParams.get("type") || undefined,
+          direction: parsedUrl.searchParams.get("direction") || undefined,
+          search: parsedUrl.searchParams.get("search") || undefined,
+          dateFrom: parsedUrl.searchParams.get("dateFrom") || undefined,
+          dateTo: parsedUrl.searchParams.get("dateTo") || undefined,
+          limit: parsedUrl.searchParams.get("limit") || 100
+        };
+        sendJson(res, 200, inventoryMovementsRepository.getAllMovements(filters));
+        return;
+      }
+
+      // GET /api/inventory/movements/stats — aggregated stock movement statistics
+      if (req.method === "GET" && pathname === "/api/inventory/movements/stats") {
+        sendJson(res, 200, inventoryMovementsRepository.getMovementsStats());
         return;
       }
 

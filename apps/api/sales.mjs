@@ -8,6 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { catalogRepository } from "./catalog.mjs";
 import { sessionRepository } from "./session.mjs";
+import { inventoryMovementsRepository } from "./inventoryMovements.mjs";
 
 const resolveDataDir = () => {
   try {
@@ -362,6 +363,29 @@ class SalesRepository {
     this.salesLedger.unshift(completeSaleRecord);
     this.persistSales();
 
+    // Record stock movements for all executed lines (FEFO deduction)
+    for (const item of executedLines) {
+      try {
+        inventoryMovementsRepository.recordMovement({
+          movementType: "SALE_DISPENSE",
+          direction: "OUT",
+          productId: item.productId,
+          productName: item.name,
+          productNameAr: item.nameAr,
+          batchNumber: item.batchNumber,
+          expiryDate: item.expiryDate,
+          quantity: item.quantity,
+          unit: "عبوة",
+          referenceId: nextInvNumber,
+          referenceType: "SALE_INVOICE",
+          performedBy: completeSaleRecord.cashier_name || "كاشير نقطة البيع",
+          notes: `صرف فاتورة بيع (${nextInvNumber}) - العميل: ${completeSaleRecord.customer_name}`
+        });
+      } catch (movErr) {
+        console.warn("[Sales] Failed to record stock movement:", movErr.message);
+      }
+    }
+
     const responseDto = {
       sale_id: completeSaleRecord.sale_id,
       invoice_number: completeSaleRecord.invoice_number,
@@ -395,6 +419,26 @@ class SalesRepository {
     for (const item of (sale.items || [])) {
       catalogRepository.restoreBatchStock(item.productId, item.batchNumber, item.quantity);
       totalUnits += Number(item.quantity) || 0;
+
+      try {
+        inventoryMovementsRepository.recordMovement({
+          movementType: "SALE_RETURN",
+          direction: "IN",
+          productId: item.productId,
+          productName: item.name,
+          productNameAr: item.nameAr,
+          batchNumber: item.batchNumber,
+          expiryDate: item.expiryDate,
+          quantity: item.quantity,
+          unit: "عبوة",
+          referenceId: `RET-${sale.invoice_number}`,
+          referenceType: "RETURN_DOC",
+          performedBy: "مدير الصيدلية (إرجاع معتمد)",
+          notes: `إرجاع فاتورة (${sale.invoice_number}) - السبب: ${reason} ${note ? `· ${note}` : ''}`
+        });
+      } catch (movErr) {
+        console.warn("[Sales] Failed to record return stock movement:", movErr.message);
+      }
     }
 
     // Restore consumed allocation quota back to device

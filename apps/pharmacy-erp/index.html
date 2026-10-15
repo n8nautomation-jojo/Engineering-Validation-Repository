@@ -707,6 +707,10 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
           حذف الصنف
         </button>
+        <button type="button" class="btn-table-action" id="btn-view-medicine-movements" style="padding:0 14px; display:inline-flex; align-items:center; gap:6px; font-size:12.5px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+          سجل حركات الصنف
+        </button>
         <button class="btn-primary" id="btn-reorder-medicine">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="13" x="1" y="3" rx="2" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /></svg>
           طلب توريد
@@ -1421,6 +1425,101 @@
       <div class="dialog-content-body" style="margin-top:16px;">
         <!-- Rendered dynamically by UserMenuModal.js -->
       </div>
+    </div>
+  </div>
+
+  <!-- 19. Stock Movements & Regulatory Inventory Audit Dialog -->
+  <div class="dialog-backdrop hidden" id="dialog-stock-movements" role="dialog" aria-modal="true">
+    <div class="dialog" style="max-width:960px; width:95vw; max-height:90vh; display:flex; flex-direction:column;">
+      <button class="dialog-close" id="btn-close-movements-modal">&times;</button>
+      
+      <div class="dialog-head" style="flex-shrink:0;">
+        <span class="title-icon lg">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </span>
+        <div>
+          <h3 class="dialog-title" id="movements-modal-title">سجل حركات المخزون والتسويات الرقابي</h3>
+          <p class="dialog-desc" id="movements-modal-desc">سجل غير قابل للتعديل يوثق جميع التوريدات، مبيعات الصيدلية FEFO، المردودات، وفروقات الجرد</p>
+        </div>
+      </div>
+
+      <!-- Quick KPI Stats Bar -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin:14px 0; padding:10px 14px; background:var(--muted); border:1px solid var(--border); border-radius:10px; flex-shrink:0;">
+        <div>
+          <small style="color:var(--muted-foreground); font-size:11px;">إجمالي الحركات</small>
+          <div style="font-size:16px; font-weight:800;" id="stat-movements-total">0</div>
+        </div>
+        <div>
+          <small style="color:var(--muted-foreground); font-size:11px;">إجمالي الوارد (+)</small>
+          <div style="font-size:16px; font-weight:800; color:#00B37E;" id="stat-movements-in">+0 عبوة</div>
+        </div>
+        <div>
+          <small style="color:var(--muted-foreground); font-size:11px;">إجمالي المنصرف (-)</small>
+          <div style="font-size:16px; font-weight:800; color:#E11D48;" id="stat-movements-out">-0 عبوة</div>
+        </div>
+        <div>
+          <small style="color:var(--muted-foreground); font-size:11px;">صافي حركة الرصيد</small>
+          <div style="font-size:16px; font-weight:800;" id="stat-movements-net">0 عبوة</div>
+        </div>
+      </div>
+
+      <!-- Filter Controls & Actions -->
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; flex-shrink:0;">
+        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:240px;">
+          <input 
+            type="search" 
+            id="movements-search-input" 
+            placeholder="بحث بالدواء، التشغيلة، الفاتورة، أو المسؤول..." 
+            style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-size:12.5px;"
+          />
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px;">
+          <select id="movements-type-filter" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--background); color:var(--foreground); font-size:12px; font-weight:600;">
+            <option value="ALL">جميع أنواع الحركات</option>
+            <option value="GOODS_RECEIPT">توريد مشتريات (إذن استلام)</option>
+            <option value="SALE_DISPENSE">صرف مبيعات (FEFO)</option>
+            <option value="SALE_RETURN">مردودات مبيعات</option>
+            <option value="STOCK_ADJUSTMENT">تسويات جردية</option>
+            <option value="DAMAGE_DISPOSAL">استبعاد وتالف</option>
+          </select>
+
+          <span class="badge" id="movements-filtered-count" style="font-size:11px; padding:4px 8px;">0 حركة</span>
+
+          <button type="button" class="btn-table-action" id="btn-export-movements-csv" title="تصدير كشف الحركات CSV" style="padding:7px 11px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            تصدير CSV
+          </button>
+
+          <button type="button" class="btn-primary" id="btn-print-movements" style="padding:7px 12px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+            طباعة الكشف
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Movements Table -->
+      <div style="flex:1; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+        <table style="width:100%; border-collapse:collapse; text-align:right;">
+          <thead style="position:sticky; top:0; background:var(--muted); border-bottom:1px solid var(--border); font-size:12px; color:var(--muted-foreground); z-index:2;">
+            <tr>
+              <th style="padding:9px 12px;">التاريخ والوقت</th>
+              <th style="padding:9px 12px;">نوع الحركة</th>
+              <th style="padding:9px 12px;">الصنف الدوائي</th>
+              <th style="padding:9px 12px;">التشغيلة والصلاحية</th>
+              <th style="padding:9px 12px;">الكمية والأثر</th>
+              <th style="padding:9px 12px;">المرجع</th>
+              <th style="padding:9px 12px;">المسؤول والملاحظات</th>
+            </tr>
+          </thead>
+          <tbody id="movements-table-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
     </div>
   </div>
 

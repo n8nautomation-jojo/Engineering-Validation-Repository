@@ -166,4 +166,45 @@
     page-break-inside: avoid !important;
     overflow: hidden !important;
   }
+
+  /* --------------------------------------------------------------------------
+     4. Stock Movements Regulatory Audit Report (A4 Sheet)
+     -------------------------------------------------------------------------- */
+  body.printing-movements {
+    width: 210mm !important;
+    margin: 8mm auto !important;
+  }
+
+  body.printing-movements #dialog-stock-movements {
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  body.printing-movements #dialog-stock-movements .dialog {
+    max-width: 100% !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  body.printing-movements #dialog-stock-movements .dialog-close,
+  body.printing-movements #dialog-stock-movements #btn-export-movements-csv,
+  body.printing-movements #dialog-stock-movements #btn-print-movements,
+  body.printing-movements #dialog-stock-movements #movements-search-input,
+  body.printing-movements #dialog-stock-movements #movements-type-filter {
+    display: none !important;
+  }
+
+  body.printing-movements #dialog-stock-movements table {
+    width: 100% !important;
+    font-size: 9.5pt !important;
+    border-collapse: collapse !important;
+  }
+
+  body.printing-movements #dialog-stock-movements th,
+  body.printing-movements #dialog-stock-movements td {
+    border: 1px solid #ddd !important;
+    padding: 6px 8px !important;
+  }
 }

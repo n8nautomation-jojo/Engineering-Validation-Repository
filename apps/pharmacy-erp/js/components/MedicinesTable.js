@@ -15,6 +15,7 @@ import { InventoryTableGrid } from './inventory/InventoryTableGrid.js';
 import { InventoryPagination } from './inventory/InventoryPagination.js';
 import { StockAdjustmentModal } from './inventory/StockAdjustmentModal.js';
 import { BarcodeLabelModal } from './inventory/BarcodeLabelModal.js';
+import { StockMovementsModal } from './inventory/StockMovementsModal.js';
 import { showToast } from './Toast.js';
 
 export class MedicinesTable {
@@ -28,7 +29,8 @@ export class MedicinesTable {
       onCategoryChange: (cat) => this.handleCategoryChange(cat),
       onStatusChange: (status) => this.handleStatusChange(status),
       onAddNew: () => this.handleAddNew(),
-      onExportCSV: () => this.handleExportCSV()
+      onExportCSV: () => this.handleExportCSV(),
+      onViewMovements: () => this.handleViewMovements()
     });
 
     this.tableGrid = new InventoryTableGrid('inventory-table-container', {
@@ -43,6 +45,7 @@ export class MedicinesTable {
 
     this.stockAdjustmentModal = new StockAdjustmentModal('dialog-stock-adjustment');
     this.barcodeLabelModal = new BarcodeLabelModal('dialog-barcode-label');
+    this.stockMovementsModal = new StockMovementsModal('dialog-stock-movements');
 
     this.init();
   }
@@ -65,6 +68,9 @@ export class MedicinesTable {
     });
 
     window.addEventListener('CATALOG_UPDATED', () => this.render());
+    window.addEventListener('OPEN_STOCK_MOVEMENTS_MODAL', (e) => {
+      this.handleViewMovements(e.detail?.medicine || null);
+    });
 
     // Initial render
     this.render();
@@ -156,5 +162,9 @@ export class MedicinesTable {
   handlePageChange(page) {
     appStore.setPage(page);
     this.render();
+  }
+
+  handleViewMovements(medicine = null) {
+    this.stockMovementsModal.open(medicine);
   }
 }

@@ -6,13 +6,14 @@
 import { AuthService } from '../../services/authService.js';
 
 export class InventoryFilterBar {
-  constructor(containerId = 'inventory-filter-bar-container', { onSearch, onCategoryChange, onStatusChange, onAddNew, onExportCSV }) {
+  constructor(containerId = 'inventory-filter-bar-container', { onSearch, onCategoryChange, onStatusChange, onAddNew, onExportCSV, onViewMovements } = {}) {
     this.containerId = containerId;
     this.onSearch = onSearch;
     this.onCategoryChange = onCategoryChange;
     this.onStatusChange = onStatusChange;
     this.onAddNew = onAddNew;
     this.onExportCSV = onExportCSV;
+    this.onViewMovements = onViewMovements;
 
     this.categories = [
       { id: 'ALL', label: 'جميع الأقسام' },
@@ -65,6 +66,12 @@ export class InventoryFilterBar {
 
           <!-- Action Buttons -->
           <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="btn-table-action" id="btn-inventory-movements" title="عرض سجل حركات المخزون والتسويات الرقابي" style="padding:8px 12px; font-size:12.5px; display:inline-flex; align-items:center; gap:6px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              </svg>
+              سجل الحركات
+            </button>
             <button type="button" class="btn-table-action" id="btn-inventory-export-csv" title="تصدير كشف المخزون والتشغيلات إلى CSV" style="padding:8px 12px; font-size:12.5px; display:inline-flex; align-items:center; gap:6px;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -135,6 +142,14 @@ export class InventoryFilterBar {
     });
 
     // Action buttons
+    el.querySelector('#btn-inventory-movements')?.addEventListener('click', () => {
+      if (this.onViewMovements) {
+        this.onViewMovements();
+      } else {
+        window.dispatchEvent(new CustomEvent('OPEN_STOCK_MOVEMENTS_MODAL'));
+      }
+    });
+
     el.querySelector('#btn-inventory-export-csv')?.addEventListener('click', () => {
       if (this.onExportCSV) this.onExportCSV();
     });

@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { catalogRepository } from "./catalog.mjs";
+import { inventoryMovementsRepository } from "./inventoryMovements.mjs";
 
 const resolveDataDir = () => {
   try {
@@ -403,6 +404,26 @@ class PurchasingRepository {
         expiryDate: expDate,
         quantity: qty
       });
+
+      try {
+        inventoryMovementsRepository.recordMovement({
+          movementType: "GOODS_RECEIPT",
+          direction: "IN",
+          productId: item.productId,
+          productName: orderItem.productName,
+          productNameAr: orderItem.productName,
+          batchNumber: batchNum,
+          expiryDate: expDate,
+          quantity: qty,
+          unit: "عبوة",
+          referenceId: grnNumber,
+          referenceType: "PURCHASE_ORDER",
+          performedBy: receiptInput.receivedBy || "د. طارق المشرف (أمين المستودع)",
+          notes: `إذن استلام شحنة لأمر الشراء ${order.poNumber} — فاتورة المورد: ${receiptInput.supplierInvoiceNumber || 'غير محدد'}`
+        });
+      } catch (movErr) {
+        console.warn("[Purchasing] Failed to record stock movement:", movErr.message);
+      }
     }
 
     // Determine if fully or partially delivered

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { inventoryMovementsRepository } from "./inventoryMovements.mjs";
 
 const resolveDataDir = () => {
   try {
@@ -318,6 +319,31 @@ class CatalogRepository {
     batch.availableQuantity = qty;
     this.persistProducts();
 
+    const diff = qty - previousQuantity;
+    if (diff !== 0) {
+      const direction = diff > 0 ? "IN" : "OUT";
+      const movementType = (reason === "DAMAGE_WASTE" || reason === "EXPIRED_DISPOSAL") ? "DAMAGE_DISPOSAL" : "STOCK_ADJUSTMENT";
+      try {
+        inventoryMovementsRepository.recordMovement({
+          movementType,
+          direction,
+          productId: product.id,
+          productName: product.name,
+          productNameAr: product.nameAr,
+          batchNumber: batch.batchNumber,
+          expiryDate: batch.expiryDate,
+          quantity: Math.abs(diff),
+          unit: product.unit || "علبة",
+          referenceId: `ADJ-${Date.now().toString().slice(-6)}`,
+          referenceType: "ADJUSTMENT_DOC",
+          performedBy: "لجنة الجرد الصيدلاني المعتمدة",
+          notes: `تسوية جردية (${reason}): تعديل الرصيد من ${previousQuantity} إلى ${qty}`
+        });
+      } catch (movErr) {
+        console.warn("[Catalog] Failed to record stock movement for adjustment:", movErr.message);
+      }
+    }
+
     return {
       productId: product.id,
       productName: product.name,
@@ -325,7 +351,7 @@ class CatalogRepository {
       batchNumber: batch.batchNumber,
       previousQuantity,
       newQuantity: qty,
-      difference: qty - previousQuantity,
+      difference: diff,
       reason,
       adjustedAt: new Date().toISOString()
     };
