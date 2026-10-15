@@ -1983,6 +1983,211 @@
     </div>
   </div>
 
+
+  <!-- =========================================================================
+       25. Supplier Commercial Invoice Modal (Accounts Payable Entry)
+       ========================================================================= -->
+  <div class="dialog-backdrop hidden" id="dialog-supplier-invoice-modal" role="dialog" aria-modal="true">
+    <div class="dialog" style="max-width:620px; width:95vw; max-height:90vh; display:flex; flex-direction:column;">
+      <button class="dialog-close" id="btn-close-invoice-modal-x">&times;</button>
+      
+      <div class="dialog-head" style="flex-shrink:0;">
+        <span class="title-icon lg">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </span>
+        <div>
+          <h3 class="dialog-title">تسجيل فاتورة مورد تجارية (Commercial Invoice)</h3>
+          <p class="dialog-desc">قيد التزام مالي في حسابات الذمم الدائنة وربطه بأمر الشراء وتاريخ الاستحقاق</p>
+        </div>
+      </div>
+
+      <div style="flex:1; overflow-y:auto; padding:10px 0;">
+        <form id="supplier-invoice-form">
+          <!-- Supplier Selection & Invoice Number -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">المورد المعتمد *</label>
+              <select id="invoice-form-supplier-select" required style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12.5px;">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">رقم فاتورة المورد *</label>
+              <input type="text" id="invoice-form-number" required placeholder="مثال: INV-HIK-8890"
+                style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12.5px; font-family:var(--font-mono);">
+            </div>
+          </div>
+
+          <!-- PO link & Dates -->
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px;">
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">أمر الشراء المرتبط</label>
+              <select id="invoice-form-po-select" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12px; font-family:var(--font-mono);">
+                <option value="">-- اختياري --</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">تاريخ إصدار الفاتورة *</label>
+              <input type="date" id="invoice-form-issue-date" required style="width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12px;">
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">تاريخ الاستحقاق *</label>
+              <input type="date" id="invoice-form-due-date" required style="width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12px;">
+            </div>
+          </div>
+
+          <!-- Total Amount & Initial Payment Section -->
+          <div style="background:var(--background); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:14px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:10px;">
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px; color:var(--foreground);">إجمالي الفاتورة (ج.س) *</label>
+                <input type="number" id="invoice-form-total-amount" min="1" step="any" required placeholder="0.00"
+                  style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--card-bg, #fff); font-size:14px; font-weight:700; font-family:var(--font-mono);">
+              </div>
+              <div>
+                <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px; color:#059669;">دفعة مقدمة / سداد فوري (ج.س)</label>
+                <input type="number" id="invoice-form-initial-paid" min="0" step="any" value="0" placeholder="0.00"
+                  style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--card-bg, #fff); font-size:14px; font-weight:700; font-family:var(--font-mono); color:#059669;">
+              </div>
+            </div>
+
+            <!-- Initial Payment Method (conditionally visible) -->
+            <div id="invoice-initial-payment-box" style="display:none; grid-template-columns:1fr 1fr; gap:10px; padding-top:10px; border-top:1px dashed var(--border);">
+              <div>
+                <label style="display:block; font-size:11.5px; font-weight:600; margin-bottom:4px;">طريقة السداد</label>
+                <select id="invoice-form-payment-method" style="width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:6px; background:var(--card-bg, #fff); font-size:12px;">
+                  <option value="BANK_TRANSFER">تحويل بنكي / تطبيق بنكك</option>
+                  <option value="CASH">نقداً من الخزينة</option>
+                  <option value="CHEQUE">شيك مصرفي آجل</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block; font-size:11.5px; font-weight:600; margin-bottom:4px;">رقم الإشعار / الشيك</label>
+                <input type="text" id="invoice-form-payment-ref" placeholder="رقم المعاملة أو الشيك"
+                  style="width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:6px; background:var(--card-bg, #fff); font-size:12px; font-family:var(--font-mono);">
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div style="margin-bottom:12px;">
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">ملاحظات الفاتورة والتسليم</label>
+            <textarea id="invoice-form-notes" rows="2" placeholder="أية ملاحظات خاصة بالشحنة، الفاتورة الضريبية، شروط السداد..."
+              style="width:100%; padding:7px 10px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12.5px;"></textarea>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border); padding-top:12px;">
+            <button type="button" class="btn-table-action" id="btn-cancel-invoice-modal" style="padding:8px 16px;">إلغاء</button>
+            <button type="submit" class="btn-primary" id="btn-save-supplier-invoice" style="padding:8px 20px; font-weight:700;">تسجيل الفاتورة وقيد الذمم</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       26. Supplier Invoice Payment / Settlement Modal
+       ========================================================================= -->
+  <div class="dialog-backdrop hidden" id="dialog-supplier-payment-modal" role="dialog" aria-modal="true">
+    <div class="dialog" style="max-width:540px; width:95vw; max-height:90vh; display:flex; flex-direction:column;">
+      <button class="dialog-close" id="btn-close-payment-modal-x">&times;</button>
+      
+      <div class="dialog-head" style="flex-shrink:0;">
+        <span class="title-icon lg">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+          </svg>
+        </span>
+        <div>
+          <h3 class="dialog-title" id="payment-modal-title">تسجيل سداد دفعة للمورد</h3>
+          <p class="dialog-desc" id="payment-modal-subtitle">الوفاء بالذمم الدائنة وتحديث الرصيد المستحق</p>
+        </div>
+      </div>
+
+      <div style="flex:1; overflow-y:auto; padding:10px 0;">
+        <!-- Invoice Balance Overview Card -->
+        <div style="background:var(--background); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:12px; color:var(--muted-foreground);">المورد التجاري:</span>
+            <strong id="pay-summary-supplier" style="font-size:12.5px;">—</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:12px; color:var(--muted-foreground);">رقم الفاتورة:</span>
+            <strong id="pay-summary-inv-num" style="font-size:12.5px; font-family:var(--font-mono);">—</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:12px; color:var(--muted-foreground);">إجمالي الفاتورة:</span>
+            <span id="pay-summary-total" style="font-weight:700; font-family:var(--font-mono);">0 ج.س</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:12px; color:var(--muted-foreground);">المسدد سابقاً:</span>
+            <span id="pay-summary-paid" style="font-weight:700; color:#059669; font-family:var(--font-mono);">0 ج.س</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; padding-top:8px; border-top:1px dashed var(--border);">
+            <strong style="font-size:13px; color:#DC2626;">الرصيد المتبقي المستحق:</strong>
+            <strong id="pay-summary-remaining" style="font-size:15px; color:#DC2626; font-family:var(--font-mono);">0 ج.س</strong>
+          </div>
+        </div>
+
+        <form id="supplier-payment-form">
+          <div style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <label style="font-size:12px; font-weight:700;">مبلغ الدفعة المراد سدادها (ج.س) *</label>
+              <button type="button" id="btn-pay-full-balance" style="background:none; border:none; padding:0; color:var(--primary); font-size:11.5px; cursor:pointer; text-decoration:underline; font-weight:600;">
+                سداد كامل المتبقي
+              </button>
+            </div>
+            <input type="number" id="pay-form-amount" min="1" step="any" required placeholder="0.00"
+              style="width:100%; padding:9px 12px; border:2px solid var(--primary); border-radius:6px; background:var(--card-bg, #fff); font-size:16px; font-weight:800; font-family:var(--font-mono); color:var(--foreground);">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">طريقة السداد</label>
+              <select id="pay-form-method" style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12.5px;">
+                <option value="BANK_TRANSFER">تحويل بنكي / تطبيق بنكك</option>
+                <option value="CASH">نقداً من الخزينة</option>
+                <option value="CHEQUE">شيك مصرفي</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">رقم العملية / الإشعار</label>
+              <input type="text" id="pay-form-ref" placeholder="مثال: TXN-BOK-8841"
+                style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12.5px; font-family:var(--font-mono);">
+            </div>
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:4px;">المسؤول عن الصرف والملاحظات</label>
+            <input type="text" id="pay-form-notes" placeholder="ملاحظات قيد السداد..."
+              style="width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:6px; background:var(--background); font-size:12.5px;">
+          </div>
+
+          <!-- Past Payments History in this invoice -->
+          <div id="pay-history-section" style="margin-bottom:14px; border:1px solid var(--border); border-radius:8px; padding:10px; background:var(--background);">
+            <div style="font-size:11.5px; font-weight:700; margin-bottom:6px; color:var(--muted-foreground);">سجل المدفوعات السابقة لهذه الفاتورة:</div>
+            <div id="pay-history-list" style="font-size:11.5px; max-height:100px; overflow-y:auto;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border); padding-top:12px;">
+            <button type="button" class="btn-table-action" id="btn-cancel-payment-modal" style="padding:8px 16px;">إلغاء</button>
+            <button type="submit" class="btn-primary" id="btn-save-supplier-payment" style="padding:8px 20px; font-weight:700;">تأكيد وصرف الدفعة</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Main JavaScript App Controller -->

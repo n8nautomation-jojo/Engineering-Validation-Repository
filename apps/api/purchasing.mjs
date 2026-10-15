@@ -24,6 +24,7 @@ const resolveDataDir = () => {
 const DATA_DIR = resolveDataDir();
 const ORDERS_FILE = DATA_DIR ? path.join(DATA_DIR, "purchasing-orders.json") : "";
 const SUPPLIERS_FILE = DATA_DIR ? path.join(DATA_DIR, "suppliers.json") : "";
+const INVOICES_FILE = DATA_DIR ? path.join(DATA_DIR, "supplier-invoices.json") : "";
 
 const randomUUID = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `018f${Math.random().toString(16).slice(2, 10)}-0000-7000-8000-000000000000`);
 
@@ -155,10 +156,81 @@ const INITIAL_ORDERS = [
   }
 ];
 
+const INITIAL_INVOICES = [
+  {
+    id: "INV-SUP-2026-0001",
+    invoiceNumber: "INV-HIK-8812",
+    supplierId: "SUP-001",
+    supplierName: "شركة الحكمة للصناعات الدوائية",
+    poNumber: "PO-2026-0041",
+    grnNumber: "GRN-2026-0081",
+    issueDate: "2026-10-12",
+    dueDate: "2026-10-26",
+    status: "PAID",
+    totalAmount: 510000,
+    paidAmount: 510000,
+    remainingBalance: 0,
+    payments: [
+      {
+        amount: 510000,
+        method: "BANK_TRANSFER",
+        reference: "TXN-BOK-SUP-9912",
+        paidAt: "2026-10-13T10:15:00.000Z",
+        paidBy: "د. أحمد الطاهر"
+      }
+    ],
+    notes: "فاتورة شحنة البنادول والبروفين - سداد كامل عبر تطبيق بنكك فرع الشركات",
+    createdAt: "2026-10-12T12:00:00.000Z"
+  },
+  {
+    id: "INV-SUP-2026-0002",
+    invoiceNumber: "INV-BNM-9401",
+    supplierId: "SUP-002",
+    supplierName: "شركة النيل الأزرق للمستلزمات الطبية",
+    poNumber: "PO-2026-0042",
+    grnNumber: null,
+    issueDate: "2026-10-13",
+    dueDate: "2026-10-27",
+    status: "UNPAID",
+    totalAmount: 1366000,
+    paidAmount: 0,
+    remainingBalance: 1366000,
+    payments: [],
+    notes: "فاتورة توريد أدوية السكري والمضادات الحيوية - استحقاق بعد 14 يوماً",
+    createdAt: "2026-10-13T14:00:00.000Z"
+  },
+  {
+    id: "INV-SUP-2026-0003",
+    invoiceNumber: "INV-ROYAL-7104",
+    supplierId: "SUP-003",
+    supplierName: "مجموعة رويال كير العالمية للأدوية",
+    poNumber: null,
+    grnNumber: null,
+    issueDate: "2026-10-14",
+    dueDate: "2026-10-28",
+    status: "PARTIALLY_PAID",
+    totalAmount: 420000,
+    paidAmount: 200000,
+    remainingBalance: 220000,
+    payments: [
+      {
+        amount: 200000,
+        method: "CASH",
+        reference: "RECEIPT-CASH-4410",
+        paidAt: "2026-10-14T11:30:00.000Z",
+        paidBy: "د. سارة الكباشي"
+      }
+    ],
+    notes: "دفعة مقدمة نقداً عند استلام شحنة مستلزمات العناية، والمتبقي بشيك آجل",
+    createdAt: "2026-10-14T09:00:00.000Z"
+  }
+];
+
 class PurchasingRepository {
   constructor() {
     this.suppliers = this.loadSuppliers();
     this.orders = this.loadOrders();
+    this.invoices = this.loadInvoices();
   }
 
   loadSuppliers() {
@@ -216,6 +288,35 @@ class PurchasingRepository {
       fs.writeFileSync(ORDERS_FILE, JSON.stringify(ordersList, null, 2), "utf-8");
     } catch (err) {
       console.warn("[PurchasingRepository] Failed to write orders to disk:", err.message);
+    }
+  }
+
+  loadInvoices() {
+    try {
+      if (INVOICES_FILE && fs && typeof fs.existsSync === "function" && fs.existsSync(INVOICES_FILE)) {
+        const raw = fs.readFileSync(INVOICES_FILE, "utf-8");
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.warn("[PurchasingRepository] Failed to read supplier invoices from disk:", err.message);
+    }
+    const initial = JSON.parse(JSON.stringify(INITIAL_INVOICES));
+    this.persistInvoices(initial);
+    return initial;
+  }
+
+  persistInvoices(invoicesList = this.invoices) {
+    if (!INVOICES_FILE || !DATA_DIR || !fs || typeof fs.writeFileSync !== "function") return;
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      fs.writeFileSync(INVOICES_FILE, JSON.stringify(invoicesList, null, 2), "utf-8");
+    } catch (err) {
+      console.warn("[PurchasingRepository] Failed to write supplier invoices to disk:", err.message);
     }
   }
 
@@ -461,6 +562,202 @@ class PurchasingRepository {
       order,
       goodsReceipt: grnRecord
     };
+  }
+
+  getAllInvoices(filters = {}) {
+    this.invoices = this.loadInvoices();
+    let result = [...this.invoices];
+
+    if (filters.supplierId) {
+      result = result.filter(inv => inv.supplierId === filters.supplierId);
+    }
+
+    if (filters.status && filters.status !== "ALL") {
+      result = result.filter(inv => inv.status === filters.status);
+    }
+
+    if (filters.search) {
+      const q = String(filters.search).toLowerCase().trim();
+      result = result.filter(inv =>
+        (inv.invoiceNumber && inv.invoiceNumber.toLowerCase().includes(q)) ||
+        (inv.supplierName && inv.supplierName.toLowerCase().includes(q)) ||
+        (inv.poNumber && inv.poNumber.toLowerCase().includes(q)) ||
+        (inv.notes && inv.notes.toLowerCase().includes(q))
+      );
+    }
+
+    result.sort((a, b) => new Date(b.createdAt || b.issueDate || 0) - new Date(a.createdAt || a.issueDate || 0));
+    return result;
+  }
+
+  getInvoiceById(id) {
+    this.invoices = this.loadInvoices();
+    const q = String(id).trim().toLowerCase();
+    return this.invoices.find(inv => inv.id.toLowerCase() === q || (inv.invoiceNumber && inv.invoiceNumber.toLowerCase() === q)) || null;
+  }
+
+  getInvoicesStats() {
+    this.invoices = this.loadInvoices();
+    const totalCount = this.invoices.length;
+    let unpaidCount = 0;
+    let partiallyPaidCount = 0;
+    let paidCount = 0;
+    let totalInvoicedAmount = 0;
+    let totalPaidAmount = 0;
+    let totalOutstandingBalance = 0;
+
+    for (const inv of this.invoices) {
+      const total = Number(inv.totalAmount) || 0;
+      const paid = Number(inv.paidAmount) || 0;
+      const rem = Number(inv.remainingBalance) || 0;
+
+      totalInvoicedAmount += total;
+      totalPaidAmount += paid;
+      totalOutstandingBalance += rem;
+
+      if (inv.status === "PAID" || rem <= 0) {
+        paidCount++;
+      } else if (inv.status === "PARTIALLY_PAID" || paid > 0) {
+        partiallyPaidCount++;
+      } else {
+        unpaidCount++;
+      }
+    }
+
+    return {
+      totalInvoicesCount: totalCount,
+      unpaidCount,
+      partiallyPaidCount,
+      paidCount,
+      totalInvoicedAmount,
+      totalPaidAmount,
+      totalOutstandingBalance,
+      currency: "SDG"
+    };
+  }
+
+  createInvoice(input = {}) {
+    this.invoices = this.loadInvoices();
+    if (!input.invoiceNumber || !String(input.invoiceNumber).trim()) {
+      throw new Error("رقم فاتورة المورد مطلوب (Invoice Number is required)");
+    }
+    const cleanInvoiceNumber = String(input.invoiceNumber).trim();
+
+    const duplicate = this.invoices.find(i => i.invoiceNumber.toLowerCase() === cleanInvoiceNumber.toLowerCase());
+    if (duplicate) {
+      throw new Error(`فاتورة المورد برقم "${cleanInvoiceNumber}" مسجلة مسبقاً بالنظام`);
+    }
+
+    if (!input.supplierId) {
+      throw new Error("المورد مطلوب (Supplier is required)");
+    }
+    const supplier = this.getSupplierById(input.supplierId);
+    if (!supplier) {
+      throw new Error("المورد المحدد غير موجود بالنظام");
+    }
+
+    const totalAmount = Number(input.totalAmount);
+    if (isNaN(totalAmount) || totalAmount <= 0) {
+      throw new Error("إجمالي الفاتورة يجب أن يكون مبلغاً أكبر من الصفر");
+    }
+
+    const issueDate = input.issueDate || new Date().toISOString().split("T")[0];
+    const dueDate = input.dueDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+
+    const initialPaid = Math.max(0, Number(input.initialPaidAmount) || 0);
+    if (initialPaid > totalAmount) {
+      throw new Error("مبلغ الدفعة الأولى لا يمكن أن يتجاوز إجمالي الفاتورة");
+    }
+
+    const remainingBalance = totalAmount - initialPaid;
+    let status = "UNPAID";
+    if (remainingBalance <= 0) {
+      status = "PAID";
+    } else if (initialPaid > 0) {
+      status = "PARTIALLY_PAID";
+    }
+
+    const payments = [];
+    if (initialPaid > 0) {
+      payments.push({
+        amount: initialPaid,
+        method: input.paymentMethod || "CASH",
+        reference: input.paymentReference || "سداد دفعة أولى عند التسجيل",
+        paidAt: new Date().toISOString(),
+        paidBy: input.recordedBy || "د. أحمد الطاهر"
+      });
+    }
+
+    const newId = `INV-SUP-2026-${String(this.invoices.length + 1).padStart(4, "0")}`;
+    const invoiceRecord = {
+      id: newId,
+      invoiceNumber: cleanInvoiceNumber,
+      supplierId: supplier.id,
+      supplierName: supplier.name,
+      poNumber: input.poNumber ? String(input.poNumber).trim() : null,
+      grnNumber: input.grnNumber ? String(input.grnNumber).trim() : null,
+      issueDate,
+      dueDate,
+      status,
+      totalAmount,
+      paidAmount: initialPaid,
+      remainingBalance,
+      payments,
+      notes: input.notes ? String(input.notes).trim() : "",
+      createdAt: new Date().toISOString()
+    };
+
+    this.invoices.push(invoiceRecord);
+    this.persistInvoices();
+    return invoiceRecord;
+  }
+
+  payInvoice(id, paymentInput = {}) {
+    this.invoices = this.loadInvoices();
+    const invoice = this.getInvoiceById(id);
+    if (!invoice) {
+      throw new Error("فاتورة المورد غير موجودة");
+    }
+
+    if (invoice.status === "PAID" || invoice.remainingBalance <= 0) {
+      throw new Error("تم سداد هذه الفاتورة بالكامل مسبقاً");
+    }
+
+    const amount = Number(paymentInput.amount);
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error("مبلغ السداد يجب أن يكون رقماً موجباً أكبر من الصفر");
+    }
+
+    if (amount > invoice.remainingBalance) {
+      throw new Error(`مبلغ السداد (${amount.toLocaleString()} ج.س) أكبر من الرصيد المتبقي على الفاتورة (${invoice.remainingBalance.toLocaleString()} ج.س)`);
+    }
+
+    const paymentRecord = {
+      amount,
+      method: paymentInput.method || "BANK_TRANSFER",
+      reference: paymentInput.reference ? String(paymentInput.reference).trim() : "إشعار سداد نقدي/بنكي",
+      paidAt: new Date().toISOString(),
+      paidBy: paymentInput.paidBy || "د. أحمد الطاهر",
+      notes: paymentInput.notes ? String(paymentInput.notes).trim() : ""
+    };
+
+    if (!Array.isArray(invoice.payments)) {
+      invoice.payments = [];
+    }
+    invoice.payments.push(paymentRecord);
+
+    invoice.paidAmount = (invoice.paidAmount || 0) + amount;
+    invoice.remainingBalance = invoice.totalAmount - invoice.paidAmount;
+
+    if (invoice.remainingBalance <= 0) {
+      invoice.remainingBalance = 0;
+      invoice.status = "PAID";
+    } else {
+      invoice.status = "PARTIALLY_PAID";
+    }
+
+    this.persistInvoices();
+    return invoice;
   }
 }
 

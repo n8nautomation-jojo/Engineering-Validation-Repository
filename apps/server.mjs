@@ -529,6 +529,62 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      // GET /api/purchasing/invoices/stats — invoices summary & accounts payable KPIs
+      if (req.method === "GET" && pathname === "/api/purchasing/invoices/stats") {
+        sendJson(res, 200, purchasingRepository.getInvoicesStats());
+        return;
+      }
+
+      // GET /api/purchasing/invoices — list supplier commercial invoices
+      if (req.method === "GET" && pathname === "/api/purchasing/invoices") {
+        const filters = {
+          supplierId: parsedUrl.searchParams.get("supplierId") || undefined,
+          status: parsedUrl.searchParams.get("status") || undefined,
+          search: parsedUrl.searchParams.get("search") || undefined
+        };
+        sendJson(res, 200, purchasingRepository.getAllInvoices(filters));
+        return;
+      }
+
+      // GET /api/purchasing/invoices/:id — get specific supplier invoice
+      if (req.method === "GET" && pathname.startsWith("/api/purchasing/invoices/") && pathname !== "/api/purchasing/invoices/stats") {
+        const id = pathname.replace("/api/purchasing/invoices/", "");
+        const invoice = purchasingRepository.getInvoiceById(id);
+        if (!invoice) {
+          sendError(res, 404, "INVOICE_NOT_FOUND", `فاتورة المورد ${id} غير موجودة`, correlationId);
+          return;
+        }
+        sendJson(res, 200, invoice);
+        return;
+      }
+
+      // POST /api/purchasing/invoices — record a new supplier invoice
+      if (req.method === "POST" && pathname === "/api/purchasing/invoices") {
+        try {
+          const body = await readJsonBody(req);
+          const newInvoice = purchasingRepository.createInvoice(body);
+          sendJson(res, 201, newInvoice);
+        } catch (err) {
+          const status = err.message.includes("غير موجود") ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+
+      // POST /api/purchasing/invoices/:id/pay — record payment against supplier invoice (Accounts Payable)
+      if (req.method === "POST" && pathname.startsWith("/api/purchasing/invoices/") && pathname.endsWith("/pay")) {
+        try {
+          const id = pathname.split("/")[4];
+          const body = await readJsonBody(req);
+          const updatedInvoice = purchasingRepository.payInvoice(id, body);
+          sendJson(res, 200, updatedInvoice);
+        } catch (err) {
+          const status = err.message.includes("غير موجودة") ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+
       // =========================================================================
       // REPORTS & ANALYTICS ENDPOINTS
       // =========================================================================

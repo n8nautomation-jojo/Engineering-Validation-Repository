@@ -397,6 +397,49 @@ export async function onRequest(context) {
       return jsonResponse(result, 200);
     }
 
+    if (method === "GET" && pathname === "/api/purchasing/invoices/stats") {
+      return jsonResponse(purchasingRepository.getInvoicesStats(), 200);
+    }
+
+    if (method === "GET" && pathname === "/api/purchasing/invoices") {
+      const filters = {
+        supplierId: url.searchParams.get("supplierId") || undefined,
+        status: url.searchParams.get("status") || undefined,
+        search: url.searchParams.get("search") || undefined
+      };
+      return jsonResponse(purchasingRepository.getAllInvoices(filters), 200);
+    }
+
+    if (method === "GET" && pathname.startsWith("/api/purchasing/invoices/") && pathname !== "/api/purchasing/invoices/stats") {
+      const id = pathname.replace("/api/purchasing/invoices/", "");
+      const invoice = purchasingRepository.getInvoiceById(id);
+      if (!invoice) {
+        return errorResponse(404, "INVOICE_NOT_FOUND", `فاتورة المورد ${id} غير موجودة`, correlationId);
+      }
+      return jsonResponse(invoice, 200);
+    }
+
+    if (method === "POST" && pathname === "/api/purchasing/invoices") {
+      try {
+        const newInvoice = purchasingRepository.createInvoice(body);
+        return jsonResponse(newInvoice, 201);
+      } catch (err) {
+        const status = err.message.includes("غير موجود") ? 404 : 400;
+        return errorResponse(status, err.message, err.message, correlationId);
+      }
+    }
+
+    if (method === "POST" && pathname.startsWith("/api/purchasing/invoices/") && pathname.endsWith("/pay")) {
+      try {
+        const id = pathname.split("/")[4];
+        const updatedInvoice = purchasingRepository.payInvoice(id, body);
+        return jsonResponse(updatedInvoice, 200);
+      } catch (err) {
+        const status = err.message.includes("غير موجودة") ? 404 : 400;
+        return errorResponse(status, err.message, err.message, correlationId);
+      }
+    }
+
     // 9. Reports & Analytics
     if (method === "GET" && (pathname === "/api/reports" || pathname === "/api/reports/summary")) {
       const startDate = url.searchParams.get("startDate");

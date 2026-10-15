@@ -88,4 +88,90 @@ export class PurchasingService {
       throw err;
     }
   }
+
+  /**
+   * Fetches supplier commercial invoices and accounts payable records.
+   */
+  static async fetchInvoices(filters = {}) {
+    try {
+      const params = new URLSearchParams();
+      if (filters.supplierId) params.append('supplierId', filters.supplierId);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.search) params.append('search', filters.search);
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const invoices = await apiClient.get(`/api/purchasing/invoices${queryString}`);
+      return Array.isArray(invoices) ? invoices : [];
+    } catch (err) {
+      console.warn('Failed to fetch supplier invoices:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Fetches a single supplier invoice by ID.
+   */
+  static async fetchInvoiceById(id) {
+    try {
+      return await apiClient.get(`/api/purchasing/invoices/${id}`);
+    } catch (err) {
+      console.warn(`Failed to fetch supplier invoice ${id}:`, err);
+      return null;
+    }
+  }
+
+  /**
+   * Fetches KPI summary for accounts payable and invoices.
+   */
+  static async fetchInvoicesStats() {
+    try {
+      return await apiClient.get('/api/purchasing/invoices/stats');
+    } catch (err) {
+      console.warn('Failed to fetch invoices stats:', err);
+      return {
+        totalInvoicesCount: 0,
+        unpaidCount: 0,
+        partiallyPaidCount: 0,
+        paidCount: 0,
+        totalInvoicedAmount: 0,
+        totalPaidAmount: 0,
+        totalOutstandingBalance: 0,
+        currency: 'SDG'
+      };
+    }
+  }
+
+  /**
+   * Records a new supplier commercial invoice.
+   */
+  static async createInvoice(invoiceData) {
+    try {
+      const invoice = await apiClient.post('/api/purchasing/invoices', invoiceData);
+      window.dispatchEvent(new CustomEvent('PURCHASING_UPDATED'));
+      showToast('تم تسجيل فاتورة المورد بنجاح', `فاتورة رقم: ${invoice.invoiceNumber} — المورد: ${invoice.supplierName}`, 'success');
+      return invoice;
+    } catch (err) {
+      showToast('خطأ في تسجيل الفاتورة', err.message || 'تعذر حفظ بيانات فاتورة المورد', 'error');
+      throw err;
+    }
+  }
+
+  /**
+   * Records a payment against an invoice (Accounts Payable settlement).
+   */
+  static async payInvoice(id, paymentData) {
+    try {
+      const updated = await apiClient.post(`/api/purchasing/invoices/${id}/pay`, paymentData);
+      window.dispatchEvent(new CustomEvent('PURCHASING_UPDATED'));
+      showToast(
+        'تم تسجيل دفعة السداد بنجاح 💳',
+        `فاتورة ${updated.invoiceNumber} — الرصيد المتبقي: ${Number(updated.remainingBalance).toLocaleString()} ج.س (${updated.status === 'PAID' ? 'تم السداد بالكامل' : 'سداد جزئي'})`,
+        'success'
+      );
+      return updated;
+    } catch (err) {
+      showToast('خطأ في سداد الفاتورة', err.message || 'تعذر تسجيل حركة السداد للمورد', 'error');
+      throw err;
+    }
+  }
 }
+

@@ -1,0 +1,102 @@
+[
+  {
+    "id": "INV-SUP-2026-0001",
+    "invoiceNumber": "INV-HIK-8812",
+    "supplierId": "SUP-001",
+    "supplierName": "شركة الحكمة للصناعات الدوائية",
+    "poNumber": "PO-2026-0041",
+    "grnNumber": "GRN-2026-0081",
+    "issueDate": "2026-10-12",
+    "dueDate": "2026-10-26",
+    "status": "PAID",
+    "totalAmount": 510000,
+    "paidAmount": 510000,
+    "remainingBalance": 0,
+    "payments": [
+      {
+        "amount": 510000,
+        "method": "BANK_TRANSFER",
+        "reference": "TXN-BOK-SUP-9912",
+        "paidAt": "2026-10-13T10:15:00.000Z",
+        "paidBy": "د. أحمد الطاهر"
+      }
+    ],
+    "notes": "فاتورة شحنة البنادول والبروفين - سداد كامل عبر تطبيق بنكك فرع الشركات",
+    "createdAt": "2026-10-12T12:00:00.000Z"
+  },
+  {
+    "id": "INV-SUP-2026-0002",
+    "invoiceNumber": "INV-BNM-9401",
+    "supplierId": "SUP-002",
+    "supplierName": "شركة النيل الأزرق للمستلزمات الطبية",
+    "poNumber": "PO-2026-0042",
+    "grnNumber": null,
+    "issueDate": "2026-10-13",
+    "dueDate": "2026-10-27",
+    "status": "UNPAID",
+    "totalAmount": 1366000,
+    "paidAmount": 0,
+    "remainingBalance": 1366000,
+    "payments": [],
+    "notes": "فاتورة توريد أدوية السكري والمضادات الحيوية - استحقاق بعد 14 يوماً",
+    "createdAt": "2026-10-13T14:00:00.000Z"
+  },
+  {
+    "id": "INV-SUP-2026-0003",
+    "invoiceNumber": "INV-ROYAL-7104",
+    "supplierId": "SUP-003",
+    "supplierName": "مجموعة رويال كير العالمية للأدوية",
+    "poNumber": null,
+    "grnNumber": null,
+    "issueDate": "2026-10-14",
+    "dueDate": "2026-10-28",
+    "status": "PARTIALLY_PAID",
+    "totalAmount": 420000,
+    "paidAmount": 200000,
+    "remainingBalance": 220000,
+    "payments": [
+      {
+        "amount": 200000,
+        "method": "CASH",
+        "reference": "RECEIPT-CASH-4410",
+        "paidAt": "2026-10-14T11:30:00.000Z",
+        "paidBy": "د. سارة الكباشي"
+      }
+    ],
+    "notes": "دفعة مقدمة نقداً عند استلام شحنة مستلزمات العناية، والمتبقي بشيك آجل",
+    "createdAt": "2026-10-14T09:00:00.000Z"
+  },
+  {
+    "id": "INV-SUP-2026-0004",
+    "invoiceNumber": "INV-TEST-1792059914262",
+    "supplierId": "SUP-001",
+    "supplierName": "شركة الحكمة للصناعات الدوائية",
+    "poNumber": null,
+    "grnNumber": null,
+    "issueDate": "2026-10-15",
+    "dueDate": "2026-10-29",
+    "status": "PAID",
+    "totalAmount": 300000,
+    "paidAmount": 300000,
+    "remainingBalance": 0,
+    "payments": [
+      {
+        "amount": 50000,
+        "method": "CASH",
+        "reference": "سداد دفعة أولى عند التسجيل",
+        "paidAt": "2026-10-15T10:25:14.265Z",
+        "paidBy": "د. أحمد الطاهر"
+      },
+      {
+        "amount": 250000,
+        "method": "BANK_TRANSFER",
+        "reference": "TXN-TEST-FULL-PAY",
+        "paidAt": "2026-10-15T10:25:14.268Z",
+        "paidBy": "د. أحمد الطاهر",
+        "notes": "سداد باقي الفاتورة بالكامل"
+      }
+    ],
+    "notes": "فاتورة اختبار سريعة للتأكد من حسابات الذمم الدائنة",
+    "createdAt": "2026-10-15T10:25:14.265Z"
+  }
+]

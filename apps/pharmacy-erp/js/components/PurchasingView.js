@@ -8,10 +8,12 @@ import { PurchasingService } from '../services/purchasingService.js';
 import { PurchasingStats } from './purchasing/PurchasingStats.js';
 import { PurchasingOrdersTable } from './purchasing/PurchasingOrdersTable.js';
 import { PurchasingSuppliersGrid } from './purchasing/PurchasingSuppliersGrid.js';
+import { PurchasingInvoicesList } from './purchasing/PurchasingInvoicesList.js';
 import { OrderDetailDialog } from './purchasing/OrderDetailDialog.js';
 import { ReceiveShipmentDialog } from './purchasing/ReceiveShipmentDialog.js';
 import { NewOrderDialog } from './purchasing/NewOrderDialog.js';
 import { AddSupplierDialog } from './purchasing/AddSupplierDialog.js';
+import { SupplierInvoiceModal } from './purchasing/SupplierInvoiceModal.js';
 import { showToast } from './Toast.js';
 
 export class PurchasingView {
@@ -19,17 +21,23 @@ export class PurchasingView {
     this.container = document.getElementById('purchasing-view');
     this.orders = [];
     this.suppliers = [];
-    this.activeTab = 'orders'; // 'orders' | 'suppliers'
+    this.invoices = [];
+    this.invoicesStats = null;
+    this.activeTab = 'orders'; // 'orders' | 'invoices' | 'suppliers'
 
     // Sub-components
     this.orderDetailDialog = new OrderDetailDialog((order) => this.receiveDialog.open(order));
     this.receiveDialog = new ReceiveShipmentDialog();
     this.newOrderDialog = new NewOrderDialog();
     this.addSupplierDialog = new AddSupplierDialog();
+    this.supplierInvoiceModal = new SupplierInvoiceModal({
+      onSuccess: () => this.loadData()
+    });
 
     this.stats = null;
     this.ordersTable = null;
     this.suppliersGrid = null;
+    this.invoicesList = null;
 
     this.init();
   }
@@ -56,13 +64,17 @@ export class PurchasingView {
 
   async loadData() {
     try {
-      const [orders, suppliers] = await Promise.all([
+      const [orders, suppliers, invoices, invoicesStats] = await Promise.all([
         PurchasingService.fetchOrders(),
-        PurchasingService.fetchSuppliers()
+        PurchasingService.fetchSuppliers(),
+        PurchasingService.fetchInvoices(),
+        PurchasingService.fetchInvoicesStats()
       ]);
 
       this.orders = orders;
       this.suppliers = suppliers;
+      this.invoices = invoices;
+      this.invoicesStats = invoicesStats;
       this.render();
     } catch (err) {
       console.error('Failed to load purchasing data:', err);
@@ -71,6 +83,8 @@ export class PurchasingView {
 
   render() {
     if (!this.container) return;
+
+    const unpaidCount = this.invoices.filter(i => i.status === 'UNPAID' || i.status === 'PARTIALLY_PAID').length;
 
     this.container.innerHTML = `
       <!-- View Header -->
@@ -87,7 +101,7 @@ export class PurchasingView {
           </span>
           <div>
             <h2>إدارة المشتريات وسلاسل الإمداد والتوريد (Supply Chain)</h2>
-            <p class="heading-meta" style="margin:0; font-size:12px;">إصدار أوامر الشراء، فحص الشحنات، وإدخال الأدوية إلى سجل المخزون بحسب تواريخ الصلاحية</p>
+            <p class="heading-meta" style="margin:0; font-size:12px;">إصدار أوامر الشراء، فحص الشحنات، فواتير الموردين، وإدارة الذمم الدائنة والتسويات</p>
           </div>
         </div>
 
@@ -95,6 +109,10 @@ export class PurchasingView {
           <button class="btn-primary" id="btn-open-new-order">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
             طلب توريد جديد
+          </button>
+          <button class="btn-table-action" id="btn-open-new-invoice" style="padding:8px 14px; font-weight:700; color:var(--primary); border-color:var(--primary); background:rgba(37,99,235,0.06);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:middle; margin-left:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+            تسجيل فاتورة مورد
           </button>
           <button class="icon-btn outlined" id="btn-open-add-supplier" title="إضافة مورد جديد">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" x2="20" y1="8" y2="14"/><line x1="23" x2="17" y1="11" y2="11"/></svg>
@@ -108,11 +126,15 @@ export class PurchasingView {
       <!-- Quick Metrics Grid -->
       <div class="stats-grid" id="purchasing-stats-grid" style="margin-bottom:20px;"></div>
 
-      <!-- Main Segmented Navigation -->
+      <!-- Main Segmented Navigation (3 Subtabs) -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
         <div class="segmented">
           <button id="tab-btn-orders" data-active="${this.activeTab === 'orders'}">
             📦 أوامر الشراء والشحنات (${this.orders.length})
+          </button>
+          <button id="tab-btn-invoices" data-active="${this.activeTab === 'invoices'}" style="position:relative;">
+            🧾 فواتير الموردين والذمم (${this.invoices.length})
+            ${unpaidCount > 0 ? `<span style="background:#EF4444; color:#fff; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px; margin-right:4px;">${unpaidCount} مستحقة</span>` : ''}
           </button>
           <button id="tab-btn-suppliers" data-active="${this.activeTab === 'suppliers'}">
             🏭 دليل الموردين المعتمدين (${this.suppliers.length})
@@ -122,6 +144,7 @@ export class PurchasingView {
 
       <!-- Content Views -->
       <div id="purchasing-orders-container" style="display:${this.activeTab === 'orders' ? 'block' : 'none'};"></div>
+      <div id="purchasing-invoices-container" style="display:${this.activeTab === 'invoices' ? 'block' : 'none'};"></div>
       <div id="purchasing-suppliers-container" style="display:${this.activeTab === 'suppliers' ? 'block' : 'none'};"></div>
     `;
 
@@ -134,6 +157,13 @@ export class PurchasingView {
       onView: (order) => this.orderDetailDialog.open(order)
     });
     this.ordersTable.render(this.orders);
+
+    this.invoicesList = new PurchasingInvoicesList('purchasing-invoices-container', {
+      onNewInvoice: () => this.supplierInvoiceModal.openInvoiceModal(),
+      onPayInvoice: (inv) => this.supplierInvoiceModal.openPaymentModal(inv),
+      onViewInvoice: (inv) => this.supplierInvoiceModal.openPaymentModal(inv)
+    });
+    this.invoicesList.render(this.invoices, this.invoicesStats);
 
     this.suppliersGrid = new PurchasingSuppliersGrid('purchasing-suppliers-container', {
       onQuickOrder: (supplierId) => this.newOrderDialog.open(supplierId),
@@ -150,40 +180,40 @@ export class PurchasingView {
       this.newOrderDialog.open();
     });
 
+    document.getElementById('btn-open-new-invoice')?.addEventListener('click', () => {
+      this.supplierInvoiceModal.openInvoiceModal();
+    });
+
     document.getElementById('btn-open-add-supplier')?.addEventListener('click', () => {
       this.addSupplierDialog.open();
     });
 
     document.getElementById('btn-refresh-purchasing')?.addEventListener('click', () => {
       this.loadData();
-      showToast('تم تحديث البيانات', 'تم تحديث أوامر الشراء وقائمة الموردين بنجاح', 'info');
+      showToast('تم تحديث البيانات', 'تم تحديث أوامر الشراء والفواتير وقائمة الموردين بنجاح', 'info');
     });
 
-    // Tab buttons
-    document.getElementById('tab-btn-orders')?.addEventListener('click', () => {
-      this.activeTab = 'orders';
+    // Subtab switching
+    const setTab = (tab) => {
+      this.activeTab = tab;
       const ordersContainer = document.getElementById('purchasing-orders-container');
+      const invoicesContainer = document.getElementById('purchasing-invoices-container');
       const suppliersContainer = document.getElementById('purchasing-suppliers-container');
       const tabOrders = document.getElementById('tab-btn-orders');
+      const tabInvoices = document.getElementById('tab-btn-invoices');
       const tabSuppliers = document.getElementById('tab-btn-suppliers');
 
-      if (ordersContainer) ordersContainer.style.display = 'block';
-      if (suppliersContainer) suppliersContainer.style.display = 'none';
-      if (tabOrders) tabOrders.dataset.active = 'true';
-      if (tabSuppliers) tabSuppliers.dataset.active = 'false';
-    });
+      if (ordersContainer) ordersContainer.style.display = tab === 'orders' ? 'block' : 'none';
+      if (invoicesContainer) invoicesContainer.style.display = tab === 'invoices' ? 'block' : 'none';
+      if (suppliersContainer) suppliersContainer.style.display = tab === 'suppliers' ? 'block' : 'none';
 
-    document.getElementById('tab-btn-suppliers')?.addEventListener('click', () => {
-      this.activeTab = 'suppliers';
-      const ordersContainer = document.getElementById('purchasing-orders-container');
-      const suppliersContainer = document.getElementById('purchasing-suppliers-container');
-      const tabOrders = document.getElementById('tab-btn-orders');
-      const tabSuppliers = document.getElementById('tab-btn-suppliers');
+      if (tabOrders) tabOrders.dataset.active = String(tab === 'orders');
+      if (tabInvoices) tabInvoices.dataset.active = String(tab === 'invoices');
+      if (tabSuppliers) tabSuppliers.dataset.active = String(tab === 'suppliers');
+    };
 
-      if (ordersContainer) ordersContainer.style.display = 'none';
-      if (suppliersContainer) suppliersContainer.style.display = 'block';
-      if (tabOrders) tabOrders.dataset.active = 'false';
-      if (tabSuppliers) tabSuppliers.dataset.active = 'true';
-    });
+    document.getElementById('tab-btn-orders')?.addEventListener('click', () => setTab('orders'));
+    document.getElementById('tab-btn-invoices')?.addEventListener('click', () => setTab('invoices'));
+    document.getElementById('tab-btn-suppliers')?.addEventListener('click', () => setTab('suppliers'));
   }
 }
