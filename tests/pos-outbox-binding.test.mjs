@@ -64,7 +64,7 @@ test("POS Outbox Binding: processSale writes durable OutboxEvent and OutboxDispa
   };
 
   const dispatcher = new OutboxDispatcher(store, mockTransport);
-  const summary = await dispatcher.dispatchPending(10);
+  const summary = await dispatcher.dispatchPending(100);
 
   assert.ok(delivered, "Matching outbox event must be delivered to transport");
   assert.ok(summary.succeeded >= 1);

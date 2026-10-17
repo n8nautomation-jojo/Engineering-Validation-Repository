@@ -18,6 +18,7 @@ import { syncRepository } from "./api/sync.mjs";
 import { accountingRepository } from "./api/accounting.mjs";
 import { branchesRepository } from "./api/branches.mjs";
 import { OutboxDispatcher } from "../dist/src/application/sync/outbox-dispatcher.js";
+import { verifyWebhookSignature } from "../dist/src/integration/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -891,6 +892,92 @@ const server = http.createServer(async (req, res) => {
           });
         } catch (err) {
           sendError(res, 500, "OUTBOX_DISPATCH_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // =========================================================================
+      // EXTERNAL BANKAK VERIFICATION GATEWAY & WEBHOOK (ADR-012 / External API)
+      // Responsibility: PharmaTech delegates OCR and bank notification extraction
+      // to the External Application. Communication is strictly via API & Webhooks.
+      // =========================================================================
+
+      // GET /api/integrations/bankak/status — gateway health and connectivity info
+      if (req.method === "GET" && pathname === "/api/integrations/bankak/status") {
+        sendJson(res, 200, {
+          providerId: "bankak-payment-adapter-v1",
+          providerName: "Bank of Khartoum - Bankak Verification Gateway",
+          environment: process.env.BANKAK_ENV || "SANDBOX",
+          status: "ACTIVE",
+          architectureModel: "EXTERNAL_GATEWAY_API",
+          delegatedResponsibilities: {
+            ocrExtraction: "EXTERNAL_APPLICATION",
+            statementScraping: "EXTERNAL_APPLICATION",
+            notificationParsing: "EXTERNAL_APPLICATION",
+            bankDirectMatching: "EXTERNAL_APPLICATION"
+          },
+          supportedEndpoints: [
+            "POST /api/integrations/bankak/verify",
+            "POST /api/webhooks/bankak",
+            "GET /api/integrations/bankak/status"
+          ]
+        });
+        return;
+      }
+
+      // POST /api/integrations/bankak/verify — Outbound verification request to external gateway API
+      if (req.method === "POST" && pathname === "/api/integrations/bankak/verify") {
+        try {
+          const body = await readJsonBody(req);
+          const target = body.invoiceNumber || body.saleId;
+          if (!target) {
+            sendError(res, 400, "TARGET_REQUIRED", "invoiceNumber or saleId is required", correlationId);
+            return;
+          }
+          const verification = await salesRepository.verifyBankakPayment(target, body);
+          sendJson(res, 200, verification);
+        } catch (err) {
+          const status = err.message === "SALE_NOT_FOUND" ? 404 : 400;
+          sendError(res, status, err.message, err.message, correlationId);
+        }
+        return;
+      }
+
+      // POST /api/webhooks/bankak — Inbound Webhook: External app pushes verified notifications
+      if (req.method === "POST" && pathname === "/api/webhooks/bankak") {
+        try {
+          const body = await readJsonBody(req);
+          const secret = process.env.BANKAK_WEBHOOK_SECRET || "pharma-bankak-webhook-secret-default";
+          const incomingSignature = req.headers["x-webhook-signature"] || body.signature;
+
+          // If signature is provided, verify it
+          if (incomingSignature && body.payload) {
+            const isValid = verifyWebhookSignature({
+              eventId: body.eventId || `evt-${Date.now()}`,
+              providerId: body.providerId || "bankak-payment-adapter-v1",
+              signature: incomingSignature,
+              timestamp: body.timestamp || new Date().toISOString(),
+              payload: body.payload
+            }, secret);
+
+            if (!isValid) {
+              sendError(res, 401, "INVALID_SIGNATURE", "Webhook signature verification failed", correlationId);
+              return;
+            }
+          }
+
+          const notificationPayload = body.payload || body;
+          const matchResult = salesRepository.matchWebhookNotification(notificationPayload);
+
+          sendJson(res, 200, {
+            received: true,
+            providerId: body.providerId || "bankak-payment-adapter-v1",
+            matchedCount: matchResult.matchedCount,
+            matchedInvoices: matchResult.matchedInvoices,
+            timestamp: new Date().toISOString()
+          });
+        } catch (err) {
+          sendError(res, 400, "WEBHOOK_PROCESSING_FAILED", err.message, correlationId);
         }
         return;
       }

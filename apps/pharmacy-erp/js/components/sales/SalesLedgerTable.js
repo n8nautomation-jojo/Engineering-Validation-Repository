@@ -4,13 +4,12 @@
  * clear split payment documentation, thermal receipt triggers, and return/reversal flows.
  */
 
-import { AuthService } from '../../services/authService.js';
-
-export class SalesLedgerTable {
-  constructor(containerId = 'sales-table-container', { onPrintReceipt, onReturnSale } = {}) {
+import { AuthService } from '../../services/authService.js';export class SalesLedgerTable {
+  constructor(containerId = 'sales-table-container', { onPrintReceipt, onReturnSale, onReloadSales } = {}) {
     this.containerId = containerId;
     this.onPrintReceipt = onPrintReceipt;
     this.onReturnSale = onReturnSale;
+    this.onReloadSales = onReloadSales;
   }
 
   render(sales = []) {
@@ -26,7 +25,7 @@ export class SalesLedgerTable {
                 <td colspan="8" style="text-align:center; padding:40px; color:var(--muted-foreground);">
                   <div style="display:grid; place-items:center; gap:8px;">
                     <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z" />
+                      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z" />
                     </svg>
                     <span>لا توجد فواتير مطابقة للبحث أو معايير التصفية</span>
                   </div>
@@ -58,6 +57,9 @@ export class SalesLedgerTable {
             ${sales.map(s => {
               const payments = Array.isArray(s.payments) ? s.payments : [];
               const isSplit = payments.length > 1;
+              const bankakPayments = payments.filter(p => p.method === 'BANK_TRANSFER' || p.method === 'BANKAK');
+              const hasBankak = bankakPayments.length > 0;
+              const hasUnverifiedBankak = bankakPayments.some(p => p.verification_status !== 'API_VERIFIED');
               let paymentBadge = '';
 
               if (isSplit) {
@@ -65,7 +67,8 @@ export class SalesLedgerTable {
                   const isB = p.method === 'BANK_TRANSFER' || p.method === 'BANKAK';
                   const label = isB ? 'بنكك' : 'نقداً';
                   const val = Number(p.amount?.value || p.amount || 0).toLocaleString();
-                  return `${label}: ${val}`;
+                  const mark = isB ? (p.verification_status === 'API_VERIFIED' ? ' (✓ API)' : ' (⏳ API)') : '';
+                  return `${label}${mark}: ${val}`;
                 }).join(' · ');
                 paymentBadge = `
                   <div style="display:grid; gap:3px;">
@@ -79,11 +82,24 @@ export class SalesLedgerTable {
                 const p = payments[0] || { method: 'CASH' };
                 const isBankak = p.method === 'BANK_TRANSFER' || p.method === 'BANKAK';
                 const bankakRef = p.evidence_reference || '';
+                const vStatus = p.verification_status || (isBankak ? 'PENDING_VERIFICATION' : 'VERIFIED');
                 if (isBankak) {
+                  const isVerified = vStatus === 'API_VERIFIED';
                   paymentBadge = `
-                    <span class="chip" style="background:#EBF5FF; color:#0052CC; font-weight:700; font-size:11px;" title="${bankakRef || 'بنكك'}">
-                      بنكك ${bankakRef ? `· ${bankakRef}` : ''}
-                    </span>
+                    <div style="display:grid; gap:3px;">
+                      <span class="chip" style="background:#EBF5FF; color:#0052CC; font-weight:700; font-size:11px;" title="${bankakRef || 'بنكك'}">
+                        بنكك ${bankakRef ? `· ${bankakRef}` : ''}
+                      </span>
+                      ${isVerified ? `
+                        <span class="chip" style="background:#ECFDF5; color:#059669; font-weight:700; font-size:10px; padding:1px 6px;" title="تمت المطابقة البنكية عبر API التطبيق الخارجي: ${p.provider_reference || ''}">
+                          ✓ مطابق بنكياً (API)
+                        </span>
+                      ` : `
+                        <span class="chip" style="background:#FEF3C7; color:#D97706; font-weight:700; font-size:10px; padding:1px 6px;" title="بانتظار مطابقة الإشعار عبر اتصال API بالتطبيق الخارجي">
+                          ⏳ بانتظار مطابقة الـ API
+                        </span>
+                      `}
+                    </div>
                   `;
                 } else {
                   paymentBadge = `
@@ -118,6 +134,15 @@ export class SalesLedgerTable {
 
               const actionsHtml = `
                 <div style="display:flex; align-items:center; gap:6px; justify-content:flex-end;">
+                  ${(!isReversed && hasUnverifiedBankak) ? `
+                    <button class="btn-table-action btn-verify-bankak-action" data-inv="${s.invoice_number}" data-ref="${bankakPayments[0]?.evidence_reference || ''}" style="color:#0052CC; border-color:#B3D4FF; background:#F0F7FF;" title="فحص ومطابقة إشعار بنكك عبر اتصال الـ API الخارجي">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                      </svg>
+                      فحص API
+                    </button>
+                  ` : ''}
                   <button class="btn-table-action btn-print-receipt-action" data-inv="${s.invoice_number}" title="${isReversed ? 'معاينة وطباعة إشعار الدائن' : 'طباعة الإيصال الحراري 80mm'}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="6 9 6 2 18 2 18 9" />
@@ -184,6 +209,55 @@ export class SalesLedgerTable {
         </table>
       </div>
     `;
+
+    // Bind Bankak external API verify buttons
+    el.querySelectorAll('.btn-verify-bankak-action').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const inv = btn.dataset.inv;
+        const ref = btn.dataset.ref;
+        btn.disabled = true;
+        const origText = btn.innerHTML;
+        btn.innerHTML = '⏳ جارِ الاتصال...';
+
+        try {
+          const res = await fetch('/api/integrations/bankak/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoiceNumber: inv, transactionReference: ref })
+          });
+          const data = await res.json();
+          if (data.success && data.verificationStatus === 'API_VERIFIED') {
+            if (window.showToast) {
+              window.showToast('تمت المطابقة البنكية', `تم التحقق بنجاح عبر API بنكك! مرجع: ${data.providerReference}`, 'success');
+            } else {
+              alert(`✓ تم التحقق بنجاح عبر API بنكك!\nالمرجع البنكي: ${data.providerReference}`);
+            }
+            if (this.onReloadSales) {
+              this.onReloadSales();
+            } else {
+              window.dispatchEvent(new CustomEvent('SALES_UPDATED'));
+            }
+          } else {
+            const reason = data.reason || 'المعاملة قيد المراجعة في التطبيق الخارجي';
+            if (window.showToast) {
+              window.showToast('فحص الـ API', `لم تتم المطابقة بعد: ${reason}`, 'warning');
+            } else {
+              alert(`⚠️ لم تتم المطابقة بعد: ${reason}`);
+            }
+            btn.disabled = false;
+            btn.innerHTML = origText;
+          }
+        } catch (err) {
+          if (window.showToast) {
+            window.showToast('خطأ بالاتصال', err.message, 'error');
+          } else {
+            alert(`خطأ في الاتصال بالـ API الخارجي: ${err.message}`);
+          }
+          btn.disabled = false;
+          btn.innerHTML = origText;
+        }
+      });
+    });
 
     // Bind print buttons
     el.querySelectorAll('.btn-print-receipt-action').forEach(btn => {

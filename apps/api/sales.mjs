@@ -12,6 +12,7 @@ import { sessionRepository } from "./session.mjs";
 import { inventoryMovementsRepository } from "./inventoryMovements.mjs";
 import { customersRepository } from "./customers.mjs";
 import { SqliteOutboxStore } from "../../dist/src/infrastructure/sqlite/sqlite-outbox-store.js";
+import { BankakPaymentAdapter } from "../../dist/src/integration/index.js";
 
 const resolveDataDir = () => {
   try {
@@ -374,7 +375,8 @@ class SalesRepository {
         method: p.method,
         amount: { value: parseFloat(p.amount.value).toFixed(2), currency: "SDG" },
         verification_mode: p.verification_mode || (p.method === "CASH" ? "MANUAL_CONFIRMATION" : "EVIDENCE_REVIEW"),
-        evidence_reference: p.evidence_reference || null
+        evidence_reference: p.evidence_reference || null,
+        verification_status: p.method === "CASH" ? "VERIFIED" : (p.verification_status || "PENDING_VERIFICATION")
       })),
       payment_summary: {
         paid_amount: totalPaidNumber.toFixed(2),
@@ -541,6 +543,130 @@ class SalesRepository {
 
   getOutboxStore() {
     return this.outboxStore;
+  }
+
+  /**
+   * Calls the External Bankak Verification Gateway API to extract and verify
+   * transaction evidence against bank statement / notification records.
+   */
+  async verifyBankakPayment(invoiceOrSaleId, options = {}) {
+    const sale = this.getSaleById(invoiceOrSaleId);
+    if (!sale) throw new Error("SALE_NOT_FOUND");
+
+    const bankakPayment = (sale.payments || []).find(p => p.method === "BANK_TRANSFER" || p.method === "BANKAK");
+    if (!bankakPayment) throw new Error("NO_BANKAK_PAYMENT_IN_SALE");
+
+    // Call external verification adapter
+    const adapter = new BankakPaymentAdapter();
+    const req = {
+      requestId: `req-bok-verify-${Date.now()}`,
+      correlationId: sale.correlation_id || `corr-${Date.now()}`,
+      idempotencyKey: `idem-bok-${sale.sale_id}`,
+      tenantId: "t-001",
+      organizationId: "org-001",
+      branchId: "brn-khartoum-01",
+      deviceId: "pos-dev-01",
+      operation: "VERIFY_PAYMENT",
+      timestamp: new Date().toISOString(),
+      payload: {
+        transactionReference: bankakPayment.evidence_reference || options.transactionReference || `TXN-BOK-${Date.now().toString().slice(-8)}`,
+        amount: parseFloat(bankakPayment.amount?.value || bankakPayment.amount || sale.totals.total),
+        currency: "SDG",
+        saleId: sale.sale_id,
+        paymentDate: sale.created_at
+      }
+    };
+
+    const res = await adapter.execute(req);
+
+    if (res.providerStatus === "API_VERIFIED" && res.result) {
+      bankakPayment.verification_status = "API_VERIFIED";
+      bankakPayment.provider_reference = res.providerReference;
+      bankakPayment.verified_at = res.timestamp;
+      bankakPayment.sender_account_masked = res.result.senderAccountMasked;
+      bankakPayment.settled_amount = res.result.settledAmount;
+
+      this.persistSales();
+
+      return {
+        success: true,
+        invoiceNumber: sale.invoice_number,
+        verificationStatus: "API_VERIFIED",
+        providerReference: res.providerReference,
+        senderAccountMasked: res.result.senderAccountMasked,
+        settledAmount: res.result.settledAmount,
+        verifiedAt: res.timestamp
+      };
+    } else {
+      bankakPayment.verification_status = "RECONCILIATION_REQUIRED";
+      this.persistSales();
+      return {
+        success: false,
+        invoiceNumber: sale.invoice_number,
+        verificationStatus: "RECONCILIATION_REQUIRED",
+        reason: "PROVIDER_UNVERIFIED"
+      };
+    }
+  }
+
+  /**
+   * Matches an incoming notification from the External Bankak Gateway Application
+   * (which has performed OCR / statement extraction) against pending sales.
+   */
+  matchWebhookNotification(payload = {}) {
+    const {
+      transactionReference,
+      amount,
+      providerReference,
+      senderAccountMasked,
+      settledAt
+    } = payload;
+
+    if (!transactionReference && !amount) {
+      throw new Error("TRANSACTION_REFERENCE_OR_AMOUNT_REQUIRED");
+    }
+
+    const matchedInvoices = [];
+    const sales = this.getAllSales();
+
+    for (const sale of sales) {
+      const bankakPayment = (sale.payments || []).find(p => {
+        if (p.method !== "BANK_TRANSFER" && p.method !== "BANKAK") return false;
+        if (p.verification_status === "API_VERIFIED") return false;
+
+        if (transactionReference) {
+          return Boolean(p.evidence_reference && p.evidence_reference.toLowerCase() === transactionReference.toLowerCase());
+        }
+
+        if (amount && !p.evidence_reference) {
+          return Math.abs(parseFloat(p.amount?.value || p.amount || 0) - parseFloat(amount)) < 0.01;
+        }
+
+        return false;
+      });
+
+      if (bankakPayment) {
+        bankakPayment.verification_status = "API_VERIFIED";
+        bankakPayment.provider_reference = providerReference || `BOK-TXN-${transactionReference || Date.now()}`;
+        bankakPayment.verified_at = settledAt || new Date().toISOString();
+        if (senderAccountMasked) {
+          bankakPayment.sender_account_masked = senderAccountMasked;
+        }
+        if (amount) {
+          bankakPayment.settled_amount = parseFloat(amount);
+        }
+        matchedInvoices.push(sale.invoice_number);
+      }
+    }
+
+    if (matchedInvoices.length > 0) {
+      this.persistSales();
+    }
+
+    return {
+      matchedCount: matchedInvoices.length,
+      matchedInvoices
+    };
   }
 }
 

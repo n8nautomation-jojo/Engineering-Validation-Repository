@@ -42,7 +42,8 @@ export class SalesView {
 
     this.table = new SalesLedgerTable('sales-table-container', {
       onPrintReceipt: (invNo) => this.reprintReceipt(invNo),
-      onReturnSale: (sale) => this.returnModal.open(sale)
+      onReturnSale: (sale) => this.returnModal.open(sale),
+      onReloadSales: () => this.loadSales()
     });
 
     this.returnModal = new SalesReturnModal();
