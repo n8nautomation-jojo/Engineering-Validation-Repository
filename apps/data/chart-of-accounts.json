@@ -44,7 +44,7 @@
     "category": "POSTABLE",
     "parentId": "ACC-1110",
     "normalBalance": "DEBIT",
-    "currentBalance": 621000,
+    "currentBalance": 616000,
     "status": "ACTIVE"
   },
   {
@@ -56,7 +56,7 @@
     "category": "POSTABLE",
     "parentId": "ACC-1110",
     "normalBalance": "DEBIT",
-    "currentBalance": 260000,
+    "currentBalance": 270000,
     "status": "ACTIVE"
   },
   {
@@ -140,7 +140,7 @@
     "category": "POSTABLE",
     "parentId": "ACC-1130",
     "normalBalance": "DEBIT",
-    "currentBalance": 2307000,
+    "currentBalance": 2341500,
     "status": "ACTIVE"
   },
   {
@@ -188,7 +188,7 @@
     "category": "POSTABLE",
     "parentId": "ACC-2100",
     "normalBalance": "CREDIT",
-    "currentBalance": 1320000,
+    "currentBalance": 1340000,
     "status": "ACTIVE"
   },
   {
@@ -260,7 +260,7 @@
     "category": "POSTABLE",
     "parentId": "ACC-4000",
     "normalBalance": "CREDIT",
-    "currentBalance": 2611000,
+    "currentBalance": 2646000,
     "status": "ACTIVE"
   },
   {
@@ -308,7 +308,7 @@
     "category": "POSTABLE",
     "parentId": "ACC-5000",
     "normalBalance": "DEBIT",
-    "currentBalance": 1692000,
+    "currentBalance": 1699000,
     "status": "ACTIVE"
   },
   {
@@ -320,7 +320,7 @@
     "category": "POSTABLE",
     "parentId": "ACC-5000",
     "normalBalance": "DEBIT",
-    "currentBalance": 91000,
+    "currentBalance": 99500,
     "status": "ACTIVE"
   },
   {

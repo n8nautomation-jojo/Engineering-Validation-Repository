@@ -1616,5 +1616,248 @@
     "createdBy": "المسؤول الرقابي والصيدلي المفتش",
     "createdAt": "2026-10-17T09:23:14.053Z",
     "reversedByEntryId": null
+  },
+  {
+    "id": "JE-2026-048-865k",
+    "entryNumber": "JV-2026-10-048",
+    "entryDate": "2026-10-15T12:00:00.000Z",
+    "fiscalPeriodId": "FP-2026-10",
+    "sourceModule": "MANUAL",
+    "referenceId": null,
+    "description": "قيد تسوية متوازن تجريبي",
+    "status": "POSTED",
+    "totalAmount": 25000,
+    "lines": [
+      {
+        "accountId": "ACC-1111",
+        "accountCode": "1111",
+        "accountNameAr": "الخزينة الرئيسية (الصندوق)",
+        "debit": 25000,
+        "credit": 0,
+        "narration": "إيداع نقدي"
+      },
+      {
+        "accountId": "ACC-4110",
+        "accountCode": "4110",
+        "accountNameAr": "إيرادات مبيعات التجزئة النقدية",
+        "debit": 0,
+        "credit": 25000,
+        "narration": "إيراد خدمات"
+      }
+    ],
+    "createdBy": "المحاسب المالي",
+    "createdAt": "2026-10-17T09:33:15.176Z",
+    "reversedByEntryId": null
+  },
+  {
+    "id": "JE-2026-049-8668",
+    "entryNumber": "JV-2026-10-049",
+    "entryDate": "2026-10-15T12:05:00.000Z",
+    "fiscalPeriodId": "FP-2026-10",
+    "sourceModule": "MANUAL",
+    "referenceId": null,
+    "description": "قيد تجريبي للاختبار تمهيداً لعكسه",
+    "status": "REVERSED",
+    "totalAmount": 12000,
+    "lines": [
+      {
+        "accountId": "ACC-1111",
+        "accountCode": "1111",
+        "accountNameAr": "الخزينة الرئيسية (الصندوق)",
+        "debit": 12000,
+        "credit": 0,
+        "narration": "قيد تجريبي للاختبار تمهيداً لعكسه"
+      },
+      {
+        "accountId": "ACC-4110",
+        "accountCode": "4110",
+        "accountNameAr": "إيرادات مبيعات التجزئة النقدية",
+        "debit": 0,
+        "credit": 12000,
+        "narration": "قيد تجريبي للاختبار تمهيداً لعكسه"
+      }
+    ],
+    "createdBy": "المحاسب المالي",
+    "createdAt": "2026-10-17T09:33:15.200Z",
+    "reversedByEntryId": "JE-2026-050-866t",
+    "reversalReason": "خطأ في التوجيه المحاسبي للإيراد",
+    "reversedAt": "2026-10-17T09:33:15.228Z",
+    "reversedBy": "المراجع المالي"
+  },
+  {
+    "id": "JE-2026-050-866t",
+    "entryNumber": "JV-2026-10-050",
+    "entryDate": "2026-10-17T09:33:15.205Z",
+    "fiscalPeriodId": "FP-2026-10",
+    "sourceModule": "REVERSAL",
+    "referenceId": "JV-2026-10-049",
+    "description": "قيد عكسي للقيد (JV-2026-10-049): خطأ في التوجيه المحاسبي للإيراد",
+    "status": "POSTED",
+    "totalAmount": 12000,
+    "lines": [
+      {
+        "accountId": "ACC-1111",
+        "accountCode": "1111",
+        "accountNameAr": "الخزينة الرئيسية (الصندوق)",
+        "debit": 0,
+        "credit": 12000,
+        "narration": "عكس السطر: قيد تجريبي للاختبار تمهيداً لعكسه"
+      },
+      {
+        "accountId": "ACC-4110",
+        "accountCode": "4110",
+        "accountNameAr": "إيرادات مبيعات التجزئة النقدية",
+        "debit": 12000,
+        "credit": 0,
+        "narration": "عكس السطر: قيد تجريبي للاختبار تمهيداً لعكسه"
+      }
+    ],
+    "createdBy": "المراجع المالي",
+    "createdAt": "2026-10-17T09:33:15.221Z",
+    "reversedByEntryId": null
+  },
+  {
+    "id": "JE-2026-051-867m",
+    "entryNumber": "JV-2026-10-051",
+    "entryDate": "2026-10-15T12:10:00.000Z",
+    "fiscalPeriodId": "FP-2026-10",
+    "sourceModule": "POS_SALES",
+    "referenceId": "INV-TEST-0999",
+    "description": "ترحيل مبيعات نقطة البيع — فاتورة رقم (INV-TEST-0999)",
+    "status": "POSTED",
+    "totalAmount": 17000,
+    "lines": [
+      {
+        "accountId": "ACC-1112",
+        "accountCode": "1112",
+        "accountNameAr": "صندوق نقطة البيع (POS Cash)",
+        "debit": 10000,
+        "credit": 0,
+        "narration": "مقبوضات مبيعات الفاتورة INV-TEST-0999"
+      },
+      {
+        "accountId": "ACC-4110",
+        "accountCode": "4110",
+        "accountNameAr": "إيرادات مبيعات التجزئة النقدية",
+        "debit": 0,
+        "credit": 10000,
+        "narration": "إيراد مبيعات الفاتورة INV-TEST-0999"
+      },
+      {
+        "accountId": "ACC-5100",
+        "accountCode": "5100",
+        "accountNameAr": "تكلفة الأدوية المصروفة للعملاء",
+        "debit": 7000,
+        "credit": 0,
+        "narration": "تكلفة صرف أدوية الفاتورة INV-TEST-0999"
+      },
+      {
+        "accountId": "ACC-1131",
+        "accountCode": "1131",
+        "accountNameAr": "مخزون الصيدلية الرئيسي",
+        "debit": 0,
+        "credit": 7000,
+        "narration": "صرف مخزني للأدوية المباعة للفاتورة INV-TEST-0999"
+      }
+    ],
+    "createdBy": "د. طارق",
+    "createdAt": "2026-10-17T09:33:15.250Z",
+    "reversedByEntryId": null
+  },
+  {
+    "id": "JE-2026-052-8683",
+    "entryNumber": "JV-2026-10-052",
+    "entryDate": "2026-10-15T12:15:00.000Z",
+    "fiscalPeriodId": "FP-2026-10",
+    "sourceModule": "PURCHASING",
+    "referenceId": "SUP-INV-TEST-01",
+    "description": "استحقاق فاتورة توريد أدوية — شركة الوابل الطبية (SUP-INV-TEST-01)",
+    "status": "POSTED",
+    "totalAmount": 50000,
+    "lines": [
+      {
+        "accountId": "ACC-1131",
+        "accountCode": "1131",
+        "accountNameAr": "مخزون الصيدلية الرئيسي",
+        "debit": 50000,
+        "credit": 0,
+        "narration": "إضافة أدوية ومستلزمات واردة بموجب فاتورة المورد SUP-INV-TEST-01"
+      },
+      {
+        "accountId": "ACC-2110",
+        "accountCode": "2110",
+        "accountNameAr": "الدائنون والذمم التجارية (الموردون)",
+        "debit": 0,
+        "credit": 50000,
+        "narration": "استحقاق تجاري للمورد شركة الوابل الطبية"
+      }
+    ],
+    "createdBy": "إدارة المشتريات والتموين",
+    "createdAt": "2026-10-17T09:33:15.267Z",
+    "reversedByEntryId": null
+  },
+  {
+    "id": "JE-2026-053-868k",
+    "entryNumber": "JV-2026-10-053",
+    "entryDate": "2026-10-15T12:20:00.000Z",
+    "fiscalPeriodId": "FP-2026-10",
+    "sourceModule": "PAYMENT",
+    "referenceId": "REC-SUP-55",
+    "description": "سداد التزام مالي للمورد شركة الوابل الطبية إيصال (REC-SUP-55)",
+    "status": "POSTED",
+    "totalAmount": 30000,
+    "lines": [
+      {
+        "accountId": "ACC-2110",
+        "accountCode": "2110",
+        "accountNameAr": "الدائنون والذمم التجارية (الموردون)",
+        "debit": 30000,
+        "credit": 0,
+        "narration": "سداد دفعة حساب للمورد شركة الوابل الطبية"
+      },
+      {
+        "accountId": "ACC-1111",
+        "accountCode": "1111",
+        "accountNameAr": "الخزينة الرئيسية (الصندوق)",
+        "debit": 0,
+        "credit": 30000,
+        "narration": "صرف من الخزينة الرئيسية"
+      }
+    ],
+    "createdBy": "قسم الحسابات والمدفوعات",
+    "createdAt": "2026-10-17T09:33:15.284Z",
+    "reversedByEntryId": null
+  },
+  {
+    "id": "JE-2026-054-8693",
+    "entryNumber": "JV-2026-10-054",
+    "entryDate": "2026-10-15T12:25:00.000Z",
+    "fiscalPeriodId": "FP-2026-10",
+    "sourceModule": "INVENTORY",
+    "referenceId": "ADJ-DMG-01",
+    "description": "تسوية إتلاف أدوية منتهية الصلاحية — إذن (ADJ-DMG-01)",
+    "status": "POSTED",
+    "totalAmount": 8500,
+    "lines": [
+      {
+        "accountId": "ACC-5200",
+        "accountCode": "5200",
+        "accountNameAr": "خسائر الأدوية التالفة ومنتهية الصلاحية",
+        "debit": 8500,
+        "credit": 0,
+        "narration": "إثبات خسائر أدوية منتهية/تالفة: شراب ملطف تالف (تشغيلة: BATCH-EXPIRED)"
+      },
+      {
+        "accountId": "ACC-1131",
+        "accountCode": "1131",
+        "accountNameAr": "مخزون الصيدلية الرئيسي",
+        "debit": 0,
+        "credit": 8500,
+        "narration": "استبعاد المخزون التالف بموجب إذن تسوية رقابي"
+      }
+    ],
+    "createdBy": "المسؤول الرقابي والصيدلي المفتش",
+    "createdAt": "2026-10-17T09:33:15.303Z",
+    "reversedByEntryId": null
   }
 ]
