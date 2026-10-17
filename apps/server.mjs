@@ -17,6 +17,7 @@ import { transfersRepository } from "./api/transfers.mjs";
 import { syncRepository } from "./api/sync.mjs";
 import { accountingRepository } from "./api/accounting.mjs";
 import { branchesRepository } from "./api/branches.mjs";
+import { OutboxDispatcher } from "../dist/src/application/sync/outbox-dispatcher.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -825,6 +826,75 @@ const server = http.createServer(async (req, res) => {
         }
         return;
       }
+
+      // GET /api/sync/outbox — list live SQLite outbox events
+      if (req.method === "GET" && pathname === "/api/sync/outbox") {
+        try {
+          const limit = parseInt(parsedUrl.searchParams.get("limit") || "50", 10);
+          const pending = await salesRepository.getPendingOutboxEvents(limit);
+          const all = await salesRepository.getAllOutboxEvents();
+          sendJson(res, 200, {
+            pendingCount: pending.length,
+            totalCount: all.length,
+            pendingEvents: pending,
+            recentEvents: all.slice(0, 50)
+          });
+        } catch (err) {
+          sendError(res, 500, "OUTBOX_QUERY_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
+      // POST /api/sync/outbox/dispatch — trigger OutboxDispatcher execution
+      if (req.method === "POST" && pathname === "/api/sync/outbox/dispatch") {
+        try {
+          const body = await readJsonBody(req);
+          const limit = parseInt(body.limit || "50", 10);
+          const outboxStore = salesRepository.getOutboxStore();
+
+          const transport = {
+            async deliver(event) {
+              try {
+                const pushPayload = {
+                  deviceId: event.deviceId || "DEV-POS-01",
+                  branchId: event.branchId || "brn-khartoum-01",
+                  batchSequence: Date.now(),
+                  events: [
+                    {
+                      eventId: event.eventId,
+                      idempotencyKey: event.correlationId,
+                      correlationId: event.correlationId,
+                      eventType: event.eventType,
+                      payload: event.payload
+                    }
+                  ]
+                };
+                const result = await syncRepository.handlePush(pushPayload);
+                const firstRes = result?.results?.[0];
+                if (firstRes && firstRes.status === "CONFLICT") {
+                  return { success: false, status: 409, error: firstRes.conflictReason, retryable: false };
+                }
+                return { success: true, status: 200, retryable: false };
+              } catch (pushErr) {
+                return { success: false, status: 500, error: pushErr.message, retryable: true };
+              }
+            }
+          };
+
+          const dispatcher = new OutboxDispatcher(outboxStore, transport);
+          const summary = await dispatcher.dispatchPending(limit);
+          const remainingPending = await salesRepository.getPendingOutboxEvents(10);
+
+          sendJson(res, 200, {
+            summary,
+            remainingPendingCount: remainingPending.length
+          });
+        } catch (err) {
+          sendError(res, 500, "OUTBOX_DISPATCH_FAILED", err.message, correlationId);
+        }
+        return;
+      }
+
       // =========================================================================
       // ACCOUNTING & GENERAL LEDGER (MVP-2 / Module Boundary)
       // =========================================================================

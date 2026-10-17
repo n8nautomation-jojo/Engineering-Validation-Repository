@@ -6,10 +6,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { DatabaseSync } from "node:sqlite";
 import { catalogRepository } from "./catalog.mjs";
 import { sessionRepository } from "./session.mjs";
 import { inventoryMovementsRepository } from "./inventoryMovements.mjs";
 import { customersRepository } from "./customers.mjs";
+import { SqliteOutboxStore } from "../../dist/src/infrastructure/sqlite/sqlite-outbox-store.js";
 
 const resolveDataDir = () => {
   try {
@@ -22,6 +24,7 @@ const resolveDataDir = () => {
 
 const DATA_DIR = resolveDataDir();
 const SALES_FILE = DATA_DIR ? path.join(DATA_DIR, "sales.json") : "";
+const SQLITE_DB_PATH = DATA_DIR ? path.join(DATA_DIR, "pharmatech-pos.db") : ":memory:";
 
 const randomUUID = () => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `018f${Math.random().toString(16).slice(2, 10)}-0000-7000-8000-000000000000`);
 
@@ -29,6 +32,15 @@ class SalesRepository {
   constructor() {
     this.idempotencyStore = new Map();
     this.salesLedger = this.loadSales();
+
+    try {
+      this.db = new DatabaseSync(SQLITE_DB_PATH);
+      this.outboxStore = new SqliteOutboxStore(this.db);
+    } catch (err) {
+      console.warn("[SalesRepository] SQLite outbox fallback to memory:", err.message);
+      this.db = new DatabaseSync(":memory:");
+      this.outboxStore = new SqliteOutboxStore(this.db);
+    }
   }
 
   loadSales() {
@@ -380,6 +392,43 @@ class SalesRepository {
     this.salesLedger.unshift(completeSaleRecord);
     this.persistSales();
 
+    // 7b. Persist Outbox Event to SQLite outbox_events table
+    try {
+      const outboxEvent = {
+        eventId: `evt-${randomUUID()}`,
+        eventType: "sale.completed",
+        aggregateId: completeSaleRecord.sale_id,
+        aggregateVersion: 1,
+        occurredAt: completeSaleRecord.created_at,
+        tenantId: dto.tenant_id || "t-001",
+        organizationId: dto.organization_id || "org-001",
+        branchId: dto.branch_id || "brn-khartoum-01",
+        deviceId: dto.device_id || "pos-dev-01",
+        correlationId: correlationId,
+        payload: {
+          saleId: completeSaleRecord.sale_id,
+          invoiceNumber: completeSaleRecord.invoice_number,
+          items: executedLines,
+          totals: completeSaleRecord.totals,
+          payments: completeSaleRecord.payments,
+          customerId: completeSaleRecord.customer_id,
+          cashierName: completeSaleRecord.cashier_name
+        },
+        status: "PENDING"
+      };
+
+      await this.outboxStore.append(outboxEvent, {
+        tenantId: outboxEvent.tenantId,
+        organizationId: outboxEvent.organizationId,
+        branchId: outboxEvent.branchId,
+        deviceId: outboxEvent.deviceId,
+        userId: completeSaleRecord.cashier_id || "usr-001",
+        correlationId: correlationId
+      });
+    } catch (outboxErr) {
+      console.warn("[SalesRepository] Non-fatal outbox append warning:", outboxErr.message);
+    }
+
     // 8. Update customer's aggregate stats if registered
     if (customerId !== "CUST-WALK-IN") {
       try {
@@ -478,6 +527,20 @@ class SalesRepository {
     sale.reversal_note = note;
     this.persistSales();
     return sale;
+  }
+
+  async getPendingOutboxEvents(limit = 50) {
+    if (!this.outboxStore) return [];
+    return this.outboxStore.getPending(limit);
+  }
+
+  async getAllOutboxEvents() {
+    if (!this.outboxStore) return [];
+    return this.outboxStore.getAll();
+  }
+
+  getOutboxStore() {
+    return this.outboxStore;
   }
 }
 

@@ -1,8 +1,8 @@
 node_modules/
 dist/
-tests/*.db
-tests/*.db-wal
-tests/*.db-shm
+*.db
+*.db-wal
+*.db-shm
 *.log
 *.patch
 .DS_Store

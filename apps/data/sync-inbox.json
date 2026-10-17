@@ -23,5 +23,21 @@
         "serverInvoiceNumber": "INV-2026-0039"
       }
     ]
+  },
+  {
+    "inboxId": "INBOX-MVC8DZN5",
+    "deviceId": "pos-dev-01",
+    "batchSequence": 1792231546287,
+    "receivedAt": "2026-10-17T10:05:46.289Z",
+    "eventsCount": 1,
+    "acceptedCount": 1,
+    "conflictCount": 0,
+    "events": [
+      {
+        "eventId": "evt-34ab8773-8bb4-4cbf-82ca-707b34af1023",
+        "status": "ACCEPTED",
+        "acknowledged": true
+      }
+    ]
   }
 ]
