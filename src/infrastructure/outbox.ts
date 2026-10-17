@@ -12,10 +12,12 @@ export interface OutboxEvent {
   readonly deviceId?:string;
   readonly correlationId:string;
   readonly payload:unknown;
+  readonly status?:string;
 }
 
 export interface OutboxStore {
   append(event:OutboxEvent, context:RequestContext):Promise<void>;
   getPending(limit:number):Promise<readonly OutboxEvent[]>;
   markDispatched(eventId:string):Promise<void>;
+  markFailed?(eventId:string, reason:string):Promise<void>;
 }
