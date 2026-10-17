@@ -73,15 +73,15 @@ export class SessionsView {
               <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           </span>
-          <h2>سجل حركات الخزينة والمطابقة الدورية</h2>
+          <h2>الورديات والخزينة</h2>
         </div>
 
         <div class="segmented" id="sessions-tab-segmented">
           <button data-tab="movements" data-active="${this.activeTab === 'movements'}">
-            حركات نقدية الوردية (${movementsCount})
+            حركات الوردية (${movementsCount})
           </button>
           <button data-tab="history" data-active="${this.activeTab === 'history'}">
-            أرشيف الورديات السابقة و Z-Reports (${history.length})
+            أرشيف الورديات (${history.length})
           </button>
         </div>
       </div>

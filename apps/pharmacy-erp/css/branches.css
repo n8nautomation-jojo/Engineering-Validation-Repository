@@ -71,15 +71,15 @@
 }
 
 .branch-tab-btn:hover {
-  background: rgba(14, 165, 233, 0.08);
-  color: var(--foreground, #0f172a);
+  background: rgba(0, 179, 126, 0.08);
+  color: var(--foreground);
 }
 
 .branch-tab-btn.active {
-  background: var(--primary, #0284c7);
+  background: var(--gradient-primary);
   color: #ffffff;
-  border-color: var(--primary, #0284c7);
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 179, 126, 0.25);
 }
 
 .branch-tab-btn svg {

@@ -49,10 +49,7 @@ export class FinancialKpisGrid {
           <div class="stat-value num">
             ${Number(metrics.netRevenue).toLocaleString('en-US')} <small>ج.س</small>
           </div>
-          <div class="stat-label">
-            إجمالي البيع: ${Number(metrics.grossRevenue).toLocaleString('en-US')} ج.س
-            ${metrics.reversedAmount > 0 ? ` · المسترجع: ${Number(metrics.reversedAmount).toLocaleString('en-US')} ج.س` : ''}
-          </div>
+          <div class="stat-label">المبيعات الصافية</div>
         </div>
 
         <!-- Card 2: Bankak Settlement -->
@@ -69,9 +66,7 @@ export class FinancialKpisGrid {
           <div class="stat-value num">
             ${Number(payments.bankak.amount).toLocaleString('en-US')} <small>ج.س</small>
           </div>
-          <div class="stat-label">
-            تسويات تطبيق بنكك (إشعارات رقمية موثقة)
-          </div>
+          <div class="stat-label">مبيعات بنكك</div>
         </div>
 
         <!-- Card 3: Cash In Drawer -->
@@ -89,9 +84,7 @@ export class FinancialKpisGrid {
           <div class="stat-value num">
             ${Number(drawer.currentCashInDrawer || payments.cash.amount).toLocaleString('en-US')} <small>ج.س</small>
           </div>
-          <div class="stat-label">
-            النقدية المتوقعة بالدرج (كاش المبيعات + العهدة)
-          </div>
+          <div class="stat-label">النقدية بالدرج</div>
         </div>
 
         <!-- Card 4: Invoices & Basket -->
@@ -107,9 +100,7 @@ export class FinancialKpisGrid {
           <div class="stat-value num">
             ${Number(metrics.averageBasket).toLocaleString('en-US')} <small>ج.س</small>
           </div>
-          <div class="stat-label">
-            متوسط قيمة الفاتورة (${metrics.totalItemsSold} عبوة مباعة)
-          </div>
+          <div class="stat-label">متوسط الفاتورة</div>
         </div>
       </div>
     `;

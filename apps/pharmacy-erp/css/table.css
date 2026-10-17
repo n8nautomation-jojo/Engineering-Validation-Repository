@@ -42,7 +42,8 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.medicine-table {
+.medicine-table,
+.data-table {
   width: 100%;
   border-collapse: collapse;
   text-align: right;
@@ -50,32 +51,75 @@
   font-size: 13px;
 }
 
-html[dir="ltr"] .medicine-table {
+html[dir="ltr"] .medicine-table,
+html[dir="ltr"] .data-table {
   text-align: left;
 }
 
-.medicine-table th {
+.medicine-table th,
+.data-table th {
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--muted-foreground);
-  padding: 12px 20px;
+  padding: 11px 18px;
   background: var(--muted);
   border-block: 1px solid var(--border);
+  letter-spacing: 0.01em;
 }
 
-.medicine-table td {
-  padding: 13px 20px;
+.medicine-table td,
+.data-table td {
+  padding: 12px 18px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
-.medicine-table tbody tr {
+.medicine-table tbody tr,
+.data-table tbody tr {
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s ease;
 }
 
-.medicine-table tbody tr:hover {
-  background: color-mix(in srgb, var(--secondary) 40%, transparent);
+.medicine-table tbody tr:hover,
+.data-table tbody tr:hover {
+  background: color-mix(in srgb, var(--primary) 4%, var(--card));
+}
+
+.btn-table-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-table-action:hover {
+  background: var(--muted);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-table-action svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.btn-table-action.active,
+.btn-table-action[data-active="true"] {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary);
 }
 
 .medicine-name {

@@ -129,14 +129,14 @@ export class PurchasingView {
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
         <div class="segmented">
           <button id="tab-btn-orders" data-active="${this.activeTab === 'orders'}">
-            📦 أوامر الشراء والشحنات (${this.orders.length})
+            أوامر الشراء (${this.orders.length})
           </button>
           <button id="tab-btn-invoices" data-active="${this.activeTab === 'invoices'}" style="position:relative;">
-            🧾 فواتير الموردين والذمم (${this.invoices.length})
+            فواتير الموردين (${this.invoices.length})
             ${unpaidCount > 0 ? `<span style="background:#EF4444; color:#fff; font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px; margin-right:4px;">${unpaidCount} مستحقة</span>` : ''}
           </button>
           <button id="tab-btn-suppliers" data-active="${this.activeTab === 'suppliers'}">
-            🏭 دليل الموردين المعتمدين (${this.suppliers.length})
+            دليل الموردين (${this.suppliers.length})
           </button>
         </div>
       </div>

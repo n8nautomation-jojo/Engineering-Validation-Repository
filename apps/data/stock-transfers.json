@@ -145,5 +145,87 @@
     "notes": "طلب تغذية رصيد فيتامين سي فوار قبل عطلة نهاية الأسبوع",
     "createdAt": "2026-10-15T09:00:00.000Z",
     "completedAt": null
+  },
+  {
+    "id": "tr-mvc6sgtk",
+    "transferNumber": "TR-2026-006",
+    "sourceWarehouseId": "WH-01",
+    "sourceWarehouseName": "المستودع الرئيسي (فرع الخرطوم الرئيسي — تقاطع القصر)",
+    "destinationWarehouseId": "WH-04",
+    "destinationWarehouseName": "مستودع فرع (فرع بحري النموذجي — المحطة الوسطى)",
+    "requestedBy": "د. أحمد الطاهر (المدير العام)",
+    "requestedAt": "2026-10-17T09:21:02.504Z",
+    "requiredDate": "2026-10-18T09:21:02.505Z",
+    "status": "DISPATCHED",
+    "priority": "HIGH",
+    "notes": "أمر تحويل ذكي موازن للمخزون (مستند لتوصية REC-REBAL-001): رصد فائض مخزني (248 عبوة) في فرع الخرطوم الرئيسي — تقاطع القصر مقابل استهلاك مرتفع ومخزون حرج في فرع بحري النموذجي — المحطة الوسطى",
+    "items": [
+      {
+        "productId": "MED-001",
+        "productName": "Panadol Extra 500mg/65mg",
+        "productNameAr": "بنادول إكسترا",
+        "batchNumber": "BATCH-2026-A2",
+        "expiryDate": "2026-11-30",
+        "requestedQuantity": 25,
+        "dispatchedQuantity": 25,
+        "receivedQuantity": 0,
+        "unit": "عبوة"
+      }
+    ],
+    "history": [
+      {
+        "status": "REQUESTED",
+        "timestamp": "2026-10-17T09:21:02.505Z",
+        "actor": "د. أحمد الطاهر (المدير العام)",
+        "notes": "إنشاء أمر التحويل آلياً عبر محرك ذكاء الفروع الموحد"
+      },
+      {
+        "status": "DISPATCHED",
+        "timestamp": "2026-10-17T09:21:02.505Z",
+        "actor": "د. أحمد الطاهر (المدير العام)",
+        "notes": "اعتماد وجاهزية الشحن المباشر لتحقيق التوازن الدوائي"
+      }
+    ]
+  },
+  {
+    "id": "tr-mvc6va7l",
+    "transferNumber": "TR-2026-007",
+    "sourceWarehouseId": "WH-01",
+    "sourceWarehouseName": "المستودع الرئيسي (فرع الخرطوم الرئيسي — تقاطع القصر)",
+    "destinationWarehouseId": "WH-04",
+    "destinationWarehouseName": "مستودع فرع (فرع بحري النموذجي — المحطة الوسطى)",
+    "requestedBy": "د. أحمد الطاهر (المدير العام)",
+    "requestedAt": "2026-10-17T09:23:13.905Z",
+    "requiredDate": "2026-10-18T09:23:13.905Z",
+    "status": "DISPATCHED",
+    "priority": "HIGH",
+    "notes": "أمر تحويل ذكي موازن للمخزون (مستند لتوصية REC-REBAL-001): رصد فائض مخزني (248 عبوة) في فرع الخرطوم الرئيسي — تقاطع القصر مقابل استهلاك مرتفع ومخزون حرج في فرع بحري النموذجي — المحطة الوسطى",
+    "items": [
+      {
+        "productId": "MED-001",
+        "productName": "Panadol Extra 500mg/65mg",
+        "productNameAr": "بنادول إكسترا",
+        "batchNumber": "BATCH-2026-A2",
+        "expiryDate": "2026-11-30",
+        "requestedQuantity": 25,
+        "dispatchedQuantity": 25,
+        "receivedQuantity": 0,
+        "unit": "عبوة"
+      }
+    ],
+    "history": [
+      {
+        "status": "REQUESTED",
+        "timestamp": "2026-10-17T09:23:13.905Z",
+        "actor": "د. أحمد الطاهر (المدير العام)",
+        "notes": "إنشاء أمر التحويل آلياً عبر محرك ذكاء الفروع الموحد"
+      },
+      {
+        "status": "DISPATCHED",
+        "timestamp": "2026-10-17T09:23:13.905Z",
+        "actor": "د. أحمد الطاهر (المدير العام)",
+        "notes": "اعتماد وجاهزية الشحن المباشر لتحقيق التوازن الدوائي"
+      }
+    ]
   }
 ]

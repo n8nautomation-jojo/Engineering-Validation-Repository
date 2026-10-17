@@ -136,16 +136,16 @@ export class MedicinesTable {
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px; flex-wrap:wrap; gap:10px;">
         <div style="display:flex; gap:8px;">
           <button type="button" class="btn-inv-subtab" data-tab="CATALOG"
-            style="padding:8px 18px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid ${this.activeTab === 'CATALOG' ? 'var(--primary)' : 'var(--border)'}; background:${this.activeTab === 'CATALOG' ? 'var(--primary)' : 'var(--card-bg, #ffffff)'}; color:${this.activeTab === 'CATALOG' ? '#ffffff' : 'var(--foreground)'}; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s ease;">
+            style="padding:8px 18px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid ${this.activeTab === 'CATALOG' ? 'var(--primary)' : 'var(--border)'}; background:${this.activeTab === 'CATALOG' ? 'var(--gradient-primary)' : 'var(--card-bg, #ffffff)'}; color:${this.activeTab === 'CATALOG' ? '#ffffff' : 'var(--foreground)'}; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s ease; ${this.activeTab === 'CATALOG' ? 'box-shadow: 0 2px 8px rgba(0, 179, 126, 0.25);' : ''}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></svg>
-            دليل الأصناف والتشغيلات
+            دليل الأصناف
           </button>
 
           <button type="button" class="btn-inv-subtab" data-tab="TRANSFERS"
-            style="padding:8px 18px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid ${this.activeTab === 'TRANSFERS' ? 'var(--primary)' : 'var(--border)'}; background:${this.activeTab === 'TRANSFERS' ? 'var(--primary)' : 'var(--card-bg, #ffffff)'}; color:${this.activeTab === 'TRANSFERS' ? '#ffffff' : 'var(--foreground)'}; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s ease;">
+            style="padding:8px 18px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid ${this.activeTab === 'TRANSFERS' ? 'var(--primary)' : 'var(--border)'}; background:${this.activeTab === 'TRANSFERS' ? 'var(--gradient-primary)' : 'var(--card-bg, #ffffff)'}; color:${this.activeTab === 'TRANSFERS' ? '#ffffff' : 'var(--foreground)'}; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s ease; ${this.activeTab === 'TRANSFERS' ? 'box-shadow: 0 2px 8px rgba(0, 179, 126, 0.25);' : ''}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m16 3 4 4-4 4M20 7H4m4 14-4-4 4-4m-4 4h16"/></svg>
-            أوامر التحويل بين المستودعات
-            <span id="inventory-transfers-tab-badge" style="background:#D97706; color:#fff; font-size:11px; font-weight:800; padding:2px 7px; border-radius:10px; margin-right:4px;">0</span>
+            تحويلات المخزون
+            <span id="inventory-transfers-tab-badge" style="background:${this.activeTab === 'TRANSFERS' ? '#ffffff' : '#D97706'}; color:${this.activeTab === 'TRANSFERS' ? 'var(--primary)' : '#fff'}; font-size:11px; font-weight:800; padding:2px 7px; border-radius:10px; margin-right:4px;">0</span>
           </button>
         </div>
       </div>

@@ -88,21 +88,21 @@ export class BranchIntelligenceView {
         <!-- Network Executive KPI Banner -->
         <div class="network-kpi-grid">
           <div class="card kpi-card" style="border-right: 4px solid #0284c7;">
-            <div class="kpi-label">إجمالي مبيعات شبكة الفروع</div>
-            <div class="kpi-value" style="color: #0284c7;">${summary.networkTotalRevenue.toLocaleString()} SDG</div>
+            <div class="kpi-label">مبيعات شبكة الفروع</div>
+            <div class="kpi-value" style="color: #0284c7;">${summary.networkTotalRevenue.toLocaleString()} <small style="font-size:13px; font-weight:600;">ج.س</small></div>
             <div class="kpi-sub">عبر ${summary.totalBranchesCount} فروع نشطة</div>
           </div>
 
           <div class="card kpi-card" style="border-right: 4px solid #10b981;">
             <div class="kpi-label">أرباح الشبكة التقديرية</div>
-            <div class="kpi-value" style="color: #10b981;">${summary.networkProfitEstimate.toLocaleString()} SDG</div>
+            <div class="kpi-value" style="color: #10b981;">${summary.networkProfitEstimate.toLocaleString()} <small style="font-size:13px; font-weight:600;">ج.س</small></div>
             <div class="kpi-sub">متوسط هامش ربح: 28%</div>
           </div>
 
           <div class="card kpi-card" style="border-right: 4px solid #8b5cf6;">
             <div class="kpi-label">إجمالي الفواتير والوصفات</div>
             <div class="kpi-value" style="color: #8b5cf6;">${summary.totalTransactions.toLocaleString()}</div>
-            <div class="kpi-sub">متوسط الفاتورة: ${summary.averageBasketValue.toLocaleString()} SDG</div>
+            <div class="kpi-sub">متوسط الفاتورة: ${summary.averageBasketValue.toLocaleString()} ج.س</div>
           </div>
 
           <div class="card kpi-card" style="border-right: 4px solid #f59e0b;">
@@ -121,7 +121,7 @@ export class BranchIntelligenceView {
               <path d="M7 23l-4-4 4-4"/>
               <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
             </svg>
-            الموازنة والتحويلات الذكية (${this.rebalancingRecs.length})
+            الموازنة والتحويلات (${this.rebalancingRecs.length})
           </button>
           <button class="branch-tab-btn ${this.activeTab === 'performance' ? 'active' : ''}" data-tab="performance">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -324,7 +324,7 @@ export class BranchIntelligenceView {
           <div style="text-align: left; background: #fff1f2; border: 1px solid #fecdd3; padding: 6px 12px; border-radius: 8px;">
             <span style="font-size: 0.75rem; color: #9f1239; display: block;">قيمة المعرض للمخاطرة:</span>
             <strong style="color: #e11d48; font-family: var(--font-mono); font-size: 1rem;">
-              ${matrix.totalEstimatedRiskSDG.toLocaleString()} SDG
+              ${matrix.totalEstimatedRiskSDG.toLocaleString()} ج.س
             </strong>
           </div>
         </div>
@@ -338,7 +338,7 @@ export class BranchIntelligenceView {
                 <th style="width: 100px;">الصلاحية</th>
                 <th style="width: 100px; text-align: center;">المتبقي</th>
                 <th style="width: 90px; text-align: center;">الرصيد</th>
-                <th style="width: 130px; text-align: left;">القيمة المالية</th>
+                <th style="width: 130px; text-align: left;">القيمة المالية (ج.س)</th>
                 <th style="width: 150px;">الفرع</th>
                 <th>الإجراء الموصى به</th>
               </tr>
@@ -360,7 +360,7 @@ export class BranchIntelligenceView {
                   </td>
                   <td style="text-align: center; font-weight: 700;">${b.availableQuantity}</td>
                   <td style="text-align: left; font-family: var(--font-mono); font-weight: 700; color: #e11d48;">
-                    ${b.estimatedFinancialRisk.toLocaleString()} SDG
+                    ${b.estimatedFinancialRisk.toLocaleString()}
                   </td>
                   <td>${b.currentBranch}</td>
                   <td>
@@ -409,14 +409,14 @@ export class BranchIntelligenceView {
                 <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px;">
                   <span>النقدية بالخزينة:</span>
                   <strong style="font-family: var(--font-mono); color: ${gov.liquidity.isExceeded ? '#dc2626' : 'var(--foreground)'};">
-                    ${gov.liquidity.currentCashInSafe.toLocaleString()} SDG
+                    ${gov.liquidity.currentCashInSafe.toLocaleString()} ج.س
                   </strong>
                 </div>
                 <div class="progress-bar-bg" style="height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 4px;">
                   <div style="width: ${Math.min(100, gov.liquidity.utilizationPercent)}%; height: 100%; background: ${gov.liquidity.isExceeded ? '#dc2626' : (gov.liquidity.utilizationPercent > 75 ? '#f59e0b' : '#0284c7')};"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted-foreground);">
-                  <span>سقف الأمان: ${gov.liquidity.liquidityLimit.toLocaleString()} SDG</span>
+                  <span>سقف الأمان: ${gov.liquidity.liquidityLimit.toLocaleString()} ج.س</span>
                   <span>الاستهلاك: ${gov.liquidity.utilizationPercent}%</span>
                 </div>
               </div>

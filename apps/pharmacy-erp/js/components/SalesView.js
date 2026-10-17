@@ -139,16 +139,16 @@ export class SalesView {
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:12px; flex-wrap:wrap; gap:10px;">
         <div style="display:flex; gap:8px;">
           <button type="button" class="btn-sales-subtab" data-tab="INVOICES"
-            style="padding:8px 18px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid ${this.activeTab === 'INVOICES' ? 'var(--primary)' : 'var(--border)'}; background:${this.activeTab === 'INVOICES' ? 'var(--primary)' : 'var(--card-bg, #ffffff)'}; color:${this.activeTab === 'INVOICES' ? '#ffffff' : 'var(--foreground)'}; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s ease;">
+            style="padding:8px 18px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid ${this.activeTab === 'INVOICES' ? 'var(--primary)' : 'var(--border)'}; background:${this.activeTab === 'INVOICES' ? 'var(--gradient-primary)' : 'var(--card-bg, #ffffff)'}; color:${this.activeTab === 'INVOICES' ? '#ffffff' : 'var(--foreground)'}; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s ease; ${this.activeTab === 'INVOICES' ? 'box-shadow: 0 2px 8px rgba(0, 179, 126, 0.25);' : ''}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/></svg>
-            فواتير المبيعات الصادرة
+            فواتير المبيعات
           </button>
 
           <button type="button" class="btn-sales-subtab" data-tab="ORDERS"
-            style="padding:8px 18px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid ${this.activeTab === 'ORDERS' ? 'var(--primary)' : 'var(--border)'}; background:${this.activeTab === 'ORDERS' ? 'var(--primary)' : 'var(--card-bg, #ffffff)'}; color:${this.activeTab === 'ORDERS' ? '#ffffff' : 'var(--foreground)'}; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s ease;">
+            style="padding:8px 18px; border-radius:8px; font-size:13.5px; font-weight:700; border:1px solid ${this.activeTab === 'ORDERS' ? 'var(--primary)' : 'var(--border)'}; background:${this.activeTab === 'ORDERS' ? 'var(--gradient-primary)' : 'var(--card-bg, #ffffff)'}; color:${this.activeTab === 'ORDERS' ? '#ffffff' : 'var(--foreground)'}; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.2s ease; ${this.activeTab === 'ORDERS' ? 'box-shadow: 0 2px 8px rgba(0, 179, 126, 0.25);' : ''}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            أوامر الحجز والروشتات المسبقة
-            <span id="sales-orders-tab-badge" style="background:#00B37E; color:#fff; font-size:11px; font-weight:800; padding:2px 7px; border-radius:10px; margin-right:4px;">0</span>
+            طلبات الحجز والروشتات
+            <span id="sales-orders-tab-badge" style="background:${this.activeTab === 'ORDERS' ? '#ffffff' : '#00B37E'}; color:${this.activeTab === 'ORDERS' ? 'var(--primary)' : '#fff'}; font-size:11px; font-weight:800; padding:2px 7px; border-radius:10px; margin-right:4px;">0</span>
           </button>
         </div>
       </div>

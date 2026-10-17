@@ -85,9 +85,9 @@ export class AccountingView {
         <!-- Executive Financial KPI Grid (Immediate Vital Signs) -->
         <div class="accounting-kpi-grid">
           <div class="financial-kpi-card" style="border-right: 4px solid #00B37E;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground);">السيولة النقدية (الخزينة + بنكك)</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground);">السيولة النقدية</div>
             <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: #00B37E;">
-              ${Number(totalLiquidity).toLocaleString()} SDG
+              ${Number(totalLiquidity).toLocaleString()} <small style="font-size: 12px; font-weight: 600;">ج.س</small>
             </div>
             <div style="font-size: 0.75rem; color: var(--muted-foreground);">
               الخزينة: ${Number(cashAcc).toLocaleString()} | بنكك: ${Number(bankAcc).toLocaleString()}
@@ -95,27 +95,27 @@ export class AccountingView {
           </div>
 
           <div class="financial-kpi-card" style="border-right: 4px solid #0052CC;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground);">صافي أرباح العمليات التشغيلية</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground);">صافي الأرباح</div>
             <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: ${estimatedNetProfit >= 0 ? '#0052CC' : '#E11D48'};">
-              ${Number(estimatedNetProfit).toLocaleString()} SDG
+              ${Number(estimatedNetProfit).toLocaleString()} <small style="font-size: 12px; font-weight: 600;">ج.س</small>
             </div>
             <div style="font-size: 0.75rem; color: var(--muted-foreground);">
-              إجمالي الإيرادات: ${Number(totalRev).toLocaleString()} SDG
+              إجمالي الإيرادات: ${Number(totalRev).toLocaleString()} ج.س
             </div>
           </div>
 
           <div class="financial-kpi-card" style="border-right: 4px solid #7928CA;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground);">القيمة الدفترية للمخزون الدوائي</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground);">قيمة المخزون</div>
             <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: #7928CA;">
-              ${Number(inventoryVal).toLocaleString()} SDG
+              ${Number(inventoryVal).toLocaleString()} <small style="font-size: 12px; font-weight: 600;">ج.س</small>
             </div>
             <div style="font-size: 0.75rem; color: var(--muted-foreground);">أصول متداولة جاهزة للبيع</div>
           </div>
 
           <div class="financial-kpi-card" style="border-right: 4px solid #FF9900;">
-            <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground);">التزامات ومستحقات الموردين</div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--muted-foreground);">ذمم الموردين</div>
             <div style="font-size: 1.4rem; font-weight: 800; font-family: var(--font-mono); color: #FF9900;">
-              ${Number(payables).toLocaleString()} SDG
+              ${Number(payables).toLocaleString()} <small style="font-size: 12px; font-weight: 600;">ج.س</small>
             </div>
             <div style="font-size: 0.75rem; color: var(--muted-foreground);">فواتير توريد مستحقة السداد</div>
           </div>
@@ -198,13 +198,13 @@ export class AccountingView {
           </div>
           <div class="statement-subtabs-nav" style="display: flex; gap: 8px;">
             <button class="btn btn-sm ${this.statementSubTab === 'income-statement' ? 'btn-primary' : 'btn-secondary'} btn-subtab" data-subtab="income-statement">
-              📊 قائمة الدخل والأرباح
+              قائمة الدخل
             </button>
             <button class="btn btn-sm ${this.statementSubTab === 'balance-sheet' ? 'btn-primary' : 'btn-secondary'} btn-subtab" data-subtab="balance-sheet">
-              ⚖️ الميزانية العمومية
+              الميزانية العمومية
             </button>
             <button class="btn btn-sm ${this.statementSubTab === 'trial-balance' ? 'btn-primary' : 'btn-secondary'} btn-subtab" data-subtab="trial-balance">
-              📑 ميزان المراجعة
+              ميزان المراجعة
             </button>
           </div>
         </div>

@@ -37,7 +37,7 @@ export class SalesStatsGrid {
           <span class="chip chip-success">مكتملة رسمياً</span>
         </div>
         <div class="stat-value num" dir="ltr">${Number(totalRevenue).toLocaleString()} <small>ج.س</small></div>
-        <div class="stat-label">إجمالي إيراد المبيعات المسجلة</div>
+        <div class="stat-label">المبيعات الإجمالية</div>
       </div>
 
       <div class="stat-card">
@@ -50,7 +50,7 @@ export class SalesStatsGrid {
           <span class="chip chip-success">${sales.length} فواتير</span>
         </div>
         <div class="stat-value num">${sales.length} <small>فاتورة</small></div>
-        <div class="stat-label">إجمالي الفواتير الصادرة بالوردية</div>
+        <div class="stat-label">عدد الفواتير</div>
       </div>
 
       <div class="stat-card">
@@ -61,10 +61,10 @@ export class SalesStatsGrid {
               <line x1="2" x2="22" y1="10" y2="10" />
             </svg>
           </span>
-          <span class="chip" style="background:#EBF5FF; color:#0052CC; font-weight:700;">Bankak</span>
+          <span class="chip chip-info">بنكك</span>
         </div>
         <div class="stat-value num" dir="ltr" style="color:#0052CC;">${Number(bankakTotal).toLocaleString()} <small>ج.س</small></div>
-        <div class="stat-label">مبيعات تطبيق بنكك المؤكدة</div>
+        <div class="stat-label">مبيعات بنكك</div>
       </div>
 
       <div class="stat-card">
@@ -76,10 +76,10 @@ export class SalesStatsGrid {
               <path d="M12 18V6" />
             </svg>
           </span>
-          <span class="chip chip-success">Cash</span>
+          <span class="chip chip-success">نقدية</span>
         </div>
         <div class="stat-value num" dir="ltr" style="color:#00B37E;">${Number(cashTotal).toLocaleString()} <small>ج.س</small></div>
-        <div class="stat-label">المقبوضات النقدية المباشرة</div>
+        <div class="stat-label">المقبوضات النقدية</div>
       </div>
     `;
   }

@@ -39,7 +39,7 @@ export class TopSellingTable {
                 <th style="width:40px; text-align:center;">الرتبة</th>
                 <th>الدواء الصيدلاني</th>
                 <th>الكمية المباعة</th>
-                <th>إجمالي الإيراد</th>
+                <th>إجمالي الإيراد (ج.س)</th>
                 <th>العمليات</th>
               </tr>
             </thead>
@@ -61,7 +61,7 @@ export class TopSellingTable {
                     <strong>${p.totalQuantity}</strong> عبوة
                   </td>
                   <td class="num" style="color:var(--primary); font-weight:700;">
-                    ${Number(p.totalRevenue).toLocaleString('en-US')} ج.س
+                    ${Number(p.totalRevenue).toLocaleString('en-US')}
                   </td>
                   <td style="font-size:11px; color:var(--muted-foreground);">
                     ${p.salesCount || 1} فواتير

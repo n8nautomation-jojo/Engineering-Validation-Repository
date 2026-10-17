@@ -152,6 +152,61 @@ html[dir="ltr"] .stat-value small {
   color: var(--destructive);
 }
 
+.chip-info {
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+
+.chip-violet {
+  background: var(--violet-bg);
+  color: var(--violet);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.badge-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: rgba(0, 179, 126, 0.25);
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.badge-danger {
+  background: var(--destructive-bg);
+  color: var(--destructive);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+.badge-blue {
+  background: var(--blue-bg);
+  color: var(--blue);
+  border-color: rgba(2, 132, 199, 0.25);
+}
+
+.badge-gray {
+  background: var(--muted);
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+
 @media (max-width: 1200px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

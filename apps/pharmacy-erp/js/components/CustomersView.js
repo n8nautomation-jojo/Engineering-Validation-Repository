@@ -122,18 +122,18 @@ export class CustomersView {
         </div>
 
         <!-- Patients Table -->
-        <div style="overflow-x:auto; border:1px solid var(--border); border-radius:8px;">
-          <table style="width:100%; border-collapse:collapse; text-align:right;">
-            <thead style="background:var(--muted); border-bottom:1px solid var(--border); font-size:12.5px; color:var(--muted-foreground);">
+        <div class="table-scroll" style="border:1px solid var(--border); border-radius:8px;">
+          <table class="data-table">
+            <thead>
               <tr>
-                <th style="padding:10px 14px;">كود الملف</th>
-                <th style="padding:10px 14px;">اسم المريض / العميل</th>
-                <th style="padding:10px 14px;">رقم الهاتف</th>
-                <th style="padding:10px 14px;">التصنيف</th>
-                <th style="padding:10px 14px;">الأمراض المزمنة والحساسية</th>
-                <th style="padding:10px 14px;">إجمالي المشتريات</th>
-                <th style="padding:10px 14px;">آخر صرف</th>
-                <th style="padding:10px 14px; text-align:center;">إجراءات سريعة</th>
+                <th>كود الملف</th>
+                <th>اسم المريض / العميل</th>
+                <th>رقم الهاتف</th>
+                <th>التصنيف</th>
+                <th>الأمراض المزمنة والحساسية</th>
+                <th>إجمالي المشتريات (ج.س)</th>
+                <th>آخر صرف</th>
+                <th style="text-align:center;">إجراءات سريعة</th>
               </tr>
             </thead>
             <tbody id="customers-table-body">
@@ -187,34 +187,34 @@ export class CustomersView {
 
     grid.innerHTML = `
       <div class="stat-card" style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px;">
-        <div style="font-size:12px; color:var(--muted-foreground); margin-bottom:4px;">إجمالي المرضى المسجلين</div>
+        <div style="font-size:12px; color:var(--muted-foreground); margin-bottom:4px;">سجل المرضى</div>
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
           <strong style="font-size:22px; color:var(--foreground);">${stats.totalCustomers || 0}</strong>
-          <span class="badge" style="background:var(--muted); color:var(--muted-foreground); font-size:11px;">ملف نشط</span>
+          <span class="badge badge-gray">ملف نشط</span>
         </div>
       </div>
 
       <div class="stat-card" style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px;">
-        <div style="font-size:12px; color:var(--muted-foreground); margin-bottom:4px;">مرضى الأمراض المزمنة</div>
+        <div style="font-size:12px; color:var(--muted-foreground); margin-bottom:4px;">الأمراض المزمنة</div>
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
           <strong style="font-size:22px; color:#B45309;">${stats.chronicPatients || 0}</strong>
-          <span class="badge" style="background:#FEF3C7; color:#B45309; font-size:11px;">متابعة دورية</span>
+          <span class="badge badge-warning">متابعة دورية</span>
         </div>
       </div>
 
       <div class="stat-card" style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px;">
-        <div style="font-size:12px; color:var(--muted-foreground); margin-bottom:4px;">عملاء التأمين الصحي</div>
+        <div style="font-size:12px; color:var(--muted-foreground); margin-bottom:4px;">التأمين الصحي</div>
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
           <strong style="font-size:22px; color:#4338CA;">${stats.insurancePatients || 0}</strong>
-          <span class="badge" style="background:#E0E7FF; color:#4338CA; font-size:11px;">شيكان والوطنية</span>
+          <span class="badge badge-blue">معتمد</span>
         </div>
       </div>
 
       <div class="stat-card" style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px;">
-        <div style="font-size:12px; color:var(--muted-foreground); margin-bottom:4px;">إجمالي المشتريات التراكمية</div>
+        <div style="font-size:12px; color:var(--muted-foreground); margin-bottom:4px;">المبيعات التراكمية</div>
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
-          <strong dir="ltr" style="font-size:20px; color:var(--primary);">${Number(stats.totalPurchasesAmount || 0).toLocaleString()} ج.س</strong>
-          <span class="badge" style="background:#E6F8F2; color:#00B37E; font-size:11px;">مبيعات دورية</span>
+          <strong dir="ltr" style="font-size:20px; color:var(--primary);">${Number(stats.totalPurchasesAmount || 0).toLocaleString()} <small style="font-size:11px;">ج.س</small></strong>
+          <span class="badge badge-success">مبيعات دورية</span>
         </div>
       </div>
     `;
@@ -273,7 +273,7 @@ export class CustomersView {
             ${allergiesHtml || ''}
             ${(!conditionsHtml && !allergiesHtml) ? '<span style="color:var(--muted-foreground); font-size:11.5px;">سليم / لا توجد موانع</span>' : ''}
           </td>
-          <td style="padding:10px 14px; font-weight:700;" dir="ltr">${Number(cust.totalPurchases || 0).toLocaleString()} ج.س</td>
+          <td style="padding:10px 14px; font-weight:700;" dir="ltr">${Number(cust.totalPurchases || 0).toLocaleString()}</td>
           <td style="padding:10px 14px; font-size:11.5px; color:var(--muted-foreground);">${lastVisit}</td>
           <td style="padding:10px 14px; text-align:center;">
             <div style="display:inline-flex; align-items:center; gap:6px;">

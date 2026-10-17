@@ -38,7 +38,7 @@ export class SessionKpisGrid {
             <span class="chip" style="background:#EBF5FF; color:#0052CC; font-weight:700;">عهدة البداية</span>
           </div>
           <div class="stat-value num" dir="ltr">${Number(m.openingFloat || 0).toLocaleString()} <small>ج.س</small></div>
-          <div class="stat-label">الرصيد الافتتاحي لدرج النقدية</div>
+          <div class="stat-label">الرصيد الافتتاحي</div>
         </div>
 
         <!-- Card 2: Cash Sales -->
@@ -54,7 +54,7 @@ export class SessionKpisGrid {
             <span class="chip chip-success">مقبوضات كاش</span>
           </div>
           <div class="stat-value num" dir="ltr" style="color:#00B37E;">+${Number(m.cashSales || 0).toLocaleString()} <small>ج.س</small></div>
-          <div class="stat-label">مبيعات الكاش المباشرة بالوردية</div>
+          <div class="stat-label">مبيعات النقدية</div>
         </div>
 
         <!-- Card 3: Bankak Sales -->
@@ -69,7 +69,7 @@ export class SessionKpisGrid {
             <span class="chip" style="background:#EBF5FF; color:#0052CC; font-weight:700;">تحويلات بنكك</span>
           </div>
           <div class="stat-value num" dir="ltr" style="color:#0052CC;">${Number(m.bankakSales || 0).toLocaleString()} <small>ج.س</small></div>
-          <div class="stat-label">مبيعات بنكك (تستقر بالحساب البنكي)</div>
+          <div class="stat-label">مبيعات بنكك</div>
         </div>
 
         <!-- Card 4: Expected Drawer Cash -->
@@ -85,7 +85,7 @@ export class SessionKpisGrid {
             <span class="chip chip-success">واجب التسليم</span>
           </div>
           <div class="stat-value num" dir="ltr" style="color:var(--primary);">${Number(m.expectedCash || 0).toLocaleString()} <small>ج.س</small></div>
-          <div class="stat-label">النقدية المتوقعة بالدرج (Expected Cash)</div>
+          <div class="stat-label">النقدية المتوقعة</div>
         </div>
       </div>
     `;

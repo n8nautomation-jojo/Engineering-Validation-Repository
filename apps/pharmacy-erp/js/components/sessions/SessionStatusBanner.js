@@ -32,9 +32,9 @@ export class SessionStatusBanner {
           </span>
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <h2 style="font-size:17px; font-weight:800; margin:0;">جلسة الخزينة (الوردية الحالية)</h2>
+              <h2 style="font-size:17px; font-weight:800; margin:0;">جلسة الخزينة</h2>
               <span class="chip ${isOpen ? 'chip-success' : 'chip-warning'}">
-                ${isOpen ? 'الوردية مفتوحة (OPEN)' : 'الوردية مغلقة (CLOSED)'}
+                ${isOpen ? 'الوردية مفتوحة' : 'الوردية مغلقة'}
               </span>
             </div>
             <p style="font-size:12.5px; color:var(--muted-foreground); margin:2px 0 0;">

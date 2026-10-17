@@ -49,37 +49,50 @@ export class PurchasingInvoicesList {
 
     this.container.innerHTML = `
       <!-- Invoices & Accounts Payable Metrics Bar -->
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:16px;">
-        <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px;">
-          <div style="font-size:11.5px; color:var(--muted-foreground); margin-bottom:4px;">إجمالي فواتير المشتريات</div>
-          <div style="font-size:18px; font-weight:800; font-family:var(--font-mono); color:var(--foreground);">
-            ${Number(this.stats.totalInvoicedAmount || 0).toLocaleString()} <span style="font-size:12px; font-weight:600;">ج.س</span>
+      <div class="stats-grid" style="margin-bottom:16px;">
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-icon info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </span>
+            <span class="chip chip-info">${this.invoices.length} فواتير</span>
           </div>
-          <div style="font-size:11px; color:var(--muted-foreground); margin-top:4px;">${this.invoices.length} فاتورة تجارية مسجلة</div>
+          <div class="stat-value num">${Number(this.stats.totalInvoicedAmount || 0).toLocaleString()} <small>ج.س</small></div>
+          <div class="stat-label">إجمالي الفواتير</div>
         </div>
 
-        <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px;">
-          <div style="font-size:11.5px; color:var(--muted-foreground); margin-bottom:4px;">إجمالي المسدد للموردين</div>
-          <div style="font-size:18px; font-weight:800; font-family:var(--font-mono); color:#059669;">
-            ${Number(this.stats.totalPaidAmount || 0).toLocaleString()} <span style="font-size:12px; font-weight:600;">ج.س</span>
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-icon" style="background:#ECFDF5; color:#00B37E;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </span>
+            <span class="chip chip-success">مسدد</span>
           </div>
-          <div style="font-size:11px; color:#059669; margin-top:4px;">تم الوفاء بها نقدياً وعبر بنكك</div>
+          <div class="stat-value num" style="color:#00B37E;">${Number(this.stats.totalPaidAmount || 0).toLocaleString()} <small>ج.س</small></div>
+          <div class="stat-label">المسدد للموردين</div>
         </div>
 
-        <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25); border-radius:10px; padding:14px;">
-          <div style="font-size:11.5px; color:#DC2626; font-weight:700; margin-bottom:4px;">الذمم الدائنة المستحقة (مطلوبات الموردين)</div>
-          <div style="font-size:20px; font-weight:800; font-family:var(--font-mono); color:#DC2626;">
-            ${Number(this.stats.totalOutstandingBalance || 0).toLocaleString()} <span style="font-size:12px; font-weight:600;">ج.س</span>
+        <div class="stat-card featured" style="border-color:rgba(239,68,68,0.3); background:linear-gradient(135deg, rgba(239,68,68,0.06), rgba(245,158,11,0.03));">
+          <div class="stat-top">
+            <span class="stat-icon danger">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </span>
+            <span class="chip chip-danger">${unpaidCount + partialCount} مستحقة</span>
           </div>
-          <div style="font-size:11px; color:#B91C1C; margin-top:4px; font-weight:600;">
-            ${unpaidCount + partialCount} فواتير قيد السداد
-          </div>
+          <div class="stat-value num" style="color:var(--destructive);">${Number(this.stats.totalOutstandingBalance || 0).toLocaleString()} <small>ج.س</small></div>
+          <div class="stat-label">الذمم الدائنة المتبقية</div>
         </div>
 
-        <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; display:flex; flex-direction:column; justify-content:center;">
+        <div class="stat-card" style="display:flex; flex-direction:column; justify-content:center; align-items:stretch;">
           <button id="btn-invoices-add-new" class="btn-primary" style="width:100%; justify-content:center; padding:10px; font-weight:700;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-            تسجيل فاتورة مورد جديدة
+            تسجيل فاتورة مورد
           </button>
         </div>
       </div>
@@ -134,11 +147,11 @@ export class PurchasingInvoicesList {
 
                 let statusBadge = '';
                 if (inv.status === 'PAID' || remaining <= 0) {
-                  statusBadge = '<span class="badge badge-success" style="padding:4px 8px; border-radius:6px; font-weight:700;">مسددة بالكامل</span>';
+                  statusBadge = '<span class="badge badge-success">مسددة بالكامل</span>';
                 } else if (inv.status === 'PARTIALLY_PAID' || paid > 0) {
-                  statusBadge = '<span class="badge badge-warning" style="padding:4px 8px; border-radius:6px; font-weight:700; background:#FEF3C7; color:#92400E; border:1px solid #FCD34D;">سداد جزئي</span>';
+                  statusBadge = '<span class="badge badge-warning">سداد جزئي</span>';
                 } else {
-                  statusBadge = '<span class="badge badge-danger" style="padding:4px 8px; border-radius:6px; font-weight:700; background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5;">غير مسددة</span>';
+                  statusBadge = '<span class="badge badge-danger">غير مسددة</span>';
                 }
 
                 const isOverdue = inv.status !== 'PAID' && inv.dueDate && new Date(inv.dueDate) < new Date();
@@ -177,14 +190,16 @@ export class PurchasingInvoicesList {
                     <td>
                       <div style="display:flex; gap:6px; align-items:center;">
                         ${remaining > 0 ? `
-                          <button class="btn-table-action btn-pay-invoice" data-inv-id="${inv.id}" style="color:#2563EB; border-color:#BFDBFE; background:#EFF6FF; font-weight:700; padding:4px 10px;" title="تسجيل دفعة سداد">
-                            💳 سداد
+                          <button class="btn-table-action btn-pay-invoice" data-inv-id="${inv.id}" style="color:var(--primary); font-weight:700; padding:4px 10px;" title="تسجيل دفعة سداد">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                            سداد
                           </button>
                         ` : `
                           <span style="font-size:11px; color:#059669; font-weight:600; padding:4px 8px;">مكتمل ✓</span>
                         `}
-                        <button class="btn-table-action btn-view-invoice" data-inv-id="${inv.id}" style="color:var(--foreground); padding:4px 8px;" title="عرض تفاصيل الفاتورة وحركات السداد">
-                          👁️ تفاصيل
+                        <button class="btn-table-action btn-view-invoice" data-inv-id="${inv.id}" style="padding:4px 8px;" title="عرض تفاصيل الفاتورة وحركات السداد">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                          تفاصيل
                         </button>
                       </div>
                     </td>

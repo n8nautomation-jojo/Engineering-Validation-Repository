@@ -21,15 +21,15 @@ export class PaymentMethodsBreakdown {
     const channels = [
       {
         id: 'bankak',
-        title: '📱 تحويل بنكك (Bankak Transfer)',
+        title: 'تحويل بنكك',
         amount: p.bankak.amount,
         percentage: p.bankak.percentage,
         color: '#0052CC',
-        desc: 'تسويات فورية برقم إشعار المعاملة (TXN Ref)'
+        desc: 'تسويات فورية برقم إشعار المعاملة'
       },
       {
         id: 'cash',
-        title: '💵 نقد في الدرج (Cash Drawer)',
+        title: 'نقد في الدرج',
         amount: p.cash.amount,
         percentage: p.cash.percentage,
         color: '#00B37E',
@@ -37,7 +37,7 @@ export class PaymentMethodsBreakdown {
       },
       {
         id: 'card',
-        title: '💳 بطاقات مصرفية (POS/ATM Card)',
+        title: 'بطاقات مصرفية',
         amount: p.card.amount,
         percentage: p.card.percentage,
         color: '#F59E0B',
@@ -45,7 +45,7 @@ export class PaymentMethodsBreakdown {
       },
       {
         id: 'insurance',
-        title: '🏥 مطالبات التأمين الصحي والشركات',
+        title: 'مطالبات التأمين الصحي',
         amount: p.insurance.amount,
         percentage: p.insurance.percentage,
         color: '#8B5CF6',
@@ -90,7 +90,7 @@ export class PaymentMethodsBreakdown {
         </div>
 
         <div style="margin-top:14px; padding-top:10px; border-top:1px dashed var(--border); display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--muted-foreground);">
-          <span>🛡️ جميع الإشعارات البنكية تخضع للمطابقة مع الكشف</span>
+          <span>الإشعارات البنكية مطابقة آلياً مع الكشف</span>
           <button type="button" class="btn-table-action" id="btn-reports-view-sales" style="color:var(--primary); font-weight:700;">
             سجل الفواتير ←
           </button>
